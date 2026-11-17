@@ -1,242 +1,263 @@
-# Avenox Ikinci Beyin V3: ajan kurulum rehberi
+# Avenox Second Brain V3: agent install guide
 
-Bu dosya, kullanicinin su istegini yerine getirmek icin kanonik kurulum tarifidir:
+This file is the canonical install recipe for carrying out the following user request:
 
-> Bu klasore ikinci beynimi kur. Mevcut kurulum varsa notlarimi koruyarak guncelle.
-> Gerekli indirme ve kurulum adimlarini sen yap. Sonunda ornek bir bilgiyi kaydedip
-> yeni oturumda geri okuyarak birlikte dogrulayalim.
+> Set up my second brain in this folder. If there is an existing installation, update it
+> and keep my notes. Do the necessary download and setup steps yourself. At the end,
+> let's verify it together by saving a sample piece of information and reading it back
+> in a new session.
 
-Kullanici ZIP indirmek, arsiv acmak veya kurulum komutu aramak zorunda degildir. Bunlari
-ajan yapar. Yalnizca istemcinin gosterdigi normal klasor, workspace veya hook guven
-incelemesi kullaniciya aittir.
+The user does not have to download a ZIP, unpack an archive or look for an install
+command. The agent does these. Only the client's normal folder, workspace or hook trust
+review belongs to the user.
 
-## Degismez kurallar
+## Non-negotiable rules
 
-1. Kurulum hedefi, kullanicinin bu istegi verdigi mevcut vault/workspace klasorudur.
-2. Kullanici notlarini silme, tasima, yeniden adlandirma veya `git reset` ile ezme.
-3. Var olan V1, V2 veya V3 kurulumunu once tespit et. Resmi installer ve resmi updater
-   yedekleme, cakisma ve geri alma kurallarini uygular; bu kontrolleri elle atlama.
-4. Yalniz `avenoxai/avenoxbeyin` deposunun en son kararli GitHub release paketini kullan.
-   Source code arsivlerini veya ucuncu taraf paketleri kullanma.
-5. Ham notlari, kimlik bilgilerini, ozel yollari veya gizli degerleri terminal ciktisina,
-   sohbete ya da dis servislere dokme.
-6. Kurulum tamamlanmadan basarili deme. Installer ya da updater cikis kodunu, surum
-   damgasini ve `beyin.py doctor` sonucunu kontrol et. Installer ciktisindaki `companion`
-   ve `skills.conflicts` alanlarini da oku; `needs_attention` gorursen ilgili adimi
-   kullaniciya sormadan tamamlama.
+1. The install target is the current vault/workspace folder in which the user made this request.
+2. Do not delete, move, rename or overwrite user notes, and do not clobber them with `git reset`.
+3. First detect any existing V1, V2 or V3 installation. The official installer and the
+   official updater apply the backup, conflict and rollback rules; do not skip these
+   checks by hand.
+4. Use only the latest stable GitHub release package of the `uy4nik-droid/avenoxbeyin-english`
+   repository. Do not use Source code archives or third-party packages.
+5. Do not spill raw notes, credentials, private paths or secret values into terminal
+   output, into the chat or to external services.
+6. Do not claim success before the installation is complete. Check the installer or
+   updater exit code, the version stamp and the result of `beyin.py doctor`. Also read
+   the `companion` and `skills.conflicts` fields in the installer output; if you see
+   `needs_attention`, do not complete the related step without asking the user.
 
-## 1. Hedefi ve Python'u bul
+## 1. Find the target and Python
 
-- Vault yolu mevcut workspace kokudur. Mutlak ve kanonik yolu kullan.
-- Python 3.11 veya daha yenisini ara:
-  - macOS/Linux: once `python3`, sonra `python`
-  - Windows: once `py -3`, sonra `python`
-- Bulunan yorumlayicinin surumunu gercekten calistirip kontrol et.
-- Uygun Python yoksa, kullanicinin bu kurulum istegini yetki kabul ederek isletim
-  sisteminin resmi paket yoneticisiyle kararli Python 3 surumunu kur. Yonetici izni veya
-  isletim sistemi onayi gerekiyorsa yalniz o noktada kisa ve acik bicimde kullanicidan
-  onay iste. Rastgele indirme siteleri kullanma.
+- The vault path is the current workspace root. Use the absolute, canonical path.
+- Look for Python 3.11 or newer:
+  - macOS/Linux: `python3` first, then `python`
+  - Windows: `py -3` first, then `python`
+- Actually run the interpreter you found and check its version.
+- If there is no suitable Python, treat the user's install request as authorization and
+  install a stable Python 3 release with the operating system's official package manager.
+  If administrator permission or an operating-system confirmation is required, ask the
+  user for approval, briefly and clearly, only at that point. Do not use random download
+  sites.
 
-Obsidian notlari acmak icindir; kurulum sirasinda Obsidian eklentisi gerekmez. Git, pip,
-Node, Mem0, API anahtari veya surekli calisan sunucu gerekmez.
+Obsidian is for opening notes; no Obsidian plugin is needed during installation. Git,
+pip, Node, Mem0, an API key or an always-running server are not needed.
 
-## 2. Resmi paketi gecici alana indir ve dogrula
+## 2. Download the official package to a temporary location and verify it
 
-Once son kararli surumun etiketini ogren. Birinci yol GitHub API:
+First find out the tag of the latest stable release. The first way is the GitHub API:
 
-`https://api.github.com/repos/avenoxai/avenoxbeyin/releases/latest`
+`https://api.github.com/repos/uy4nik-droid/avenoxbeyin-english/releases/latest`
 
-Cevaptaki `tag_name` alanini kullan; `draft` ve `prerelease` false olmalidir. API
-kimliksiz isteklerde IP basina saatlik sinir uygular. HTTP 403 veya 429 donerse API'yi
-zorlama ve surumu tahmin etme; ikinci yol olarak su adresin yonlendirmesini oku:
+Use the `tag_name` field in the response; `draft` and `prerelease` must be false. For
+unauthenticated requests the API applies an hourly limit per IP. If it returns HTTP 403
+or 429, do not push the API and do not guess the version; as the second way, read the
+redirect of this address:
 
-`https://github.com/avenoxai/avenoxbeyin/releases/latest`
+`https://github.com/uy4nik-droid/avenoxbeyin-english/releases/latest`
 
-Bu adres `https://github.com/avenoxai/avenoxbeyin/releases/tag/vX.Y.Z` adresine
-yonlenir; etiket son yol parcasidir.
+This address redirects to `https://github.com/uy4nik-droid/avenoxbeyin-english/releases/tag/vX.Y.Z`;
+the tag is the last path segment.
 
-Release kararli bir `vMAJOR.MINOR.PATCH` etiketi tasimalidir. Etiket `vX.Y.Z` ise gerekli
-varliklar sunlardir:
+The release must carry a stable `vMAJOR.MINOR.PATCH` tag. If the tag is `vX.Y.Z`, the
+required assets are:
 
 - `beyin-v3-X.Y.Z.zip`
 - `beyin-v3-X.Y.Z.zip.sha256`
 
-Surumu sabitleme ve bu satirlardaki `X.Y.Z` yer tutucusunu gercek surum sanma: isimleri
-gercek etiketten uret. Indirme adresleri API cevabindaki `browser_download_url`
-alanlaridir; yonlendirme yolunu kullandiysan ayni adresler su kaliptadir:
+Do not pin the version, and do not mistake the `X.Y.Z` placeholder in these lines for a
+real version: derive the names from the real tag. The download addresses are the
+`browser_download_url` fields in the API response; if you used the redirect path, the
+same addresses follow this pattern:
 
-`https://github.com/avenoxai/avenoxbeyin/releases/download/vX.Y.Z/beyin-v3-X.Y.Z.zip`
-`https://github.com/avenoxai/avenoxbeyin/releases/download/vX.Y.Z/beyin-v3-X.Y.Z.zip.sha256`
+`https://github.com/uy4nik-droid/avenoxbeyin-english/releases/download/vX.Y.Z/beyin-v3-X.Y.Z.zip`
+`https://github.com/uy4nik-droid/avenoxbeyin-english/releases/download/vX.Y.Z/beyin-v3-X.Y.Z.zip.sha256`
 
-Ikisini HTTPS ile isletim sisteminin gecici klasorune indir. SHA-256 dosyasindaki ilk
-alani ZIP'in yerel SHA-256 degeriyle karsilastir. Eslesme yoksa dur, arsivi acma ve
-sorunu bildir.
+Download both over HTTPS into the operating system's temporary folder. Compare the first
+field in the SHA-256 file with the local SHA-256 of the ZIP. If they do not match, stop,
+do not unpack the archive and report the problem.
 
-ZIP'i gecici bir klasore acarken her uyenin hedefinin bu gecici klasorun icinde kaldigini
-kontrol et. Mutlak yol, `..` ile kacis veya sembolik bag iceren arsivi reddet. Paket
-kokunde `manifest.json` ve `scripts/install_v3.py` bulunmalidir.
+When unpacking the ZIP into a temporary folder, check that the destination of every
+member stays inside this temporary folder. Reject an archive that contains an absolute
+path, an escape with `..` or a symbolic link. The package root must contain
+`manifest.json` and `scripts/install_v3.py`.
 
-## 3. Kurulumu veya guncellemeyi uygula
+## 3. Apply the installation or update
 
-Once vault kokunde `.beyin-version` dosyasina bak ve yola gore ayril.
+First look at the `.beyin-version` file in the vault root and branch according to it.
 
-### 3a. `.beyin-version` yoksa, V1 veya V2 varsa: resmi installer
+### 3a. If `.beyin-version` is missing, or V1 or V2 exists: the official installer
 
-Buldugun ayni Python yorumlayicisiyla:
-
-```text
-<python> <gecici-paket>/scripts/install_v3.py --vault <mutlak-vault-yolu>
-```
-
-Eski V1/V2 kurulumunda once ayni komutu sonuna `--plan` ekleyerek calistir; bu hicbir sey
-degistirmez, nelerin yazilacagini ve emekli edilecegini gosterir. Kullanici eski bir
-runner'i elle degistirmisse installer `Customized legacy runner requires review <yol>`
-mesajiyla 1 cikis kodu dondurur. O dosyayi silme veya ezme; icerigini kisaca ozetle,
-kullanicinin acik onayini al ve ancak o zaman tek dosya icin
-`--accept-customized-legacy <vault-goreli-yol>` kullan. Toplu gecis yoktur. Ayrintilar:
-`https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/MIGRATION.md`
-
-### 3b. `.beyin-version` zaten `3.` ile basliyorsa: kurulu updater
-
-Mevcut V3 kurulumunda tercih edilen yol vault icindeki `beyin.py` updater'idir.
-Vault kokunde, indirip dogruladigin ZIP ile calistir:
+With the same Python interpreter you found:
 
 ```text
-<python> beyin.py update --check --package <indirdigin-zip>
-<python> beyin.py update --package <indirdigin-zip>
+<python> <temp-package>/scripts/install_v3.py --vault <absolute-vault-path>
 ```
 
-Sonuc `updated` ise surum degismistir, `noop` ise vault zaten gunceldir; ikisi de
-basaridir. Bu yol gereksiz yere yeni bir istemci guven incelemesi zorlamaz ve gerekirse
-`<python> beyin.py rollback` ile tam geri alinir. Ag erisimi varsa `--package` olmadan da
-calisir; ag hatasi (ornegin `http_403`) "guncel" anlamina gelmez. Cok eski bir V3
-paketinde `update` komutu taninmiyorsa 3a yoluna dus. `beyin.py --help` ciktisi `update`,
-`rollback` ve `recover` komutlarini listelemez; bunlar giris scriptinde ayrica ele alinir
-ve calisir. Komutu `--help` listesinde gormedin diye 3a'ya dusme.
+For an old V1/V2 installation, first run the same command with `--plan` appended; this
+changes nothing and shows what would be written and what would be retired. If the user
+has modified an old runner by hand, the installer returns exit code 1 with the message
+`Customized legacy runner requires review <path>`. Do not delete or overwrite that file;
+summarize its contents briefly, get the user's explicit approval, and only then use
+`--accept-customized-legacy <vault-relative-path>` for that single file. There is no
+bulk migration. Details:
+`https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/MIGRATION.md`
 
-### Her iki yol icin gecerli
+### 3b. If `.beyin-version` already starts with `3.`: the installed updater
 
-Vault'ta `.beyin-runtime.json` varsa installer ve updater onun dis yerel state konumunu
-korur. Yeni kurulumda state macOS, Linux veya Windows icin uygun yerel uygulama verisi
-dizinine, vault disina yazilir. State'i iCloud, OneDrive, Dropbox veya vault icine tasima.
+For an existing V3 installation, the preferred way is the `beyin.py` updater inside the
+vault. In the vault root, run it with the ZIP you downloaded and verified:
 
-Yonetilen bir dosya elle degistirilmisse her iki yol da
-`Reinstall conflict: managed file changed <yol>` hatasi verip 1 cikis kodu dondurur.
-Kullanici dosyasini ezme. Cakisan dosyayi ve neden otomatik devam edilemedigini kisa
-bicimde bildir. Yarim kalan resmi V3 isleminde once mevcut vault'taki `beyin.py recover`
-yolunu kullan; basarisiz olmadan yeniden kopyalama yapma. Kendi curl, kopyalama veya
-`git pull` zincirinle kurulu bir vault'u guncelleme.
+```text
+<python> beyin.py update --check --package <downloaded-zip>
+<python> beyin.py update --package <downloaded-zip>
+```
 
-## 4. Kurulumu dogrula
+If the result is `updated`, the version has changed; if it is `noop`, the vault is
+already up to date; both are success. This way does not needlessly force a new client
+trust review, and if necessary it can be fully rolled back with
+`<python> beyin.py rollback`. It also works without `--package` when there is network
+access; a network error (for example `http_403`) does not mean "up to date". If the
+`update` command is not recognized in a very old V3 package, fall back to path 3a. The
+output of `beyin.py --help` does not list the `update`, `rollback` and `recover`
+commands; they are handled separately in the entry script and they work. Do not fall
+back to 3a just because you did not see the command in the `--help` list.
 
-Vault kokunde su kontrolleri yap:
+### Applies to both paths
+
+If the vault has `.beyin-runtime.json`, the installer and updater preserve its external
+local state location. On a new installation, state is written outside the vault, to the
+appropriate local application-data directory for macOS, Linux or Windows. Do not move
+the state into iCloud, OneDrive, Dropbox or the vault.
+
+If a managed file has been modified by hand, both paths fail with the error
+`Reinstall conflict: managed file changed <path>` and return exit code 1. Do not
+overwrite the user's file. Report the conflicting file and why it cannot continue
+automatically, briefly. For an interrupted official V3 operation, first use the
+`beyin.py recover` path in the existing vault; do not re-copy before it has failed. Do
+not update an installed vault with your own chain of curl, copy or `git pull`.
+
+## 4. Verify the installation
+
+Run these checks in the vault root:
 
 ```text
 <python> beyin.py doctor --human
 <python> beyin.py preferences --human
 ```
 
-Ek olarak `.beyin-version`, `.agents/skills/beyin/SKILL.md`,
-`.agents/skills/beyin-doktor/SKILL.md`, `.agents/skills/beyin-guncelle/SKILL.md` ve
-`.agents/skills/beyin-kontrol/SKILL.md` dosyalarinin varligini kontrol et. Kurulumdan
-sonra gecici ZIP ve acma klasorunu sil; kullanici notlarina dokunma. Kurulum vault kokundeki `AGENTS.md` dosyasina
-`<!-- beyin-v3:start -->` isaretli yonetilen bir bolum ekler; mevcut icerik korunur.
-`CLAUDE.md` yoksa yalniz `@AGENTS.md` import satiriyla olusturulur. `AGENTS.md`'yi zaten
-import eden `CLAUDE.md`'ye bolum ikinci kez eklenmez; import etmeyen `CLAUDE.md`'ye ayni
-bolum eklenir. Kullaniciya verdigin ozette neyin eklendigini yaz.
-Kiro destegi iceren bir paket kullaniyorsan `.kiro/hooks/beyin-v3.json` ve
-`.kiro/skills/beyin/SKILL.md` dosyalarini da kontrol et; eski paketlerde bu
-dosyalar bulunmayabilir.
+In addition, check that these files exist: `.beyin-version`,
+`.agents/skills/beyin/SKILL.md`, `.agents/skills/beyin-doktor/SKILL.md`,
+`.agents/skills/beyin-guncelle/SKILL.md` and `.agents/skills/beyin-kontrol/SKILL.md`.
+After installation, delete the temporary ZIP and the unpack folder; do not touch user
+notes. The installation adds a managed section marked `<!-- beyin-v3:start -->` to the
+`AGENTS.md` file in the vault root; existing content is preserved. If `CLAUDE.md` does
+not exist, it is created with only the `@AGENTS.md` import line. The section is not added
+a second time to a `CLAUDE.md` that already imports `AGENTS.md`; the same section is added
+to a `CLAUDE.md` that does not import it. In the summary you give the user, say what was
+added.
+If you are using a package that includes Kiro support, also check the files
+`.kiro/hooks/beyin-v3.json` and `.kiro/skills/beyin/SKILL.md`; these files may be absent
+in older packages.
 
-Kurulum vault kokune yalniz ilgili platformun guncelleme kisayolunu birakir: macOS'ta
-`Beyni Güncelle.command`, Windows'ta `Beyni Guncelle.cmd`, Linux'ta `Beyni Güncelle.sh`
-ve onu cagiran `Beyni Güncelle.desktop`. Hepsi kurulu `beyin.py update` komutunu
-cagirir, ayri bir guncelleme mantigi icermez. Kullanici ileride ajana "beynimi guncelle"
-diyerek ya da bu kisayolla guncelleyebilir.
+The installation leaves only the update shortcut of the relevant platform in the vault
+root: on macOS `Beyni Güncelle.command`, on Windows `Beyni Guncelle.cmd`, on Linux
+`Beyni Güncelle.sh` and the `Beyni Güncelle.desktop` that calls it. All of them call the
+installed `beyin.py update` command and contain no separate update logic. In the future
+the user can update by telling the agent "update my brain" or with this shortcut.
 
-Codex'te `/hooks` incelemesini, Claude Code ve Antigravity'de normal workspace/klasor
-guvenini kullaniciya goster. Guven hash'i uydurma veya onayi atlatma. OpenCode icin ek
-guven adimi yoktur; vault klasorunde OpenCode acilinca eklenti yuklenir. OMP icin de ek
-guven adimi yoktur; vault klasorunde OMP acilinca `.omp/hooks/pre/beyin-v3.ts` hook'u
-yuklenir. Hermes Agent kullaniliyorsa installer eklenti dosyalarini vault icine yazar,
-ancak baglanti icin `hermes plugins enable beyin-v3` ve yeniden baslatma adimlari
-kullaniciya aittir; adimlar
-`https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/HERMES.md` icindedir.
-Kiro IDE 1.x veya CLI V3 kullaniliyorsa vault'u ac, Agent Hooks panelinde veya
-CLI `/hooks` ekraninda Beyin tanimlarini incele ve yeni oturum baslat.
-Pi kullaniliyorsa vault klasorunde Pi'yi ac, `.pi/extensions/beyin-v3.ts` dosyasini
-kullaniciya gosterip Pi'nin proje guveni sorusunu kullaniciya biraktir ve yeni oturum
-baslat; `~/.pi/agent/trust.json` dosyasina elle yazma. Vault disindaki projelerde Pi
-yalniz acik `--beyin-project-root` kapsamiyla baglanir (`docs/v3/PI.md`).
-Ardindan yeni bir istemci oturumu acilmasini iste. Codex Desktop otomatik hook baglami
-gorunmezse bu bir kurulum basarisi iddiasi degildir; kurulu `beyin.py context` ve `sync`
-komutlariyla dogrudan tazeleme kullanilabilir.
+Show the user the `/hooks` review in Codex, and the normal workspace/folder trust in
+Claude Code and Antigravity. Do not make up a trust hash or bypass the approval. There is
+no extra trust step for OpenCode; the plugin loads when OpenCode is opened in the vault
+folder. There is no extra trust step for OMP either; the `.omp/hooks/pre/beyin-v3.ts`
+hook loads when OMP is opened in the vault folder. If Hermes Agent is used, the installer
+writes the plugin files into the vault, but for the connection, the steps
+`hermes plugins enable beyin-v3` and a restart belong to the user; the steps are in
+`https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/HERMES.md`.
+If Kiro IDE 1.x or the V3 CLI is used, open the vault, review the Beyin definitions in
+the Agent Hooks panel or on the CLI `/hooks` screen, and start a new session.
+If Pi is used, open Pi in the vault folder, show the user the `.pi/extensions/beyin-v3.ts`
+file, leave Pi's project trust question to the user and start a new session; do not
+write to the `~/.pi/agent/trust.json` file by hand. In projects outside the vault, Pi
+connects only with an explicit `--beyin-project-root` scope (`docs/v3/PI.md`).
+Then ask for a new client session to be opened. If the Codex Desktop automatic hook
+context does not appear, this is not a claim of installation success; direct refresh with
+the installed `beyin.py context` and `sync` commands can be used.
 
-## 5. Kullanici ile tanis ve gercek geri okuma yap
+## 5. Get to know the user and do a real read-back
 
-Kurulumdan sonra `.agents/skills/beyin/SKILL.md` dosyasini oku. Kullaniciya en fazla uc
-kisa tanisma sorusu sor. Cevaplarini kaynak Markdown notuna kaydet: kimlik ve hitap
-bilgisi companion klasorundeki `Core.md` dosyasina yazilir. Bu klasoru yalniz resmi
-installer acar. 3b yolunda (eski bir V3'ten guncelleme) klasor hemen olusmaz; installer
-ciktisinda `companion` alani `needs_attention` dondugunde de olusmaz. Iki durumda da
-yeni bir kimlik klasoru acma: vault'ta mevcut `Core.md` veya `Soul.md` ara, birden fazla
-aday varsa hangisinin kullanilacagini kullaniciya sor. Yeni semantik notlar ise yalniz
-`notes/` veya `knowledge/` altina `<python> beyin.py note-create --file NOTE_JSON` ile
-olusturulur; klasor yoksa olusur. Sonra `<python> beyin.py sync` ile esitle ve ayni
-bilgiyi ayri bir komutta `<python> beyin.py context "<aradigin konu>"` ile geri okuyup
-donen `source` yolunu kullaniciya soyle. Dosyayi dogrudan acip okumak geri okuma yerine
-gecmez. Uydurma profil bilgisi yazma.
+After installation, read the `.agents/skills/beyin/SKILL.md` file. Ask the user at most
+three short getting-to-know-you questions. Save the answers to a source Markdown note:
+identity and form-of-address information is written to the `Core.md` file in the
+companion folder. Only the official installer creates this folder. On path 3b (updating
+from an older V3) the folder is not created immediately; it is also not created when the
+`companion` field in the installer output returns `needs_attention`. In both cases, do
+not open a new identity folder: look for an existing `Core.md` or `Soul.md` in the vault,
+and if there is more than one candidate, ask the user which one to use. New semantic
+notes, on the other hand, are created only under `notes/` or `knowledge/` with
+`<python> beyin.py note-create --file NOTE_JSON`; if the folder does not exist, it is
+created. Then sync with `<python> beyin.py sync`, and in a separate command read the same
+information back with `<python> beyin.py context "<the topic you are looking for>"` and
+tell the user the `source` path it returns. Opening and reading the file directly does
+not count as a read-back. Do not write made-up profile information.
 
-Son olarak kullanicidan yeni bir oturum acip kaydedilen ornek bilgiyi sormasini iste.
-Bu yeni oturum geri okumasi yapilmadan "oturumlar arasi hafiza dogrulandi" deme.
+Finally, ask the user to open a new session and ask about the saved sample information.
+Do not say "memory across sessions is verified" until this new-session read-back has been
+done.
 
-Varsayilan tuketim profili Normal'dir. Kullanici isterse beyin skill'i uzerinden
-"ekonomik moda gec", "kontrol araligini 30 dakika yap" veya "otomatik kontrolleri
-kapat" diyebilir. Yerel kontroller model cagirmaz ve kapali uygulamayi uyandiran bir
-zamanlayici kurulmaz.
+The default consumption profile is Normal. If the user wishes, via the beyin skill they
+can say "switch to economy mode", "set the check interval to 30 minutes" or "turn off
+automatic checks". Local checks do not call a model, and no timer that wakes a closed
+application is installed.
 
-## Opsiyonel Jev danismani
+## Optional Jev advisor
 
-Jev kurulumun parcasi degildir ve varsayilan kapalidir. Kurulumdan sonra
-`<python> beyin.py jev status --human` ciktisi "kapali" ve "Anahtar: yok" gostermelidir;
-baska bir sey yapma. Kullanici acikca istemedikce acma, API anahtari isteme veya konuyu
-gundeme getirme.
+Jev is not part of the installation and is off by default. After installation, the output
+of `<python> beyin.py jev status --human` should show "Jev: off" and "Key: not set";
+do nothing else. Do not turn it on, ask for an API key or bring up the subject
+unless the user explicitly asks.
 
-Kullanici isterse kurulu `.agents/skills/beyin/SKILL.md` icindeki Jev bolumunu ve
-`https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/JEV.md` adimlarini uygula
-(kurulu pakette `docs/` klasoru yoktur). Anahtar `TYPESAFE_API_KEY` ortam degiskeninde
-durur; Markdown'a, surum kontrolune veya komut argumanina yazilmaz. `jev` komutu anahtar
-kabul etmez ve yazdirmaz. `env_file` kullanilacaksa mutlak yol gerekir. Kural 5 geregi
-anahtari sohbetten isteme ve sohbete yazdirma; kullanici onu kendi kabuk ortamina
-kendisi koyar. Once `jev shadow` ile olc, sonra `jev on` yap. `jev on` iken ajanin
-`context ... --jev`, `jev-answer` ve `jev-review` cagrilari da saglayiciya veri gonderir:
-`context --jev` sorgu ile izin verilen her adayin basligini ve metninden bir kesiti
-yollar. `auto_context` ayri ve ek
-bir opt-in'dir: `jev on --enable auto_context` acildiginda her turda istem metni ve en
-fazla 8 aday notun basligi ile ilk 600 karakteri saglayiciya gider. `private` notlar
-hicbir yolda gonderilmez; V3.2.0 ve sonrasinda `remote_allowed: false` ve
-`sensitivity: sensitive` kayitlar da gonderilmez. Bunlari acmadan once kullaniciya soyle. Mod `off` degilken anahtar yoksa komut
-uyarir ve cagrilar yerel sonuca duser. Kapatma: `<python> beyin.py jev off`; acil durumda
-`BEYIN_JEV_DISABLE=1` ortam degiskeni kayitli modu degistirmeden cagrilari durdurur.
+If the user asks, apply the Jev section in the installed `.agents/skills/beyin/SKILL.md`
+and the steps in
+`https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/JEV.md`
+(the installed package has no `docs/` folder). The key lives in the `TYPESAFE_API_KEY`
+environment variable; it is not written to Markdown, to version control or to a command
+argument. The `jev` command does not accept or print the key. If `env_file` is going to be
+used, an absolute path is required. Per rule 5, do not ask for the key in the chat and do
+not print it into the chat; the user puts it into their own shell environment themselves.
+Measure first with `jev shadow`, then do `jev on`. While `jev on` is active, the agent's
+`context ... --jev`, `jev-answer` and `jev-review` calls also send data to the provider:
+`context --jev` sends the query and, for every allowed candidate, the title and an excerpt
+of the text. `auto_context` is a separate and additional opt-in: when
+`jev on --enable auto_context` is turned on, on every turn the prompt text and, for up to
+8 candidate notes, the title and the first 600 characters go to the provider. `private`
+notes are not sent by any path; from V3.2.0 onward, records with `remote_allowed: false`
+and `sensitivity: sensitive` are not sent either. Tell the user these things before
+turning them on. When the mode is not `off` and there is no key, the command warns and the
+calls fall back to the local result. To turn it off: `<python> beyin.py jev off`; in an
+emergency, the `BEYIN_JEV_DISABLE=1` environment variable stops the calls without changing
+the saved mode.
 
-Anahtar istemeyen yerel secenek: kullanici acikca isterse ayri kurulmus `laya-serve`
-(`LAYA_HOST=127.0.0.1 LAYA_PORT=8765`) icin `<python> beyin.py jev shadow --provider laya`,
-sonra `jev status --check`. Laya'yi, PyTorch'u veya model agirligini Beyin'in ortamina
-kurma. Laya yalniz golge modda calisir: olcumde Jev'den cok daha zayif ciktigi icin
-puanlari yalniz olcum icin kaydedilir, hicbir sonucu degistirmez; `jev on --provider laya`
-`laya_shadow_only` ile reddedilir ve `jev status` modu `golge (yalniz)` gosterir. Ayni gonderim
-kurallari gecerlidir; `private`, `remote_allowed: false` ve `sensitivity: sensitive` kayitlar
-Laya'ya da gitmez. Jev'e donus: `jev on --provider typesafe`.
+Local option that needs no key: if the user explicitly asks, for a separately installed
+`laya-serve` (`LAYA_HOST=127.0.0.1 LAYA_PORT=8765`) run
+`<python> beyin.py jev shadow --provider laya`, then `jev status --check`. Do not install
+Laya, PyTorch or model weights into Beyin's environment. Laya runs only in shadow mode:
+because it measured much weaker than Jev, its scores are recorded for measurement only
+and change no result; `jev on --provider laya` is rejected with `laya_shadow_only`, and
+`jev status` shows the mode as `shadow (only)`. The same sending rules
+apply; `private`, `remote_allowed: false` and `sensitivity: sensitive` records do not go
+to Laya either. Returning to Jev: `jev on --provider typesafe`.
 
-## Manuel kacis yolu
+## Manual fallback
 
-Ajanin ag veya dosya yetkisi gercekten yetersizse, kullaniciyi su sayfaya yonlendir:
+If the agent's network or file permission is genuinely insufficient, direct the user to
+this page:
 
 `https://avenox.lol/ikincibeyin`
 
-Sayfadaki V3 ZIP dugmesi GitHub'daki en son kararli resmi release paketine ve SHA-256
-dosyasina goturur; ayni paketler dogrudan
-`https://github.com/avenoxai/avenoxbeyin/releases/latest` sayfasinda da durur. Manuel
-kurulumdan sonra vault kokunde `<python> beyin.py update --check` ile surumun guncel
-oldugunu dogrula. Bu yol otomatik kurulumun yerine gecen son care yoludur; ilk tercih
-degildir.
+The V3 ZIP button on the page leads to the latest stable official release package on
+GitHub and to the SHA-256 file; the same packages are also available directly on the
+`https://github.com/uy4nik-droid/avenoxbeyin-english/releases/latest` page. After a manual
+installation, verify that the version is current with `<python> beyin.py update --check`
+in the vault root. This path is the last resort that takes the place of automatic
+installation; it is not the first choice.

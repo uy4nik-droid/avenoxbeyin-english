@@ -72,7 +72,7 @@ class MemoryAuditorTest(unittest.TestCase):
         self.assertEqual(finding['type'], 'near_duplicate')
         self.assertGreaterEqual(finding['overlap'], 0.85)
         self.assertEqual(finding['severity'], 'warning')
-        self.assertIn('Ayri not acmak yerine', finding['recommendation'])
+        self.assertIn('Instead of opening a separate note', finding['recommendation'])
 
     def test_status_contradiction_detection(self):
         """Detect temporal conflict when older note states unverified/failed and newer note states verified/active."""
@@ -101,7 +101,7 @@ class MemoryAuditorTest(unittest.TestCase):
         conf = finding['conflict']
         self.assertIn(conf['older_term'], ('dogrulanmadi', 'unverified', 'basarisiz'))
         self.assertIn(conf['newer_term'], ('dogrulandi', 'verified', 'basarili'))
-        self.assertIn('tarihsel', finding['recommendation'])
+        self.assertIn('historical', finding['recommendation'])
 
     def test_superseded_notes_are_not_flagged_as_open_conflicts(self):
         """When newer note explicitly includes supersedes: [older-note], no open conflict is raised."""
@@ -254,9 +254,9 @@ class MemoryAuditorTest(unittest.TestCase):
         ]
         res_human = subprocess.run(cmd_human, capture_output=True, text=True, env=inherited_env())
         self.assertEqual(res_human.returncode, 0, res_human.stderr)
-        self.assertIn("Ikinci Beyin Hafiza Denetim Raporu", res_human.stdout)
-        self.assertIn("Yuksek Tekrar ve Ortusme", res_human.stdout)
-        self.assertIn("Denetci Siniri", res_human.stdout)
+        self.assertIn("Second Brain Memory Audit Report", res_human.stdout)
+        self.assertIn("High Duplication and Overlap", res_human.stdout)
+        self.assertIn("Auditor Limits", res_human.stdout)
 
 
     SHARED = ("Kuyruk servisi yeniden deneme politikasi bekleme suresi zaman asimi "

@@ -1,71 +1,75 @@
-# İsteğe bağlı yerel web görünümü
+# Optional local web view
 
-`beyin.py web`, vault'un görevlerini, son receipt'lerini, hafıza dosyalarının boyutunu ve
-doktor özetini tarayıcıda gösteren küçük bir yerel sunucudur ([#371](https://github.com/avenoxai/avenoxbeyin/issues/371),
-[#423](https://github.com/avenoxai/avenoxbeyin/pull/423)). Tamamen isteğe bağlıdır: kurulum,
-güncelleme ve hook'lar onu hiçbir zaman başlatmaz; masaüstü kısayolu ya da arka plan servisi
-kurulmaz. Yalnız sen komutu çalıştırınca açılır.
+`beyin.py web` is a small local server that shows the vault's tasks, recent receipts, the size of
+the memory files and the doctor summary in the browser ([#371](https://github.com/avenoxai/avenoxbeyin/issues/371),
+[#423](https://github.com/avenoxai/avenoxbeyin/pull/423)). It is entirely optional: install,
+update and hooks never start it; no desktop shortcut or background service is installed. It opens
+only when you run the command.
 
 ```sh
-python3 beyin.py web ac              # sunucuyu başlatır, tarayıcıyı açar
-python3 beyin.py web ac --read-only  # yalnız okuma: görev, eşitleme ve sıkıştırma kapalı
-python3 beyin.py web ac --no-browser # adresi yalnız yazdırır
+python3 beyin.py web ac              # starts the server, opens the browser
+python3 beyin.py web ac --read-only  # read-only: task, sync and compaction are off
+python3 beyin.py web ac --no-browser # only prints the address
 python3 beyin.py web durum
 python3 beyin.py web durdur
 ```
 
-Windows'ta `py -3 beyin.py web ac`. Varsayılan port 7373-7393 arasındaki ilk boş porttur; hepsi
-doluysa işletim sisteminin verdiği boş bir port kullanılır. `--port` ile seçilebilir. Sunucu 30
-dakika kullanılmazsa kendiliğinden kapanır, `Ctrl+C` ya da `beyin.py web durdur` da kapatır.
-Beyin güncellenir ya da geri alınırsa çalışan sunucu bir sonraki istekte bunu fark eder, isteği
-reddeder ve kapanır; yeni sürümle `beyin.py web ac` ile yeniden açılır.
+On Windows, `py -3 beyin.py web ac`. The default port is the first free port between 7373 and 7393;
+if all are taken, a free port given by the operating system is used. You can choose one with
+`--port`. The server shuts itself down if it is unused for 30 minutes; `Ctrl+C` or
+`beyin.py web durdur` also shuts it down. If Beyin is updated or rolled back, the running server
+notices this on the next request, rejects the request and shuts down; open it again with the new
+version using `beyin.py web ac`.
 
-## Ne gösterir, ne yazar
+## What it shows, what it writes
 
-| Bölüm | Kaynak | Yazma |
+| Section | Source | Write |
 | --- | --- | --- |
-| Kokpit | `doctor` özeti, açık görev sayıları, son receipt'ler | yok |
-| Görevler | `tasks/` altındaki görev kayıtları (`kind: task`) | yeni görev `task-create`, durum değişikliği `task-update` |
-| Arama | ajanların bağlam için kullandığı dizin | yok |
-| Receipt'ler | son 14 günün receipt'leri | yok |
-| Hafıza | `companion-compact --dry-run` planı | `companion-compact` (eski girdileri arşive aynen taşır, silmez) |
+| Cockpit | `doctor` summary, open task counts, recent receipts | none |
+| Tasks | task records under `tasks/` (`kind: task`) | new task `task-create`, status change `task-update` |
+| Search | the index agents use for context | none |
+| Receipts | receipts from the last 14 days | none |
+| Memory | the `companion-compact --dry-run` plan | `companion-compact` (moves old entries to the archive unchanged, does not delete) |
 
-Üst köşedeki **Eşitle** düğmesi `beyin.py sync` ile aynı işi yapar. Web görünümü vault'a kendi
-başına dosya yazmaz: her yazma, CLI komutunun kendisi aynı süreçte çalıştırılarak yapılır; revizyon
-denetimi, kilitler, sır süzgeci ve projeksiyon doğrulaması CLI'dakiyle aynıdır. Eşzamanlı bir
-değişiklikte görev güncellemesi `revision conflict` ile reddedilir; sayfa yenilenip yeniden denenir.
+The **Sync** button in the top corner does the same thing as `beyin.py sync`. The web view does not
+write files to the vault on its own: every write is done by running the CLI command itself in the
+same process; revision checks, locks, the secret filter and projection validation are the same as
+in the CLI. On a concurrent change, a task update is rejected with `revision conflict`; refresh the
+page and try again.
 
-## Gizlilik
+## Privacy
 
-Okumalar çekirdek dizinin kendi kapısından geçer: `visibility: private` notlar ve görevler,
-`trust: untrusted` kayıtlar, kasa sınıfı klasörler (Kasa, Şifre, Müşteri, Finans...), dizinden
-hariç tutulan klasörler ve kaynağı dizinden sonra değişmiş notlar arama sonuçlarında, görev
-listesinde ve önizlemede görünmez; kimliği bilinse bile açılamaz ya da güncellenemez. Gizli bir
-kaynağa bağlı receipt özeti gösterilmez. Herhangi bir vault yolu doğrudan istenemez; önizleme
-yalnız dizindeki bir kaydın kimliğiyle açılır.
+Reads go through the core index's own gate: `visibility: private` notes and tasks, `trust: untrusted`
+records, safe-class folders (Kasa, Şifre, Müşteri, Finans...), folders excluded from the index
+and notes whose source changed after indexing do not appear in search results, the task list or the
+preview; even if the ID is known, they cannot be opened or updated. A receipt summary tied to a
+hidden source is not shown. No arbitrary vault path can be requested directly; the preview opens
+only with the ID of a record in the index.
 
-## Güvenlik
+## Security
 
-- Sunucu yalnız `127.0.0.1` üzerinde dinler. Her istekte `Host` başlığı bu dinleyiciyi
-  (`127.0.0.1:<port>` ya da `localhost:<port>`) göstermeli; `Origin` ve `Sec-Fetch-Site` varsa
-  aynı kaynağı göstermeli. Başka bir site, DNS rebinding ile de olsa yanıt alamaz.
-- Her açılışta yeni bir belirteç üretilir ve sunucu kapanana kadar geçerlidir. Belirteç,
-  terminale yazdırılan adreste (`--json` çıktısında `adres` alanında) ve state klasöründeki
-  `web/running.json` dosyasında bulunur; bu dosyanın izni macOS ve Linux'ta 0600'dür, Windows bu
-  izni uygulamaz. Tarayıcı bu adresle bir kez gelir; sunucu ayrı bir `HttpOnly; SameSite=Strict`
-  oturum çerezi verir ve belirteci adres çubuğundan hemen kaldırır. Belirteçli adres tarayıcı
-  geçmişinde (ve geçmiş eşitleniyorsa diğer cihazlarda) kalabilir; sunucu kapanınca işe yaramaz.
-- Sayfadan gelen her yazma isteği oturum çerezi, aynı kaynaktan `Origin`, `application/json`
-  gövdesi ve o oturumun CSRF belirtecini taşımalıdır. Tek istisna `beyin.py web durdur`: belirteci
-  `Authorization` başlığında gönderir, `Origin` taşımaz ve yalnız sunucuyu kapatır. CORS başlığı
-  hiç gönderilmez.
-- Çerezler porta göre ayrılmaz: tarayıcı oturum çerezini `127.0.0.1` üzerindeki başka portlara da
-  gönderir. Başka bir sayfadan gelen istek `Origin` ve `Sec-Fetch-Site` denetimine takılır; ancak
-  aynı bilgisayarda başka bir porttan yayın yapan bir yerel sunucu (bir geliştirme sunucusu ya da
-  `127.0.0.1`'e açılmış bir konteyner) bu çerezi alıp oturumu kullanabilir. Böyle sunucular
-  çalışırken `--read-only` kullan ve işin bitince `beyin.py web durdur` ile kapat.
-- Sayfa, stil ve betik `beyin_v3_web_ui.py` içinden gelir; CDN, web fontu ya da uzak görsel yoktur.
-  İçerik güvenlik politikası yalnız aynı kaynaktaki bu dosyalara izin verir; vault metni sayfaya
-  her zaman düz metin olarak yazılır.
+- The server listens only on `127.0.0.1`. On every request the `Host` header must point to this
+  listener (`127.0.0.1:<port>` or `localhost:<port>`); `Origin` and `Sec-Fetch-Site`, if present,
+  must point to the same origin. Another site cannot get a response, even with DNS rebinding.
+- A new token is generated at every launch and is valid until the server shuts down. The token is
+  in the address printed to the terminal (in the `adres` field of the `--json` output) and in the
+  `web/running.json` file in the state folder; this file's permission is 0600 on macOS and Linux,
+  Windows does not apply this permission. The browser arrives once with this address; the server
+  issues a separate `HttpOnly; SameSite=Strict` session cookie and immediately removes the token
+  from the address bar. The address with the token may stay in the browser history (and on other
+  devices if history is synced); it is useless once the server shuts down.
+- Every write request coming from the page must carry the session cookie, an `Origin` from the same
+  origin, an `application/json` body and that session's CSRF token. The only exception is
+  `beyin.py web durdur`: it sends the token in the `Authorization` header, carries no `Origin`, and
+  only shuts the server down. No CORS header is ever sent.
+- Cookies are not separated by port: the browser sends the session cookie to other ports on
+  `127.0.0.1` as well. A request coming from another page is caught by the `Origin` and
+  `Sec-Fetch-Site` check; however, a local server serving from another port on the same computer (a
+  development server or a container opened to `127.0.0.1`) could take this cookie and use the
+  session. While such servers are running, use `--read-only` and shut it down with
+  `beyin.py web durdur` when you are done.
+- The page, styles and script come from `beyin_v3_web_ui.py`; there is no CDN, web font or remote
+  image. The content security policy allows only these same-origin files; vault text is always
+  written to the page as plain text.
 
-Python standart kütüphanesi dışında bağımlılık yoktur; dış ağa bağlanmaz.
+There are no dependencies outside the Python standard library; it does not connect to the outside network.

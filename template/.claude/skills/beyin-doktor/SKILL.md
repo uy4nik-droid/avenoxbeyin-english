@@ -1,148 +1,149 @@
 ---
 name: beyin-doktor
-description: Beynin sağlık kontrolü. Hook'lar, script'ler, hafıza dosyaları, günlük loglar, derleme durumu ve vault hijyeni tek tabloda raporlanır. "beyin doktor", "doktor", "sağlık kontrolü", "beyin çalışıyor mu", "hafıza bozuk mu" dendiğinde veya bir hafıza mekanizmasının sessizce çalışmadığından şüphelenildiğinde kullan.
+description: Health check for the brain. Reports hooks, scripts, memory files, daily logs, compile status and vault hygiene in a single table. Use when the user says "brain doctor", "doctor", "health check", "is the brain working", "is memory broken" (or in Turkish "beyin doktor", "doktor", "sağlık kontrolü", "beyin çalışıyor mu", "hafıza bozuk mu"), or when you suspect a memory mechanism is silently not working.
 ---
 
-# Beyin Doktoru
+# Brain Doctor
 
-Bu skill beynin mekanik katmanını denetler: hook'lar tetikleniyor mu, script'ler çalışmış mı,
-loglar tazeliğini koruyor mu, vault kirlenmiş mi. Amaç sessiz arızayı görünür yapmak.
+This skill audits the brain's mechanical layer: are the hooks firing, have the scripts run,
+are the logs staying fresh, has the vault been polluted. The goal is to make silent failures visible.
 
-## Nasıl çalışırsın
+## How you work
 
-1. Vault kökünde (CLAUDE.md/AGENTS.md'nin bulunduğu klasör) çalış. Tüm yollar göreceli, mutlak yol yazma.
-2. Aşağıdaki kontrolleri **Bash ile sırayla çalıştır**. Komutları olduğu gibi kullan, tahmin etme.
-3. Her kontrolün çıktısını 🟢 / 🟡 / 🔴 olarak sınıfla.
-4. Sonucu tek bir tabloda ver, her 🔴 için bir düzeltme satırı yaz.
-5. En sonda tek cümlelik hüküm ver.
+1. Work in the vault root (the folder containing CLAUDE.md/AGENTS.md). All paths are relative; do not write absolute paths.
+2. Run the checks below **in order with Bash**. Use the commands exactly as written; do not guess.
+3. Classify each check's output as 🟢 / 🟡 / 🔴.
+4. Give the result in a single table and write one fix line for each 🔴.
+5. At the very end, give a one-sentence verdict.
 
-Kontroller salt okunurdur. Hiçbir şeyi kendiliğinden düzeltme, önce raporla, sonra kullanıcı
-isterse düzelt.
+The checks are read-only. Do not fix anything on your own: report first, then fix if the user
+asks.
 
-## Kontroller
+## Checks
 
-### 1. Hook dosyaları var mı ve çalıştırılabilir mi
-
-```bash
-for h in session-start prompt-counter session-end pre-compact; do f=".claude/hooks/$h.sh"; if [ ! -f "$f" ]; then echo "$h: DOSYA YOK"; elif [ ! -x "$f" ]; then echo "$h: calistirilabilir degil"; else echo "$h: ok"; fi; done
-```
-
-🟢 dördü de `ok`. 🔴 eksik veya çalıştırılabilir değil.
-Düzeltme: `chmod +x .claude/hooks/*.sh`, dosya yoksa depodan kopyala.
-
-### 2. Hook'lar settings.json içinde bağlı mı
+### 1. Do the hook files exist and are they executable
 
 ```bash
-for h in session-start prompt-counter session-end pre-compact; do if grep -q "$h.sh" .claude/settings.json 2>/dev/null; then echo "$h: bagli"; else echo "$h: SETTINGS ICINDE YOK"; fi; done
+for h in session-start prompt-counter session-end pre-compact; do f=".claude/hooks/$h.sh"; if [ ! -f "$f" ]; then echo "$h: FILE MISSING"; elif [ ! -x "$f" ]; then echo "$h: not executable"; else echo "$h: ok"; fi; done
 ```
 
-🟢 dördü de bağlı. 🔴 biri bile eksikse o hook hiç çalışmıyor demektir.
-Düzeltme: `.claude/settings.json` içindeki `hooks` bloğuna eksik olayı ekle (SessionStart,
-UserPromptSubmit, SessionEnd, PreCompact), sonra Claude Code'u yeniden başlat.
+🟢 all four `ok`. 🔴 missing or not executable.
+Fix: `chmod +x .claude/hooks/*.sh`; if a file is missing, copy it from the repo.
 
-### 3. Özyineleme koruması her hook'ta var mı
+### 2. Are the hooks wired in settings.json
 
 ```bash
-for f in .claude/hooks/*.sh; do if grep -q 'BEYIN_INVOKED_BY' "$f"; then echo "$(basename "$f"): guard var"; else echo "$(basename "$f"): GUARD YOK"; fi; done
+for h in session-start prompt-counter session-end pre-compact; do if grep -q "$h.sh" .claude/settings.json 2>/dev/null; then echo "$h: wired"; else echo "$h: NOT IN SETTINGS"; fi; done
 ```
 
-🟢 hepsinde var. 🔴 eksik. Guard'ı olmayan hook, arka plan `claude -p` çağrısında tekrar
-tetiklenir ve sonsuz döngü riski doğar.
-Düzeltme: dosyanın shebang'inden hemen sonraki satıra `[ -n "${BEYIN_INVOKED_BY:-}" ] && exit 0` ekle.
+🟢 all four wired. 🔴 if even one is missing, that hook never runs at all.
+Fix: add the missing event to the `hooks` block in `.claude/settings.json` (SessionStart,
+UserPromptSubmit, SessionEnd, PreCompact), then restart Claude Code.
 
-### 3b. Codex router, skill ve kanca bağlantıları
+### 3. Does every hook have the recursion guard
 
 ```bash
-test -L AGENTS.md && [ "$(readlink AGENTS.md)" = "CLAUDE.md" ] && echo "router: ortak" || echo "router: AYRI/YOK"; test -L .agents/skills && [ "$(readlink .agents/skills)" = "../.claude/skills" ] && echo "skills: ortak" || echo "skills: AYRI/YOK"; test -L .codex/hooks && [ "$(readlink .codex/hooks)" = "../.claude/hooks" ] && echo "hooks: ortak" || echo "hooks: AYRI/YOK"; python3 -c "import json,os;d=json.load(open('.codex/hooks.json')); w={'SessionStart':('session-start.sh',15),'UserPromptSubmit':('prompt-counter.sh',5),'PreCompact':('pre-compact.sh',10),'SessionEnd':('session-end.sh',3)}; print('codex:', 'ok' if all(sum(n in (h.get('command') or '') and os.path.isabs((h.get('command') or '').strip(chr(39)+chr(34))) and h.get('timeout')==t for m in d.get('hooks',{}).get(e,[]) for h in m.get('hooks',[]))==1 for e,(n,t) in w.items()) else 'BOZUK')" 2>/dev/null || echo "codex: BOZUK/YOK"
+for f in .claude/hooks/*.sh; do if grep -q 'BEYIN_INVOKED_BY' "$f"; then echo "$(basename "$f"): guard present"; else echo "$(basename "$f"): NO GUARD"; fi; done
 ```
 
-🟢 dört satır da ortak/ok. 🔴 ise Codex aynı motoru görmüyor veya göreli/eski bir komut okuyor.
-Düzeltme: `python3 .claude/scripts/render_codex_hooks.py --vault "$PWD" --platform posix`, sonra
-Codex içinde `/hooks` ekranından değişen proje kancalarını onayla. Güven hash'ini elle yazma.
+🟢 present in all. 🔴 missing. A hook without the guard fires again inside the background `claude -p`
+call, which risks an infinite loop.
+Fix: add `[ -n "${BEYIN_INVOKED_BY:-}" ] && exit 0` on the line right after the file's shebang.
 
-### 3c. Antigravity kanca adaptörü
+### 3b. Codex router, skill and hook links
 
 ```bash
-python3 -c "import json;d=json.load(open('.agents/hooks.json'));h=d.get('avenox-beyin',{});print('antigravity:', 'ok' if len(h.get('PreInvocation',[]))==1 and len(h.get('Stop',[]))==1 else 'BOZUK')" 2>/dev/null || echo "antigravity: BOZUK/YOK"
+test -L AGENTS.md && [ "$(readlink AGENTS.md)" = "CLAUDE.md" ] && echo "router: shared" || echo "router: SEPARATE/MISSING"; test -L .agents/skills && [ "$(readlink .agents/skills)" = "../.claude/skills" ] && echo "skills: shared" || echo "skills: SEPARATE/MISSING"; test -L .codex/hooks && [ "$(readlink .codex/hooks)" = "../.claude/hooks" ] && echo "hooks: shared" || echo "hooks: SEPARATE/MISSING"; python3 -c "import json,os;d=json.load(open('.codex/hooks.json')); w={'SessionStart':('session-start.sh',15),'UserPromptSubmit':('prompt-counter.sh',5),'PreCompact':('pre-compact.sh',10),'SessionEnd':('session-end.sh',3)}; print('codex:', 'ok' if all(sum(n in (h.get('command') or '') and os.path.isabs((h.get('command') or '').strip(chr(39)+chr(34))) and h.get('timeout')==t for m in d.get('hooks',{}).get(e,[]) for h in m.get('hooks',[]))==1 for e,(n,t) in w.items()) else 'BROKEN')" 2>/dev/null || echo "codex: BROKEN/MISSING"
 ```
 
-🟢 `ok`. 🔴 ise Antigravity hafızayı enjekte etmiyor veya son turu günlüğe taşımıyor.
-Düzeltme: `python3 .claude/scripts/render_antigravity_hooks.py --vault "$PWD" --platform posix`.
+🟢 all four lines shared/ok. 🔴 means Codex is not seeing the same engine, or is reading a relative/stale command.
+Fix: `python3 .claude/scripts/render_codex_hooks.py --vault "$PWD" --platform posix`, then
+approve the changed project hooks in Codex's `/hooks` screen. Do not write the trust hash by hand.
 
-### 4. python3 ve model CLI yolda mı
+### 3c. Antigravity hook adapter
 
 ```bash
-if command -v python3 >/dev/null 2>&1; then echo "python3: $(python3 -V 2>&1)"; else echo "python3: YOK"; fi; if command -v claude >/dev/null 2>&1; then echo "claude: var"; elif command -v agy >/dev/null 2>&1; then echo "agy: var"; else echo "model CLI: YOK"; fi
+python3 -c "import json;d=json.load(open('.agents/hooks.json'));h=d.get('avenox-beyin',{});print('antigravity:', 'ok' if len(h.get('PreInvocation',[]))==1 and len(h.get('Stop',[]))==1 else 'BROKEN')" 2>/dev/null || echo "antigravity: BROKEN/MISSING"
 ```
 
-🟢 python3 ile `claude` veya `agy` var. 🔴 python3 yoksa motor hiç çalışmaz; iki model CLI da
-yoksa arka plan özetleyici durur.
-Düzeltme: python3 kur; kullandığın Claude Code veya Antigravity CLI'yi PATH'e ekle.
+🟢 `ok`. 🔴 means Antigravity is not injecting memory or not carrying the last turn into the daily log.
+Fix: `python3 .claude/scripts/render_antigravity_hooks.py --vault "$PWD" --platform posix`.
 
-### 4b. Model CLI oturum açmış mı
+### 4. Are python3 and the model CLI on the PATH
 
-Varlık yetmez. Arka plan özetleyici ve derleyici `claude -p` ile çalışır; CLI kurulu ama oturum
-kapalıysa her flush `Not logged in` alıp ölür ve **hiçbir yerde günlük oluşmaz**. Motor çalışır
-görünür, `daily/` boş kalır: 6 numaralı kontrol kırmızıya döner ama sebebi orada görünmez.
-Bir GUI uygulamasında oturum açık olması CLI'yi kapsamaz, kimlik depoları ayrıdır.
-`auth status` token harcamaz.
+```bash
+if command -v python3 >/dev/null 2>&1; then echo "python3: $(python3 -V 2>&1)"; else echo "python3: MISSING"; fi; if command -v claude >/dev/null 2>&1; then echo "claude: present"; elif command -v agy >/dev/null 2>&1; then echo "agy: present"; else echo "model CLI: MISSING"; fi
+```
+
+🟢 python3 plus `claude` or `agy` present. 🔴 without python3 the engine does not run at all; if both
+model CLIs are missing, the background summarizer stops.
+Fix: install python3; add the Claude Code or Antigravity CLI you use to the PATH.
+
+### 4b. Is the model CLI logged in
+
+Being present is not enough. The background summarizer and compiler run through `claude -p`; if the CLI
+is installed but logged out, every flush gets `Not logged in` and dies, and **no daily log is created
+anywhere**. The engine looks like it is running, `daily/` stays empty: check 6 turns red but the cause
+does not show there.
+Being logged in to a GUI app does not cover the CLI; the credential stores are separate.
+`auth status` does not spend tokens.
 
 ```bash
 if command -v claude >/dev/null 2>&1; then
-  if claude auth status 2>/dev/null | grep -q '"loggedIn": *true'; then echo "oturum: acik"; else echo "oturum: KAPALI"; fi
-elif command -v agy >/dev/null 2>&1; then echo "agy kullaniliyor, bu kontrol claude'a ozgu"
-else echo "model CLI: YOK"; fi
+  if claude auth status 2>/dev/null | grep -q '"loggedIn": *true'; then echo "session: logged in"; else echo "session: LOGGED OUT"; fi
+elif command -v agy >/dev/null 2>&1; then echo "using agy, this check is specific to claude"
+else echo "model CLI: MISSING"; fi
 ```
 
-🟢 `oturum: acik`. 🔴 `oturum: KAPALI`: en sinsi arıza budur.
-Düzeltme: **kullanıcı kendisi** `claude auth login` çalıştırsın, tarayıcıda OAuth açar. Bu adımı
-ajan olarak sen yapamazsın. Giriş bittikten sonra `claude auth status` ile doğrula, bir oturum
-açıp kapat ve 6 numaralı kontrolü tekrarla.
+🟢 `session: logged in`. 🔴 `session: LOGGED OUT`: this is the sneakiest failure.
+Fix: **the user must run** `claude auth login` **themselves**; it opens OAuth in the browser. You, as
+the agent, cannot do this step. Once login is done, verify with `claude auth status`, open and close
+a session, and repeat check 6.
 
-### 5. python3-missing işareti
+### 5. python3-missing marker
 
 ```bash
-if [ -f .claude/scripts/.state/python3-missing ]; then echo "isaret VAR, tarih: $(head -1 .claude/scripts/.state/python3-missing 2>/dev/null)"; else echo "isaret yok"; fi
+if [ -f .claude/scripts/.state/python3-missing ]; then echo "marker PRESENT, date: $(head -1 .claude/scripts/.state/python3-missing 2>/dev/null)"; else echo "no marker"; fi
 ```
 
-🟢 işaret yok. 🔴 işaret var: hook'lar python3 bulamadığı için JSON kaçışını yapamamış.
-Düzeltme: python3'ü kur, sonra dosyayı sil: `rm .claude/scripts/.state/python3-missing`.
+🟢 no marker. 🔴 marker present: the hooks could not find python3, so they could not do the JSON escaping.
+Fix: install python3, then delete the file: `rm .claude/scripts/.state/python3-missing`.
 
-### 6. Günlük log tazeliği
+### 6. Daily log freshness
 
 ```bash
-f=$(ls -t daily/*.md 2>/dev/null | head -1); if [ -z "$f" ]; then echo "daily: hic log yok"; else m=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f"); n=$(date +%s); echo "daily: $f, $(( (n - m) / 3600 )) saat once yazildi"; fi
+f=$(ls -t daily/*.md 2>/dev/null | head -1); if [ -z "$f" ]; then echo "daily: no logs at all"; else m=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f"); n=$(date +%s); echo "daily: $f, written $(( (n - m) / 3600 )) hours ago"; fi
 ```
 
-🟢 48 saatten yeni. 🟡 48 ile 96 saat arası. 🔴 96 saatten eski veya hiç log yok.
-Düzeltme: oturum bitir ve yeniden başlat, sonra bu kontrolü tekrarla. Hâlâ boşsa 1, 2 ve 4
-numaralı kontrollere dön, arıza flush zincirinde.
+🟢 newer than 48 hours. 🟡 between 48 and 96 hours. 🔴 older than 96 hours, or no logs at all.
+Fix: end the session and start again, then repeat this check. If it is still empty, go back to checks
+1, 2 and 4; the fault is in the flush chain.
 
-### 7. Derleme durumu
+### 7. Compile status
 
 ```bash
-f=".claude/scripts/.state/compile-state.json"; if [ -f "$f" ]; then m=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f"); n=$(date +%s); echo "state: $(( (n - m) / 3600 )) saat once guncellendi"; python3 -c "import json;d=json.load(open('.claude/scripts/.state/compile-state.json'));print('last_run:',d.get('last_run','yok'));print('last_status:',d.get('last_status','yok'));print('ingested:',len(d.get('ingested',{})),'log')" 2>/dev/null || echo "state dosyasi bozuk, JSON okunamadi"; else echo "compile: state dosyasi yok, henuz hic derleme calismadi"; fi
+f=".claude/scripts/.state/compile-state.json"; if [ -f "$f" ]; then m=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f"); n=$(date +%s); echo "state: updated $(( (n - m) / 3600 )) hours ago"; python3 -c "import json;d=json.load(open('.claude/scripts/.state/compile-state.json'));print('last_run:',d.get('last_run','none'));print('last_status:',d.get('last_status','none'));print('ingested:',len(d.get('ingested',{})),'logs')" 2>/dev/null || echo "state file corrupt, could not read JSON"; else echo "compile: no state file, no compile has run yet"; fi
 ```
 
-🟢 `last_run` 48 saatten yeni ve `last_status` `ok`. 🟡 state yok ama vault yeni kurulmuş veya
-henüz akşam 18:00 olmamış. 🔴 `last_status` `fail:` ile başlıyor veya 48 saatten eski.
-Düzeltme: elle bir tur çalıştır ve hatayı gör: `python3 .claude/scripts/compile.py --dry-run`,
-sonra `python3 .claude/scripts/compile.py`.
+🟢 `last_run` newer than 48 hours and `last_status` is `ok`. 🟡 no state, but the vault was just set up or
+it is not yet 18:00 in the evening. 🔴 `last_status` starts with `fail:` or is older than 48 hours.
+Fix: run one round by hand and look at the error: `python3 .claude/scripts/compile.py --dry-run`,
+then `python3 .claude/scripts/compile.py`.
 
-### 8. Sağlık kayıtlarındaki son hatalar
+### 8. Recent errors in the health records
 
-`health.json` satır başına bir JSON kaydı tutar (JSONL). Kayıtların hepsi arıza değildir:
-`error` alanı `warn:` ile başlıyorsa motor sorunu **kendi çözmüştür** (örneğin
-`warn:summary-schema-retried` — özetin ilk çıktısı şemaya uymadı, yeniden denendi, tuttu; günlük
-log eksiksiz yazıldı). Uyarıyı hata sayan bir kontrol sağlıklı bir vault'ta kalıcı kırmızı üretir
-ve kullanıcıyı doktoru görmezden gelmeye alıştırır. İkisini ayır.
+`health.json` holds one JSON record per line (JSONL). Not every record is a failure: if the
+`error` field starts with `warn:`, the engine **resolved the problem itself** (for example
+`warn:summary-schema-retried` — the summary's first output did not match the schema, it was retried and
+it worked; the daily log was written in full). A check that counts warnings as errors produces a
+permanent red on a healthy vault and trains the user to ignore the doctor. Tell the two apart.
 
 ```bash
 python3 - <<'PYCHK'
 import json, os, time
 p = ".claude/scripts/.state/health.json"
 if not os.path.exists(p):
-    print("health: kayit yok"); raise SystemExit(0)
+    print("health: no records"); raise SystemExit(0)
 now = time.time(); err = warn = 0
 for line in open(p, encoding="utf-8"):
     line = line.strip()
@@ -152,75 +153,75 @@ for line in open(p, encoding="utf-8"):
     yas = int((now - r.get("ts", now)) / 3600)
     e = str(r.get("error", ""))
     if e.startswith("warn:"):
-        tur = "UYARI"
+        tur = "WARNING"
         if yas < 48: warn += 1
     else:
-        tur = "HATA"
+        tur = "ERROR"
         if yas < 48: err += 1
-    print("%s | %s | %s | %d saat once" % (tur, r.get("component", "?"), e, yas))
-print("ozet: son 48 saatte %d hata, %d uyari" % (err, warn))
+    print("%s | %s | %s | %d hours ago" % (tur, r.get("component", "?"), e, yas))
+print("summary: %d errors, %d warnings in the last 48 hours" % (err, warn))
 PYCHK
 ```
 
-🟢 kayıt yok, ya da son 48 saatte `0 hata` (uyarı olabilir). 🟡 son 48 saatte uyarı var ama hata
-yok: motor kendini toparlamış, tekrarlıyorsa bak. 🔴 son 48 saatte en az bir `HATA`.
-Düzeltme: `component` alanına bak. `flush` ise transkript veya claude CLI — önce 4b'yi kontrol
-et, `claude-exit-1` neredeyse her zaman kapalı oturum demektir. `compile` ise model çağrısı
-sorunlu. Kaydı okuduktan ve sebebini giderdikten sonra dosyayı silebilirsin, script yeniden yazar.
+🟢 no records, or `0 errors` in the last 48 hours (warnings are fine). 🟡 warnings but no errors in the
+last 48 hours: the engine recovered by itself; look into it if it keeps repeating. 🔴 at least one `ERROR` in the last 48 hours.
+Fix: look at the `component` field. If it is `flush`, the transcript or the claude CLI — check 4b
+first; `claude-exit-1` almost always means a logged-out session. If it is `compile`, the model call
+is the problem. After reading the record and fixing its cause you may delete the file; the script writes it again.
 
-### 9. Bilgi indeksi büyüklüğü
+### 9. Knowledge index size
 
 ```bash
-if [ -f knowledge/index.md ]; then echo "index: $(wc -l < knowledge/index.md | tr -d ' ') satir"; else echo "index: DOSYA YOK"; fi
+if [ -f knowledge/index.md ]; then echo "index: $(wc -l < knowledge/index.md | tr -d ' ') lines"; else echo "index: FILE MISSING"; fi
 ```
 
-Oturum başında indeksin sadece ilk 150 satırı bağlama giriyor.
-🟢 150 satır ve altı. 🟡 151 ile 300 satır arası, alt sıralar artık enjekte edilmiyor.
-🔴 300 satırın üstü: özet indeks zamanı.
-Düzeltme: indeksi tema başlıklarına göre grupla, eski satırları tek bir özet satırında topla,
-detay makalede kalsın. Dosya hiç yoksa depodaki tohum dosyayı geri koy.
+Only the first 150 lines of the index enter the context at session start.
+🟢 150 lines or fewer. 🟡 between 151 and 300 lines; the lower rows are no longer injected.
+🔴 over 300 lines: time for a summary index.
+Fix: group the index under theme headings, collapse old rows into a single summary row,
+and leave the detail in the article. If the file is missing entirely, restore the seed file from the repo.
 
-### 10. iCloud çakışma dosyaları
+### 10. iCloud conflict files
 
 ```bash
 find . -name "* 2.*" -not -path "./.git/*" 2>/dev/null | head -20
 ```
 
-🟢 çıktı boş. 🔴 çıktı var: iCloud aynı dosyanın iki kopyasını tutmuş, hafıza dosyalarının
-bir kısmı yanlış kopyada olabilir.
-Düzeltme: listelenen her dosyayı aslıyla karşılaştır (`diff "dosya.md" "dosya 2.md"`), gerekli
-içeriği asıl dosyaya taşı, sonra çakışma kopyasını sil. Kullanıcıya sormadan silme.
+🟢 empty output. 🔴 output present: iCloud kept two copies of the same file, and some of the memory files
+may be in the wrong copy.
+Fix: compare each listed file with its original (`diff "file.md" "file 2.md"`), move the needed
+content into the original, then delete the conflict copy. Do not delete without asking the user.
 
-### 11. Git deposu ve kaydedilmemiş değişiklik
-
-```bash
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then echo "git: var, kaydedilmemis: $(git status --porcelain | wc -l | tr -d ' ') dosya"; else echo "git: REPO YOK"; fi
-```
-
-🟢 repo var ve kaydedilmemiş dosya 50'nin altında. 🟡 50 üstü birikmiş. 🔴 repo yok, yani
-hafızanın geri alınabilir bir geçmişi yok.
-Düzeltme: repo yoksa `git init` ve ilk commit. Birikme varsa commit at.
-
-### 12. Sürüm dosyası
+### 11. Git repository and uncommitted changes
 
 ```bash
-if [ -f .beyin-version ]; then echo "surum: $(head -1 .beyin-version)"; else echo "surum: DOSYA YOK, v1 vault"; fi
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then echo "git: present, uncommitted: $(git status --porcelain | wc -l | tr -d ' ') files"; else echo "git: NO REPO"; fi
 ```
 
-🟢 `2.3.0`. 🟡 `2.2.0`, `2.1.0`, `2.0.0` veya dosya yok: yükseltme yapılabilir.
-Düzeltme: SETUP.md içindeki yükseltme yolunu (B modu) uygula. Yükseltme mevcut hafıza
-dosyalarına dokunmaz, sadece eksik parçaları ekler.
+🟢 repo present and fewer than 50 uncommitted files. 🟡 more than 50 piled up. 🔴 no repo, meaning
+the memory has no history you can roll back to.
+Fix: if there is no repo, `git init` and a first commit. If changes have piled up, commit.
 
-### 13. Kurallar dosyası
+### 12. Version file
 
 ```bash
-if [ -f "🔮 850-Companion/Kurallar.md" ]; then echo "kurallar: var, $(wc -l < "🔮 850-Companion/Kurallar.md" | tr -d ' ') satir"; else echo "kurallar: YOK"; fi
+if [ -f .beyin-version ]; then echo "version: $(head -1 .beyin-version)"; else echo "version: FILE MISSING, v1 vault"; fi
 ```
 
-🟢 var. 🟡 yok: kullanıcının düzeltmeleri kalıcı hale gelmiyor.
-Düzeltme: depodaki tohum `Kurallar.md` dosyasını `🔮 850-Companion/` altına kopyala.
+🟢 `2.3.0`. 🟡 `2.2.0`, `2.1.0`, `2.0.0` or no file: an upgrade is available.
+Fix: follow the upgrade path (mode B) in SETUP.md. The upgrade does not touch existing memory
+files; it only adds the missing pieces.
 
-### 14. Çift etkin kanca (settings.json + settings.local.json)
+### 13. Rules file
+
+```bash
+if [ -f "🔮 850-Companion/Kurallar.md" ]; then echo "rules: present, $(wc -l < "🔮 850-Companion/Kurallar.md" | tr -d ' ') lines"; else echo "rules: MISSING"; fi
+```
+
+🟢 present. 🟡 missing: the user's corrections are not being made permanent.
+Fix: copy the seed `Kurallar.md` file from the repo into `🔮 850-Companion/`.
+
+### 14. Double-active hooks (settings.json + settings.local.json)
 
 ```bash
 python3 - <<'PYCHK'
@@ -234,9 +235,9 @@ for f in (".claude/settings.json", ".claude/settings.local.json"):
     except FileNotFoundError:
         continue
     except ValueError:
-        print("%s: BOZUK JSON" % f); raise SystemExit(0)
+        print("%s: CORRUPT JSON" % f); raise SystemExit(0)
     if not isinstance(d, dict):
-        print("%s: JSON nesnesi degil" % f); continue
+        print("%s: not a JSON object" % f); continue
     for ev, ms in (d.get("hooks") or {}).items():
         if ev not in EV: continue
         for m in (ms or []):
@@ -248,73 +249,73 @@ for e in EV:
 PYCHK
 ```
 
-🟢 dört olayın da sayısı tam olarak `1`. 🔴 herhangi biri `2` veya daha fazla: o olayda
-kancalar her seferinde iki kez çalışıyor, yani her prompt iki kez sayılıyor ve her oturum
-sonunda iki flush tetikleniyor. `0` ise o olay hiç bağlı değil.
-Düzeltme: `.claude/settings.local.json` içindeki beyin kanca girdisini sil, ilgisiz
-kancalara ve `env`, `permissions` gibi diğer anahtarlara dokunma. Tek bağlantı
-`.claude/settings.json` içinde kalmalı.
+🟢 the count for all four events is exactly `1`. 🔴 any of them `2` or more: on that event the
+hooks run twice every time, so every prompt is counted twice and two flushes fire at the end of every
+session. `0` means that event is not wired at all.
+Fix: delete the brain hook entry in `.claude/settings.local.json`; do not touch unrelated
+hooks or other keys such as `env` and `permissions`. The single wiring must stay
+in `.claude/settings.json`.
 
-### 15. Vault içinde sır taşıyabilecek yedek artığı
+### 15. Backup leftovers in the vault that may carry secrets
 
 ```bash
-find . -path ./.git -prune -o -type f \( -name "*.yedek" -o -name "*.yedek-*" -o -name "settings.local.json.*" -o -name "*.bak" -o -name "*.orig" \) -print 2>/dev/null | head -10; echo "---"; git ls-files 2>/dev/null | grep -E 'settings\.local\.json|\.yedek|\.env$' || echo "izlenen sirli dosya yok"
+find . -path ./.git -prune -o -type f \( -name "*.yedek" -o -name "*.yedek-*" -o -name "settings.local.json.*" -o -name "*.bak" -o -name "*.orig" \) -print 2>/dev/null | head -10; echo "---"; git ls-files 2>/dev/null | grep -E 'settings\.local\.json|\.yedek|\.env$' || echo "no tracked secret files"
 ```
 
-🟢 iki bölüm de boş. 🔴 bir yedek dosyası çıkarsa: bu dosyalar `settings.local.json`
-kopyası olabilir ve API anahtarı taşır; ikinci bölümde bir şey çıkarsa sır zaten git
-tarafından izleniyor demektir.
-Düzeltme: yedeği vault dışına taşı ve `chmod 600` ver; git izliyorsa
-`git rm --cached <dosya>` ile izlemeden çıkar, `.gitignore` kuralını doğrula, ve
-sızmış anahtarı sağlayıcıdan **iptal edip yenile**.
+🟢 both sections empty. 🔴 if a backup file shows up: these files may be a copy of `settings.local.json`
+and carry an API key; if anything shows up in the second section, the secret is already tracked
+by git.
+Fix: move the backup outside the vault and give it `chmod 600`; if git tracks it,
+untrack it with `git rm --cached <file>`, verify the `.gitignore` rule, and
+**revoke and rotate** the leaked key at the provider.
 
-### 16. Grafik bütünlüğü (kırık bağlantı + yetim not)
+### 16. Graph integrity (broken links + orphan notes)
 
 ```bash
 python3 .claude/scripts/graf_kontrol.py
 ```
 
-Hafıza düz bir dosya yığını değil **graf**: bir not ancak ona giden bir bağlantı varsa
-bulunur. Yetim not diskte durur ama ajan ona ulaşmak için bütün vault'u taramak zorunda
-kalır, yani ya token yakar ya bulamayıp uydurur. Kırık bağlantı ise haritada var olmayan
-bir adresi gösterir. İkisini de başka hiçbir kontrol yakalamıyor.
+Memory is not a flat pile of files but a **graph**: a note can only be found if there is a link
+leading to it. An orphan note sits on disk, but to reach it the agent has to scan the whole vault,
+which means it either burns tokens or fails to find it and makes something up. A broken link points to
+an address that does not exist on the map. No other check catches either of them.
 
-🟢 kırık bağlantı 0. 🟡 kırık bağlantı 1–20. 🔴 kırık bağlantı 20 üstü.
-Yetim sayısı tek başına 🔴 değildir: taslak, arşivlik ve tek seferlik notlar doğal olarak
-yetimdir. Kanca tarafından her oturumda enjekte edilen çekirdek dosyalar tarayıcıda açıkça
-muaf tutulur; kalan sonuçlar erişim kolaylığı için danışmanlık sinyalidir.
-Düzeltme: `--tam` ile listeyi aç. Kırık bağlantı için ya hedef notu oluştur ya bağlantıyı
-düzelt; hedef bilerek yoksa (belgede örnek olarak geçen `[[wikilink]]` gibi) dokunma.
-Yetim not için ilgili üs nottan veya `Dashboard.md`'den bağlantı ver.
+🟢 0 broken links. 🟡 1–20 broken links. 🔴 more than 20 broken links.
+The orphan count alone is not 🔴: drafts, archival and one-off notes are naturally
+orphans. The core files the hook injects every session are explicitly exempted by the
+scanner; the remaining results are an advisory signal for ease of access.
+Fix: open the list with `--tam`. For a broken link, either create the target note or fix the
+link; if the target is missing on purpose (such as a `[[wikilink]]` used as an example in a document), leave it.
+For an orphan note, link to it from a related parent note or from `Dashboard.md`.
 
-## Rapor formatı
+## Report format
 
-Tüm kontroller bittikten sonra tek tablo bas:
+After all checks are done, print a single table:
 
 ```
-| Kontrol | Durum | Bulgu |
+| Check | Status | Finding |
 | --- | --- | --- |
-| Hook dosyaları | 🟢 | dördü de yerinde ve çalıştırılabilir |
-| settings.json bağlantısı | 🟢 | dört olay da bağlı |
-| Codex bağlantıları | 🟢 | router, skill ve kanca store ortak; hooks.json mutlak |
-| Antigravity bağlantıları | 🟢 | PreInvocation ve Stop adaptörü kayıtlı |
-| Özyineleme koruması | 🟢 | hepsinde var |
-| python3 ve model CLI | 🟢 | python3 3.11.6, agy var |
-| Model CLI oturumu | 🟢 | açık |
-| python3-missing işareti | 🟢 | işaret yok |
-| Günlük log tazeliği | 🟡 | son log 51 saat önce |
-| Derleme durumu | 🔴 | last_status fail:timeout |
-| Sağlık kayıtları | 🔴 | dün compile hatası |
-| Bilgi indeksi | 🟢 | 42 satır |
-| iCloud çakışmaları | 🟢 | temiz |
-| Git | 🟢 | repo var, 3 dosya kaydedilmemiş |
-| Sürüm | 🟢 | 2.3.0 |
-| Kurallar | 🟢 | var, 24 satır |
-| Çift etkin kanca | 🔴 | SessionEnd 2 kez bağlı |
-| Sır yedeği artığı | 🟢 | temiz |
-| Grafik bütünlüğü | 🟡 | 4 kırık bağlantı, 12 yetim not |
+| Hook files | 🟢 | all four in place and executable |
+| settings.json wiring | 🟢 | all four events wired |
+| Codex links | 🟢 | router, skill and hook store shared; hooks.json absolute |
+| Antigravity links | 🟢 | PreInvocation and Stop adapter registered |
+| Recursion guard | 🟢 | present in all |
+| python3 and model CLI | 🟢 | python3 3.11.6, agy present |
+| Model CLI session | 🟢 | logged in |
+| python3-missing marker | 🟢 | no marker |
+| Daily log freshness | 🟡 | last log 51 hours ago |
+| Compile status | 🔴 | last_status fail:timeout |
+| Health records | 🔴 | compile error yesterday |
+| Knowledge index | 🟢 | 42 lines |
+| iCloud conflicts | 🟢 | clean |
+| Git | 🟢 | repo present, 3 files uncommitted |
+| Version | 🟢 | 2.3.0 |
+| Rules | 🟢 | present, 24 lines |
+| Double-active hooks | 🔴 | SessionEnd wired 2 times |
+| Secret backup leftovers | 🟢 | clean |
+| Graph integrity | 🟡 | 4 broken links, 12 orphan notes |
 ```
 
-Tablodan sonra sadece 🔴 satırlar için "Düzeltme:" ile başlayan birer satır yaz, komutu da ver.
-Sonra tek cümlelik hüküm: örneğin "Beyin ayakta ama derleyici iki gündür takılı, önce onu çöz."
-Her şey yeşilse hüküm de kısa olsun: "Beyin sağlıklı, yapılacak bir şey yok."
+After the table, write one line starting with "Fix:" for each 🔴 row only, and give the command too.
+Then a one-sentence verdict, for example: "The brain is up, but the compiler has been stuck for two days; fix that first."
+If everything is green, keep the verdict short too: "The brain is healthy, nothing to do."

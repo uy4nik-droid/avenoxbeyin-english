@@ -3,8 +3,7 @@
 > You are Claude Code or Codex, run from inside a freshly cloned `avenoxbeyin` repo. The user wants their
 > own AI second brain, or wants to upgrade the one they already have. The scaffold lives in
 > `./template/`. Your job: decide the mode, interview the user, install or upgrade, verify.
-> Execute phase by phase. Speak **Turkish** to the user (the audience is Turkish). This runbook is
-> in English only so your instructions stay precise; the system you build talks Turkish.
+> Execute phase by phase. Speak **English** to the user (this is the English edition of the runbook).
 
 ## Rules (binding)
 
@@ -16,9 +15,9 @@
 4. **Don't block on optional steps** (obsidian-cli, mem0, swift icon). Log it, tell the user,
    continue.
 5. **Verify each phase** with a quick check before moving on. End with the first-run report.
-6. **Be the demo.** This is often filmed. Narrate what you are doing in short Turkish lines as you
-   go: "Vault iskeletini kuruyorum...", "Hafıza motorunu bağlıyorum...", "Derleyiciyi yerine
-   koyuyorum...". Short sentences, no walls of text.
+6. **Be the demo.** This is often filmed. Narrate what you are doing in short lines as you
+   go: "Setting up the vault skeleton...", "Connecting the memory engine...", "Putting the
+   compiler in place...". Short sentences, no walls of text.
 7. **Everything is free.** No API key is required anywhere. The background summarizer and the
    compiler run on the user's existing Claude subscription through `claude -p`.
 
@@ -26,25 +25,25 @@ Placeholders you must resolve:
 `{{OS_NAME}}` · `{{USER_NAME}}` · `{{USER_BIO}}` · `{{COMPANION}}` · `{{VAULT_PATH}}` ·
 `{{SCOPE}}` · `{{USE_MEM0}}` · `{{TODAY}}`
 
-| Placeholder | Nereden gelir | Örnek |
+| Placeholder | Where it comes from | Example |
 | --- | --- | --- |
-| `{{OS_NAME}}` | makine adından türetilir, kullanıcı onaylar | `AylinOS` |
-| `{{USER_NAME}}` | soru 1 | `Aylin` |
-| `{{USER_BIO}}` | soru 2, 1 veya 2 cümle | `Ürün tasarımcısı, yan projeler yürütüyor` |
-| `{{COMPANION}}` | soru 3, AI ortağının adı | `Echo` |
+| `{{OS_NAME}}` | derived from the machine name, the user confirms | `AylinOS` |
+| `{{USER_NAME}}` | question 1 | `Aylin` |
+| `{{USER_BIO}}` | question 2, 1 or 2 sentences | `Product designer, runs side projects` |
+| `{{COMPANION}}` | question 3, the name of their AI partner | `Echo` |
 | `{{VAULT_PATH}}` | PHASE 0.3 | `~/Documents/AylinOS` |
-| `{{SCOPE}}` | soru 4, opsiyonel klasörler | `core+goals` |
-| `{{USE_MEM0}}` | açık kullanıcı tercihi | `hayır` |
+| `{{SCOPE}}` | question 4, optional folders | `core+goals` |
+| `{{USE_MEM0}}` | explicit user preference | `no` |
 | `{{TODAY}}` | `date +%F` | `2026-08-22` |
 
-`{{SCOPE}}` ve `{{USE_MEM0}}` dosya içine yazılmaz, sadece hangi klasörlerin ve hangi opsiyonel
-adımın çalışacağını belirler. Diğer altısı dosya içeriklerinde geçer.
+`{{SCOPE}}` and `{{USE_MEM0}}` are not written into any file; they only decide which folders are
+created and which optional step runs. The other six appear in file contents.
 
 ---
 
 ## PHASE M: Mode selection (do this FIRST, before anything else)
 
-Ask the user in Turkish: **"Daha önce kurulmuş bir beynin var mı? Varsa klasör yolunu ver."**
+Ask the user in English: **"Do you already have a brain set up? If so, give me the folder path."**
 If they say no, still scan the two default locations before deciding:
 
 No globs here. An empty `Documents` folder makes `"$HOME/Documents"/*` abort the whole command under
@@ -63,32 +62,33 @@ while IFS= read -r BEYIN_D; do
   BEYIN_MEM=$(find "$BEYIN_D" -mindepth 1 -maxdepth 1 -type d -name "🔮 850-*" -print 2>/dev/null | head -1)
   [ -n "$BEYIN_MEM" ] || continue
   BEYIN_HITS=$((BEYIN_HITS + 1))
-  echo "ADAY: $BEYIN_D"
-  echo "  hafıza klasörü: $(basename "$BEYIN_MEM")"
+  echo "CANDIDATE: $BEYIN_D"
+  echo "  memory folder: $(basename "$BEYIN_MEM")"
   if [ -f "$BEYIN_D/.beyin-version" ]; then
-    echo "  sürüm: $(sed -n '1p' "$BEYIN_D/.beyin-version")"
+    echo "  version: $(sed -n '1p' "$BEYIN_D/.beyin-version")"
   else
-    echo "  sürüm: v1 (.beyin-version yok)"
+    echo "  version: v1 (no .beyin-version)"
   fi
 done < "$BEYIN_LIST"
 rm -f "$BEYIN_LIST"
 echo "TARAMA TAMAM: $BEYIN_HITS aday bulundu"
 ```
 
-The last line is the success check. If you do not see `TARAMA TAMAM`, the scan did not finish and
+The last line is the success check (it is a fixed sentinel line, kept verbatim: "scan complete: N
+candidates found"). If you do not see `TARAMA TAMAM`, the scan did not finish and
 you may not pick a mode yet: fix the error first.
 
 Decide:
 
-| Bulgu | Mod |
+| Finding | Mode |
 | --- | --- |
-| `TARAMA TAMAM: 0 aday` | **MODE A, sıfırdan kurulum** (PHASE 0'a git) |
-| Aday var, `.beyin-version` yok | **MODE B, v1'den yükseltme** (PHASE U1'e git) |
-| Aday var, `.beyin-version` = `2.0.0`, `2.1.0` veya `2.2.0` | **MODE B**, v2.3 yükseltmesi |
-| Aday var, `.beyin-version` = `2.3.0` | Zaten güncel. Sadece `beyin-doktor` çalıştır, eksikleri kapat |
-| Aday var, `.beyin-version` başka bir değer | Kullanıcıya göster, ne yapılacağını sor |
+| `TARAMA TAMAM: 0 aday` | **MODE A, fresh install** (go to PHASE 0) |
+| Candidate found, no `.beyin-version` | **MODE B, upgrade from v1** (go to PHASE U1) |
+| Candidate found, `.beyin-version` = `2.0.0`, `2.1.0` or `2.2.0` | **MODE B**, v2.3 upgrade |
+| Candidate found, `.beyin-version` = `2.3.0` | Already up to date. Just run `beyin-doktor` and close any gaps |
+| Candidate found, `.beyin-version` is any other value | Show it to the user and ask what to do |
 
-Tell the user which mode you picked and why, in one Turkish sentence. Never guess silently.
+Tell the user which mode you picked and why, in one sentence. Never guess silently.
 
 ---
 
@@ -106,16 +106,16 @@ PascalCase it and append `OS` (strip "MacBook/Pro/Air/iMac/'s", apostrophes, das
 `Johns-MacBook-Pro` → `JohnOS`, `aylin's Mac` → `AylinOS`, `DESKTOP-AB12` → `Ab12OS`.
 Propose `{{OS_NAME}}`, let the user override.
 
-Ask (Turkish, conversational, not a form):
+Ask (in English, conversational, not a form):
 
-1. **İsmin ne?** → `{{USER_NAME}}`
-2. **Ne iş yapıyorsun, bu beyni en çok ne için kullanacaksın?** → `{{USER_BIO}}`
-3. **AI ortağına ne isim vermek istersin?** → `{{COMPANION}}`
-4. **Kapsam:** core (herkes) + opsiyonel `⚔️ 200-Goals`, `🔐 400-Vault`, `💪 700-Body`,
+1. **What's your name?** → `{{USER_NAME}}`
+2. **What do you do, and what will you mostly use this brain for?** → `{{USER_BIO}}`
+3. **What would you like to name your AI partner?** → `{{COMPANION}}`
+4. **Scope:** core (everyone) + optional `⚔️ 200-Goals`, `🔐 400-Vault`, `💪 700-Body`,
    `🧘 800-Mind` → `{{SCOPE}}`
-5. `{{USE_MEM0}}` varsayılanı **hayır**. Mem0 hesabı, API anahtarı veya üçüncü parti hafıza
-   servisi istemeden devam et. Yalnız kullanıcı açıkça Mem0 entegrasyonu isterse
-   opsiyonel sağlayıcı olarak ele al; temel hafıza yerel dosyalarla çalışır.
+5. `{{USE_MEM0}}` defaults to **no**. Continue without asking for a Mem0 account, an API key or a
+   third-party memory service. Only if the user explicitly asks for a Mem0 integration, treat it
+   as an optional provider; the core memory works with local files.
 
 Pick the vault path → `{{VAULT_PATH}}`:
 
@@ -148,16 +148,16 @@ if [ "$BEYIN_PLATFORM" = "Darwin" ]; then
     [ -d "/Applications/Obsidian.app" ] || brew install --cask obsidian
     command -v obsidian >/dev/null 2>&1 \
       || (brew tap yakitrak/yakitrak >/dev/null 2>&1 && brew install yakitrak/yakitrak/obsidian-cli >/dev/null 2>&1) \
-      || echo "obsidian-cli atlandı (opsiyonel)"
+      || echo "obsidian-cli skipped (optional)"
   else
-    echo "🔴 BREW YOK: Homebrew kurulumu tamamlanmadı. Obsidian'ı elle kur: https://obsidian.md/download"
+    echo "🔴 NO BREW: the Homebrew install did not complete. Install Obsidian by hand: https://obsidian.md/download"
   fi
-  [ -d "/Applications/Obsidian.app" ] && echo "Obsidian ✓" || echo "🟡 Obsidian bulunamadı, elle kurulmalı"
+  [ -d "/Applications/Obsidian.app" ] && echo "Obsidian ✓" || echo "🟡 Obsidian not found, it has to be installed by hand"
 else
   # Linux / other. No Homebrew, no cask, no .app bundle. NOT verified on a real Linux desktop.
-  echo "macOS değil. Homebrew, Obsidian cask ve macOS masaüstü uygulaması adımları atlanıyor."
-  echo "Obsidian'ı dağıtımının paket yöneticisinden veya https://obsidian.md/download üstünden kur."
-  command -v obsidian >/dev/null 2>&1 && echo "obsidian-cli ✓" || echo "obsidian-cli yok (opsiyonel)"
+  echo "Not macOS. Skipping the Homebrew, Obsidian cask and macOS desktop app steps."
+  echo "Install Obsidian from your distribution's package manager or from https://obsidian.md/download."
+  command -v obsidian >/dev/null 2>&1 && echo "obsidian-cli ✓" || echo "obsidian-cli missing (optional)"
 fi
 ```
 
@@ -168,26 +168,27 @@ BEYIN_MISSING=0
 if command -v python3 >/dev/null 2>&1; then
   echo "python3 ✓ $(python3 -V 2>&1)"
 else
-  echo "🔴 python3 YOK"
+  echo "🔴 python3 MISSING"
   BEYIN_MISSING=$((BEYIN_MISSING + 1))
 fi
 if command -v claude >/dev/null 2>&1; then
   echo "claude CLI ✓ $(command -v claude)"
 else
-  echo "🔴 claude CLI YOK"
+  echo "🔴 claude CLI MISSING"
   BEYIN_MISSING=$((BEYIN_MISSING + 1))
 fi
 echo "ONKOSUL SONUC: $BEYIN_MISSING eksik"
 ```
 
-`ONKOSUL SONUC: 0` is the only line that lets you continue. `python3` is what the background
+`ONKOSUL SONUC: 0` is the only line that lets you continue (a fixed sentinel line, kept verbatim:
+"prerequisite result: N missing"). `python3` is what the background
 summarizer and the compiler run on, and it is the entire v2 thesis. If it is missing:
 
 - macOS: `xcode-select --install`, then run the block again.
 - Linux: install `python3` with your package manager, then run the block again.
 
-Do not carry on quietly. If the user insists on continuing without python3, say in Turkish that
-this is a **degraded kurulum**: continuity works, the automatic daily log and the knowledge
+Do not carry on quietly. If the user insists on continuing without python3, say in English that
+this is a **degraded install**: continuity works, the automatic daily log and the knowledge
 compilation stay off. Then repeat that sentence in the final report and never call the install
 successful. `beyin doktor` will show it red every single time until python3 exists.
 
@@ -198,7 +199,7 @@ mkdir -p "$(dirname "{{VAULT_PATH}}")"
 cp -R "./template/" "{{VAULT_PATH}}/"
 find "{{VAULT_PATH}}/.claude/hooks" -maxdepth 1 -type f -name "*.sh" -exec chmod +x {} +
 find "{{VAULT_PATH}}/.claude/hooks" -maxdepth 1 -type f -name "*.sh" -exec bash -n {} \; \
-  && echo "KANCA SOZDIZIMI: tamam"
+  && echo "HOOK SYNTAX: ok"
 mkdir -p "{{VAULT_PATH}}/.agents" "{{VAULT_PATH}}/.codex"
 ln -s "CLAUDE.md" "{{VAULT_PATH}}/AGENTS.md"
 ln -s "../.claude/skills" "{{VAULT_PATH}}/.agents/skills"
@@ -223,8 +224,8 @@ ls .claude/hooks/          # session-start.sh prompt-counter.sh session-end.sh p
 ls .claude/scripts/        # shared engine + Codex/Antigravity adapters
 ls .claude/skills/         # beyin-doktor gecmis-import
 ls -l AGENTS.md .agents/skills .codex/hooks
-python3 -m json.tool .codex/hooks.json >/dev/null && echo "Codex kancaları ✓"
-python3 -m json.tool .agents/hooks.json >/dev/null && echo "Antigravity kancaları ✓"
+python3 -m json.tool .codex/hooks.json >/dev/null && echo "Codex hooks ✓"
+python3 -m json.tool .agents/hooks.json >/dev/null && echo "Antigravity hooks ✓"
 ls -d daily knowledge/concepts knowledge/connections
 cat .beyin-version         # 2.3.0
 ```
@@ -235,7 +236,7 @@ Replace EVERY placeholder in EVERY file under `{{VAULT_PATH}}` with the resolved
 verify none remain:
 
 ```bash
-grep -rl "{{" "{{VAULT_PATH}}" || echo "✓ tüm placeholder'lar dolduruldu"
+grep -rl "{{" "{{VAULT_PATH}}" || echo "✓ all placeholders filled in"
 ```
 
 Also update the structure section of `CLAUDE.md` to list any optional scope folders you created.
@@ -256,8 +257,8 @@ git add -A
 BEYIN_LEAK=$(git diff --cached --name-only | grep -E 'settings\.local\.json|\.yedek|\.bak$|(^|/)\.env$' || true)
 if [ -n "$BEYIN_LEAK" ]; then
   git reset -q
-  echo "🔴 SAHNELENMESI YASAK DOSYA: $BEYIN_LEAK"
-  echo "   .gitignore eksik. Once onu duzelt, sonra tekrar dene."
+  echo "🔴 FORBIDDEN FILE STAGED: $BEYIN_LEAK"
+  echo "   .gitignore is incomplete. Fix it first, then try again."
   exit 1
 fi
 BEYIN_STAGED=$(git diff --cached --name-only | wc -l | tr -d ' ')
@@ -267,19 +268,19 @@ BEYIN_MAIL=$(git config user.email 2>/dev/null || echo "")
 [ -n "$BEYIN_MAIL" ] || BEYIN_MAIL="beyin@localhost"
 if [ "$BEYIN_STAGED" -gt 0 ]; then
   if git -c user.name="$BEYIN_NAME" -c user.email="$BEYIN_MAIL" \
-       commit -q -m "{{OS_NAME}}: ikinci beyin kuruldu"; then
-    echo "ILK COMMIT: $(git rev-parse --short HEAD) ($BEYIN_STAGED dosya)"
+       commit -q -m "{{OS_NAME}}: second brain installed"; then
+    echo "FIRST COMMIT: $(git rev-parse --short HEAD) ($BEYIN_STAGED files)"
   else
-    echo "🔴 ILK COMMIT BASARISIZ: $BEYIN_STAGED dosya sahnede kaldı"
+    echo "🔴 FIRST COMMIT FAILED: $BEYIN_STAGED files left staged"
   fi
 else
-  echo "🔴 SAHNEDE DOSYA YOK: kopyalama adımı çalışmamış olabilir"
+  echo "🔴 NO FILES STAGED: the copy step may not have run"
 fi
 ```
 
 Always pass `-c user.name` and `-c user.email`, falling back to the user's own global identity
 when it exists. Without them, a machine with no git identity fails the commit and the old
-`|| echo "commit atlandı"` line turns that failure into a success-looking message while every
+`|| echo "commit skipped"` line turns that failure into a success-looking message while every
 file stays staged. Do not create any remote, do not push anywhere. This repo is local and private
 by default.
 
@@ -307,7 +308,7 @@ img.unlockFocus()
 if let t = img.tiffRepresentation, let r = NSBitmapImageRep(data: t),
    let p = r.representation(using: .png, properties: [:]) { try? p.write(to: URL(fileURLWithPath: out)) }
 SWIFT
-  command -v swift >/dev/null 2>&1 && swift /tmp/render_brain.swift /tmp/brain.png || echo "swift yok, ikon atlandı"
+  command -v swift >/dev/null 2>&1 && swift /tmp/render_brain.swift /tmp/brain.png || echo "no swift, icon skipped"
 
   # 3) set as app icon (writes the custom Icon resource, overrides the default applet icon)
   cat > /tmp/set_icon.swift <<'SWIFT'
@@ -323,7 +324,7 @@ SWIFT
   touch "$HOME/Desktop/{{OS_NAME}}.app"
   /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
     -f "$HOME/Desktop/{{OS_NAME}}.app" 2>/dev/null || true
-  [ -d "$HOME/Desktop/{{OS_NAME}}.app" ] && echo "BASLATICI: macOS .app hazır" || echo "BASLATICI: kurulamadı"
+  [ -d "$HOME/Desktop/{{OS_NAME}}.app" ] && echo "LAUNCHER: macOS .app ready" || echo "LAUNCHER: could not be installed"
 else
   # Linux: XDG desktop entry. No osacompile, no AppKit, no .app bundle.
   mkdir -p "$HOME/.local/share/applications"
@@ -331,7 +332,7 @@ else
 [Desktop Entry]
 Type=Application
 Name={{OS_NAME}}
-Comment=Ikinci beyin vault
+Comment=Second brain vault
 Exec=xdg-open "obsidian://open?vault={{OS_NAME}}"
 Icon=obsidian
 Terminal=false
@@ -341,13 +342,13 @@ DESKTOP
   command -v update-desktop-database >/dev/null 2>&1 \
     && update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
   [ -f "$HOME/.local/share/applications/{{OS_NAME}}.desktop" ] \
-    && echo "BASLATICI: Linux .desktop yazıldı (gerçek bir Linux masaüstünde doğrulanmadı)" \
-    || echo "BASLATICI: kurulamadı"
+    && echo "LAUNCHER: Linux .desktop written (not verified on a real Linux desktop)" \
+    || echo "LAUNCHER: could not be installed"
 fi
 ```
 
 The launcher only works after the vault has been added to Obsidian once (PHASE 8). On Linux, say
-in one Turkish line that this shortcut has not been tested on a real Linux desktop and that opening
+in one line that this shortcut has not been tested on a real Linux desktop and that opening
 the folder in Obsidian by hand always works.
 
 ## PHASE 6: Optional memory provider (disabled by default)
@@ -373,9 +374,9 @@ If the doctor cannot run for any reason, do the manual check instead:
 
 ```bash
 cd "{{VAULT_PATH}}"
-ls -l .claude/hooks/*.sh | awk '{print $1, $NF}'   # hepsi çalıştırılabilir olmalı
+ls -l .claude/hooks/*.sh | awk '{print $1, $NF}'   # all of them must be executable
 python3 -c "import json;d=json.load(open('.claude/settings.json'));print(sorted(d.get('hooks',{})))"
-python3 -m py_compile .claude/scripts/flush.py .claude/scripts/compile.py && echo "scriptler ✓"
+python3 -m py_compile .claude/scripts/flush.py .claude/scripts/compile.py && echo "scripts ✓"
 ```
 
 ## PHASE 8: Verify and first-run report
@@ -383,12 +384,12 @@ python3 -m py_compile .claude/scripts/flush.py .claude/scripts/compile.py && ech
 ```bash
 ls -la "{{VAULT_PATH}}"
 test -f "{{VAULT_PATH}}/CLAUDE.md" && echo "CLAUDE.md ✓"
-test -L "{{VAULT_PATH}}/AGENTS.md" && echo "AGENTS.md ortak router ✓"
+test -L "{{VAULT_PATH}}/AGENTS.md" && echo "AGENTS.md shared router ✓"
 test -L "{{VAULT_PATH}}/.agents/skills" && echo "Codex skill store ✓"
 python3 -m json.tool "{{VAULT_PATH}}/.codex/hooks.json" >/dev/null && echo "Codex hooks ✓"
 python3 -m json.tool "{{VAULT_PATH}}/.agents/hooks.json" >/dev/null && echo "Antigravity hooks ✓"
-test -f "{{VAULT_PATH}}/🔮 850-Companion/Last-Session.md" && echo "hafıza ✓"
-test -f "{{VAULT_PATH}}/.beyin-version" && echo "sürüm $(cat "{{VAULT_PATH}}/.beyin-version") ✓"
+test -f "{{VAULT_PATH}}/🔮 850-Companion/Last-Session.md" && echo "memory ✓"
+test -f "{{VAULT_PATH}}/.beyin-version" && echo "version $(cat "{{VAULT_PATH}}/.beyin-version") ✓"
 test -d "$HOME/Desktop/{{OS_NAME}}.app" && echo "launcher 🧠 ✓"
 ```
 
@@ -468,35 +469,35 @@ sits inside it, and any directory without the v1 markers (`CLAUDE.md` plus a `�
 ## PHASE U1: Plan (read only, changes nothing)
 
 ```bash
-bash scripts/upgrade.sh --vault "/kullanicinin/mutlak/vault/yolu" --stage check
+bash scripts/upgrade.sh --vault "/absolute/path/to/the/vault" --stage check
 ```
 
 Use the absolute path you confirmed in PHASE M, in double quotes: it has spaces and emoji in it.
 The command prints the plan, the current memory folder name, how many v1 hooks live in
-`settings.local.json`, and an `ONAY GEREKLİ` list when confirmations are needed. It touches
-nothing. Read it back to the user in Turkish.
+`settings.local.json`, and a `CONFIRMATION REQUIRED` list when confirmations are needed. It touches
+nothing. Read it back to the user in English.
 
-## PHASE U2: Get the confirmations, in Turkish, out loud
+## PHASE U2: Get the confirmations, in English, out loud
 
 Ask only what `--stage check` actually asked for.
 
-1. **Hafıza klasörü adı.** If it is not `🔮 850-Companion`:
-   > "Hafıza klasörünün adı `🔮 850-Echo`. v2'nin kancaları ve scriptleri sabit
-   > `🔮 850-Companion` yolunu okuyor, bu yüzden bu yeniden adlandırma v2 için zorunlu. İçerik hiç
-   > değişmiyor, sadece klasörün adı değişiyor; ortağının ismi zaten dosyaların içinde yazıyor.
-   > Onaylıyor musun?"
+1. **Memory folder name.** If it is not `🔮 850-Companion`:
+   > "The name of your memory folder is `🔮 850-Echo`. The v2 hooks and scripts read the fixed
+   > `🔮 850-Companion` path, so this rename is mandatory for v2. The contents do not change at
+   > all, only the folder name does; your partner's name is already written inside the files.
+   > Do you confirm?"
 
    Yes → pass `--confirm-rename`.
-   No → **stop the upgrade here.** Say in Turkish that the vault stays on v1, nothing was changed
+   No → **stop the upgrade here.** Say in English that the vault stays on v1, nothing was changed
    and no version was stamped. Do not run `apply`. Do not write `.beyin-version`. A vault stamped
    `2.3.0` whose memory injection cannot find the folder is worse than an honest older vault.
 
-2. **`settings.local.json` içindeki v1 kancaları.** If the check found any:
-   > "Eski kurulumda kancalar `settings.local.json` içine yazılmış. v2 bunları `settings.json`
-   > içine alıyor. Eskiler silinmezse her olayda kancalar iki kez çalışır ve aynı gün iki kez
-   > loglanır. Sadece bu dört kanca girdisi siliniyor; API anahtarın, izinlerin ve kendi yazdığın
-   > diğer kancalar aynen kalıyor. Silmeden önce yedeği repo ve vault dışına, sadece senin
-   > okuyabileceğin izinle alıyorum. Onaylıyor musun?"
+2. **v1 hooks inside `settings.local.json`.** If the check found any:
+   > "In the old setup the hooks were written into `settings.local.json`. v2 moves them into
+   > `settings.json`. If the old ones are not removed, every hook runs twice on every event and
+   > the same day gets logged twice. Only these four hook entries are removed; your API key, your
+   > permissions and any other hooks you wrote stay exactly as they are. Before removing anything
+   > I take a backup outside the repo and the vault, readable only by you. Do you confirm?"
 
    Yes → pass `--confirm-local-hooks`.
    No → **stop the upgrade here**, same rule. Never stamp a version on a vault that fires every
@@ -505,21 +506,21 @@ Ask only what `--stage check` actually asked for.
 ## PHASE U3: Apply
 
 ```bash
-bash scripts/upgrade.sh --vault "/kullanicinin/mutlak/vault/yolu" --stage apply --confirm-rename --confirm-local-hooks
+bash scripts/upgrade.sh --vault "/absolute/path/to/the/vault" --stage apply --confirm-rename --confirm-local-hooks
 ```
 
 Pass only the confirmation flags the check asked for. Read the numbered output back to the user.
 
-| Çıkış kodu | Anlamı | Ne yapacaksın |
+| Exit code | Meaning | What you do |
 | --- | --- | --- |
-| `0` | apply tamam, sürüm damgası HENÜZ yazılmadı | PHASE U4'e geç |
-| `3` | vault zaten `2.3.0` | yükseltme yok, sadece `beyin doktor` çalıştır |
-| `10` | yeniden adlandırma onayı eksik | PHASE U2'ye dön |
-| `11` | yerel kanca temizliği onayı eksik | PHASE U2'ye dön |
-| `1` | sert hata, ekranda `HATA:` satırı var | DUR. Kullanıcıya oku, düzelt, tekrar çalıştır |
+| `0` | apply done, version stamp NOT written yet | go on to PHASE U4 |
+| `3` | vault is already `2.3.0` | no upgrade, just run `beyin doktor` |
+| `10` | rename confirmation missing | go back to PHASE U2 |
+| `11` | local-hook cleanup confirmation missing | go back to PHASE U2 |
+| `1` | hard error, there is an `ERROR:` line on screen | STOP. Read it to the user, fix it, run again |
 
 On exit `1` nothing is stamped and the pre-upgrade snapshot is already in the vault's git history,
-so `git reset --hard <anlık görüntü>` inside the vault puts everything back. Say that out loud
+so `git reset --hard <snapshot>` inside the vault puts everything back. Say that out loud
 instead of improvising a repair.
 
 ## PHASE U4: Resolve the placeholders in the newly added files
@@ -527,19 +528,19 @@ instead of improvising a repair.
 `apply` prints the files that still contain `{{...}}`. Read `CLAUDE.md` and the existing memory
 files to recover the user's name and the companion's name, and fill them in. Do not ask the user
 to repeat what the vault already knows; confirm your reading in one line instead:
-"Ortağının adı X, senin adın Y, doğru mu?"
+"Your partner's name is X, your name is Y, right?"
 
 ```bash
-grep -rl "{{" "/kullanicinin/mutlak/vault/yolu/knowledge" \
-              "/kullanicinin/mutlak/vault/yolu/.claude/skills" \
-              "/kullanicinin/mutlak/vault/yolu/🔮 850-Companion" 2>/dev/null \
-  || echo "✓ çözülmemiş placeholder yok"
+grep -rl "{{" "/absolute/path/to/the/vault/knowledge" \
+              "/absolute/path/to/the/vault/.claude/skills" \
+              "/absolute/path/to/the/vault/🔮 850-Companion" 2>/dev/null \
+  || echo "✓ no unresolved placeholders"
 ```
 
 ## PHASE U5: Doctor
 
 ```bash
-cd "/kullanicinin/mutlak/vault/yolu" && claude "beyin doktor"
+cd "/absolute/path/to/the/vault" && claude "beyin doktor"
 ```
 
 Close every 🔴 row before you go on. The version has not been stamped yet, so the doctor is
@@ -548,7 +549,7 @@ looking at an honest half-upgraded vault. That is the point.
 ## PHASE U6: Finalize (the only step that writes `.beyin-version`)
 
 ```bash
-bash scripts/upgrade.sh --vault "/kullanicinin/mutlak/vault/yolu" --stage finalize
+bash scripts/upgrade.sh --vault "/absolute/path/to/the/vault" --stage finalize
 ```
 
 `finalize` re-runs every gate from scratch, in this order:
@@ -569,8 +570,9 @@ abort if any staged path looks like local settings or a backup, verify that `HEA
 and only then write `.beyin-version` atomically as the final filesystem write. If any gate fails
 it prints the failing rows, writes nothing, and the vault stays honestly on v1.
 
-Then offer this in one Turkish line, do not push it: **"Eski ChatGPT, Claude veya Gemini geçmişini
-de bu beyne aktarmak ister misin? `geçmiş import` yeter."** The `gecmis-import` skill does
+Then offer this in one line, do not push it: **"Would you like to import your old ChatGPT, Claude
+or Gemini history into this brain too? Just say `geçmiş import`."** (`geçmiş import` is the
+Turkish trigger phrase of the `gecmis-import` skill.) The `gecmis-import` skill does
 everything locally; nothing is uploaded anywhere. Large exports take several evenings to compile,
 and that is fine.
 
@@ -578,7 +580,7 @@ and that is fine.
 
 - **One process.** No variable survives between your Bash calls, so none is used across them.
 - **Verified snapshot.** `git init` when needed, always with an explicit `-c user.name` and
-  `-c user.email`, so an unset git identity cannot turn a failed commit into "değişiklik yok".
+  `-c user.email`, so an unset git identity cannot turn a failed commit into "no changes".
   It compares `HEAD` before and after and refuses to continue if the commit did not actually
   happen. With no git at all it takes a copy outside the vault and verifies the item count.
 - **Secrets stay out of git.** The `.gitignore` entries are installed **before** the first
@@ -588,40 +590,40 @@ and that is fine.
 - **Never destroy.** Every copy is checked, the rename compares the item count before and after,
   seed files are skipped when they already exist, and the `settings.local.json` rewrite drops only
   the four exact v1 beyin commands.
-- **Idempotent.** Running `apply` twice prints `eklenen kanca girdisi: 0`, skips every seed and
+- **Idempotent.** Running `apply` twice prints `hook entries added: 0`, skips every seed and
   reports the memory folder as already correct. Running anything on a finished vault exits `3`.
 
 # THE DEMO (both modes end here)
 
-Report in Turkish:
+Report in English:
 
-- ✅ **Ne kuruldu:** klasörler, 4 kanca, arka plan özetleyici, gece derleyicisi, hafıza dosyaları,
-  ortağın adı, masaüstü kısayolu. Yükseltme modunda: hangi dosyalara dokunulmadığını da say, eski
-  hafıza klasörü adının neden değiştiğini de tek cümleyle tekrarla.
-- ▶️ **İlk çalıştırma:** Obsidian'ı aç → vault olarak `{{VAULT_PATH}}` seç (bir kez tanıtır,
-  masaüstündeki 🧠 ikonu bundan sonra tek tıkla açar). Sonra o klasörde `claude` çalıştır.
+- ✅ **What was installed:** folders, 4 hooks, background summarizer, nightly compiler, memory files,
+  the partner's name, desktop shortcut. In upgrade mode: also count which files were left untouched,
+  and repeat in one sentence why the old memory folder name was changed.
+- ▶️ **First run:** Open Obsidian → choose `{{VAULT_PATH}}` as the vault (this registers it once;
+  after that the 🧠 icon on the desktop opens it with one click). Then run `claude` in that folder.
 
-## Sihri göster, ama önce doğrula
+## Show the magic, but verify first
 
 The SessionEnd hook detaches the summarizer and returns in under a second. That is on purpose,
 the hook budget is tight. It also means the daily log is **not** on disk the moment the user types
 `/exit`. Do not send them back into `claude` before you have seen the file.
 
-Tell them, in Turkish, exactly this shape of thing:
+Tell them, in English, exactly this shape of thing:
 
-> "Şimdi benimle bir şey konuş, sonra `/exit` yaz. Arka planda küçük bir özetleyici çalışacak,
-> genelde birkaç saniye sürer. Ben günlük logun diske düştüğünü görene kadar bekleyeceğim, sonra
-> `claude`'u tekrar açacağız."
+> "Now talk to me about something, then type `/exit`. A small summarizer will run in the
+> background, it usually takes a few seconds. I'll wait until I see the daily log land on disk,
+> then we'll open `claude` again."
 
 After they type `/exit`, run this bounded poll from the repo and wait for it. Do not skip it, and
-do not tell the user "oldu" before it prints its success line:
+do not tell the user "it worked" before it prints its success line:
 
 ```bash
 BEYIN_LOG="{{VAULT_PATH}}/daily/$(date +%F).md"
 BEYIN_TRY=0
 BEYIN_OK=0
 while [ "$BEYIN_TRY" -lt 24 ]; do
-  if [ -f "$BEYIN_LOG" ] && grep -q '^### Oturum' "$BEYIN_LOG" 2>/dev/null; then
+  if [ -f "$BEYIN_LOG" ] && grep -q '^### Session' "$BEYIN_LOG" 2>/dev/null; then
     BEYIN_OK=1
     break
   fi
@@ -636,6 +638,10 @@ else
 fi
 ```
 
+(`### Session` is the session heading the summarizer writes into the daily log.
+The two final lines are fixed sentinels, kept verbatim: "daily log ready" and "daily log was not
+written within 120 seconds".)
+
 Wait for one of the two final lines. There is no third outcome, and neither of them is silent.
 
 - `GUNLUK LOG HAZIR` → show the tail to the user, that is the actual demo. Now relaunch `claude`.
@@ -644,25 +650,26 @@ Wait for one of the two final lines. There is no third outcome, and neither of t
   worth summarizing (the summarizer answers `FLUSH_BOS` and writes nothing, which is correct
   behavior, not a bug), or `python3` is missing.
 
-## Honest timing, say it in Turkish
+## Honest timing, say it in English
 
-- **Günlük log:** oturum kapanışında, arka planda, küçük bir Haiku çağrısı. Saniyeler.
-- **Bilgi derlemesi:** aynı akşam değil, saat 18'den sonraki ilk oturum kapanışında, günde bir kez,
-  ve bir Sonnet çağrısı olduğu için **dakikalar** sürebilir. `knowledge/` klasörünün o an boş
-  olması normal. Ertesi sabah `claude` açtığında indeks kendiliğinden bağlama girer.
+- **Daily log:** at session close, in the background, a small Haiku call. Seconds.
+- **Knowledge compilation:** not the same evening, but at the first session close after 6 pm, once
+  a day, and because it is a Sonnet call it can take **minutes**. It is normal for the `knowledge/`
+  folder to be empty at that point. When `claude` opens the next morning the index enters the
+  context on its own.
 
 Never promise the knowledge articles in the same minute. Promise the daily log, show the daily
 log, and be precise about when the rest arrives.
 
-## Kapanış
+## Wrap-up
 
-- 🩺 **Bir şey ters giderse:** `beyin doktor` yaz. Tek tabloda her parçanın durumunu verir.
-- 💸 **Maliyet:** Ekstra ücret yok; arka plan özetleyici ve derleyici mevcut Claude aboneliğinin
-  günlük limitinden küçük bir pay kullanır (özet: her oturum sonunda küçük bir Haiku çağrısı;
-  derleme: günde bir Sonnet çağrısı).
-- 🔗 **Sen de kurdun mu?** Bir arkadaşına gönder: `avenox.lol/beyin.md`
+- 🩺 **If something goes wrong:** type `beyin doktor`. It gives the status of every part in a single table.
+- 💸 **Cost:** No extra charge; the background summarizer and the compiler use a small share of the
+  daily limit of the existing Claude subscription (summary: a small Haiku call at the end of every
+  session; compilation: one Sonnet call per day).
+- 🔗 **Did you set it up too?** Send it to a friend: `https://raw.githubusercontent.com/uy4nik-droid/avenoxbeyin-english/main/beyin.md`
 
-Do not end the session by saying "kuruldu" alone. Show the pipeline once, with the user watching.
+Do not end the session by saying "installed" alone. Show the pipeline once, with the user watching.
 
 ---
 

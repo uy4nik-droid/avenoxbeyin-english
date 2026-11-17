@@ -287,7 +287,7 @@ class HygieneCliTest(unittest.TestCase):
             self.assertLessEqual(len(live), limit)
             self.assertEqual(result['files'][path.name]['chars_after'], len(live))
             self.assertTrue(stored.startswith('---\n{"kind": "note", "visibility": "private"'))
-            self.assertEqual(live.count(f'Arşivlenen metin: `{COMPANION}/Arşiv/{archive.name}`'), 1)
+            self.assertEqual(live.count(f'Archived text: `{COMPANION}/Arşiv/{archive.name}`'), 1)
             # Every original line is still somewhere, as often as it was: nothing dropped.
             missing = Counter(originals[path.name].splitlines()) - (Counter(live.splitlines()) + Counter(stored.splitlines()))
             self.assertEqual(missing, Counter())
@@ -327,7 +327,7 @@ class HygieneCliTest(unittest.TestCase):
         self.assertEqual(after.count('---\n{"kind"'), 1)
         live = last.read_text(encoding='utf-8')
         self.assertIn('NEWER_4', live)
-        self.assertEqual(live.count('Arşivlenen metin:'), 1)
+        self.assertEqual(live.count('Archived text:'), 1)
         self.assertIn('NEWER_1', after)
 
     def test_undated_prose_over_the_limit_is_reported_not_cut(self):
@@ -342,7 +342,7 @@ class HygieneCliTest(unittest.TestCase):
         self.assertTrue(archive.exists())
         archive_text = archive.read_text(encoding='utf-8')
         self.assertIn(FILLER, archive_text)
-        self.assertIn('tam metin yedeği (needs_rewrite)', archive_text)
+        self.assertIn('characters full-text backup (needs_rewrite)', archive_text)
         self.assertEqual(result['files']['Last-Session.md'].get('archive'),
                          f'{COMPANION}/Arşiv/{archive.name}')
         self.assertEqual(result['files']['Last-Session.md']['backup'], 'written')
@@ -360,8 +360,8 @@ class HygieneCliTest(unittest.TestCase):
         self.assertFalse((self.directory / compact_module.LOCK_NAME).exists())
         # The human dry-run line must not claim a backup that was never written.
         human = human_entry().human_result(result, 'companion-compact')
-        self.assertNotIn('yedeklendi', human)
-        self.assertIn('--dry-run olmadan calistir', human)
+        self.assertNotIn('(full text backed up to the archive', human)
+        self.assertIn('first run without --dry-run', human)
 
     def test_needs_rewrite_avoids_duplicate_snapshots_on_repeated_runs(self):
         body = '# Threads\n\n## Active Threads\n' + ('### Thread\nAktif konu detay metni.\n' * 300)
@@ -402,7 +402,7 @@ class HygieneCliTest(unittest.TestCase):
         self.assertIn(live, text)
         self.assertIn('OLD_UPDATE_0', text)
         human = human_entry().human_result(first, 'companion-compact')
-        self.assertIn('hala sinirin (8000) ustunde (tam metin arsive yedeklendi: ', human)
+        self.assertIn('is still above the limit (8000) (full text backed up to the archive: ', human)
         again = self.run_cli('companion-compact')
         self.assertEqual((again['files']['Threads.md']['status'], again['files']['Threads.md']['backup']),
                          ('needs_rewrite', 'exists'))
@@ -524,7 +524,7 @@ class HygieneCliTest(unittest.TestCase):
         for i in moved:
             stamp = (moment - timedelta(hours=2 * i)).strftime('%Y-%m-%d %H:%M')
             self.assertIn(f'## {stamp} · session_{i:02d} · a{i:07x}\n'
-                          f'Arşiv: `{COMPANION}/Arşiv/Last-Session-{month}.md`\n'
+                          f'Archive: `{COMPANION}/Arşiv/Last-Session-{month}.md`\n'
                           f'**Karar (Umut):** DECISION_{i:02d} ayrı repo.\n'
                           f'- **Decision:** EN_{i:02d} kept.\n', text)
         for absent in ('NOT_', 'FENCED_'):
@@ -550,24 +550,24 @@ class HygieneCliTest(unittest.TestCase):
         for text in (skill, installer):
             text = ' '.join(text.split())
             self.assertIn('companion-compact', text)
-            self.assertIn('baştan yeniden', text)
-            self.assertIn('her cevapta', text)
-            self.assertIn('kendi kartını', text)
+            self.assertIn('rewrite only your own card from the top', text)
+            self.assertIn('on every reply', text)
+            self.assertIn('your own card', text)
         # #112: every place that tells an agent how to write Last-Session.md names the same
         # per-session card heading, so no client falls back to rewriting the whole file.
         router = (ROOT / 'template/CLAUDE.md').read_text(encoding='utf-8')
         starter = companion_module.STARTERS['Last-Session.md']
-        heading = '## YYYY-MM-DD HH:MM · <etiket> · <session_id[:8]>'
+        heading = '## YYYY-MM-DD HH:MM · <label> · <session_id[:8]>'
         for text in (skill, installer, router, starter):
             text = ' '.join(text.split())
             self.assertIn(heading, text)
-            self.assertIn('kartı yazdığın turdaki hook bağlamının `now=`', text)
-            self.assertIn('yerel sistem saatini oku, tahmin etme', text)
-            self.assertIn('kendi kartını', text)
+            self.assertIn('the `now=` value in the hook context of the turn in which you write the card', text)
+            self.assertIn('read the local system clock, do not guess', text)
+            self.assertIn('your own card', text)
         for text in (skill, installer, router):
             text = ' '.join(text.split())
-            self.assertIn('en üste', text)
-            self.assertIn('dosyanın tamamını yeniden yazma', text)
+            self.assertIn('at the top', text)
+            self.assertIn('do not rewrite the whole file', text)
             self.assertIn('Receipt session', text)
         for text in (skill, installer, router, starter,
                      (ROOT / 'template/.agents/skills/beyin-doktor/SKILL.md').read_text(encoding='utf-8')):
@@ -601,34 +601,34 @@ class HumanOutputTest(unittest.TestCase):
     def test_doctor_preferences_and_compaction_read_as_short_turkish_lines(self):
         doctor = self.entry.human_result({'status': 'observed_metadata', 'companion_hygiene': {
             'over_limit': ['Threads.md'], 'files': {'Threads.md': {'chars': 57012, 'limit': 8000}}}}, 'doctor', '3.3.0')
-        self.assertIn('Hafiza hijyeni: Threads.md 57012 karakter (sinir 8000).', doctor)
+        self.assertIn('Memory hygiene: Threads.md 57012 characters (limit 8000).', doctor)
         self.assertIn('beyin.py companion-compact', doctor)
         prefs = self.entry.human_result({'preferences': {'auto_sync': True, 'interval_minutes': 0, 'context_mode': 'turn',
                                                          'context_chars': 5000, 'secret_filter': False},
                                          'companion_limits': {'Last-Session.md': 0, 'Threads.md': 8000}}, 'preferences')
-        self.assertIn('Hafiza dosyasi siniri, Last-Session.md: kapali', prefs)
-        self.assertIn('Hafiza dosyasi siniri, Threads.md: 8000 karakter', prefs)
+        self.assertIn('Memory file limit, Last-Session.md: off', prefs)
+        self.assertIn('Memory file limit, Threads.md: 8000 characters', prefs)
         compacted = self.entry.human_result({'status': 'needs_rewrite', 'files': {
             'Last-Session.md': {'status': 'compacted', 'chars': 94000, 'chars_after': 2900, 'moved_chars': 91200,
                                 'limit': 3000, 'within_limit_after': True},
             'Threads.md': {'status': 'needs_rewrite', 'chars': 9000, 'limit': 8000}}}, 'companion-compact')
-        self.assertIn('Last-Session.md: 94000 -> 2900 karakter, 91200 karakter arsive tasindi.', compacted)
-        self.assertIn('Threads.md: tasinacak tarihli eski kayit yok', compacted)
-        self.assertTrue(compacted.endswith('Hicbir metin silinmedi; model cagrilmadi.'))
+        self.assertIn('Last-Session.md: 94000 -> 2900 characters, 91200 characters moved to the archive.', compacted)
+        self.assertIn('Threads.md: no old dated entries to move', compacted)
+        self.assertTrue(compacted.endswith('No text was deleted; no model was called.'))
         planned = self.entry.human_result({'status': 'dry_run', 'files': {
             'Threads.md': {'status': 'planned', 'chars': 9000, 'chars_after': 8100, 'moved_chars': 900,
                            'limit': 8000, 'within_limit_after': False}}}, 'companion-compact')
-        self.assertIn('8100 karakter olacak, 900 karakter arsive tasinacak.', planned)
-        self.assertIn('Threads.md hala sinirin (8000) ustunde', planned)
+        self.assertIn('8100 characters (planned), 900 characters will move to the archive.', planned)
+        self.assertIn('Threads.md is still above the limit (8000)', planned)
         odd = self.entry.human_result({'status': 'needs_attention', 'files': {
             'Threads.md': {'status': 'needs_attention', 'reason': 'not UTF-8; nothing moved'}}}, 'companion-compact')
         self.assertIn('Threads.md: not UTF-8; nothing moved.', odd)
         refused = self.entry.human_result({'status': 'needs_attention', 'files': {}, 'limits_file': 'invalid'}, 'companion-compact')
-        self.assertIn('Sinir ayari okunamadi', refused)
+        self.assertIn('The limit setting could not be read', refused)
 
 
 class CompactionPlanTest(unittest.TestCase):
-    POINTER = 'Arşivlenen metin: `X/Arşiv/A-2026-09.md`'
+    POINTER = 'Archived text: `X/Arşiv/A-2026-09.md`'
 
     def plan(self, text, name, limit):
         result = compact_module.plan(text, name, limit, self.POINTER)
@@ -716,7 +716,7 @@ class CompactionPlanTest(unittest.TestCase):
         self.assertIn('## 2026-09-26 16:30 · ev · 3f9a1c2b\nEN_YENİ_KART: 4. oturum kararı', result['live'])
         self.assertNotIn('EN_ESKİ_KART_1', result['live'])
         self.assertIn('EN_ESKİ_KART_1', result['archive'])
-        self.assertIn('## Önceki oturumlar\n\n' + self.POINTER, result['live'])
+        self.assertIn('## Previous sessions\n\n' + self.POINTER, result['live'])
         self.assertLessEqual(len(result['live']), 350)
 
     def test_written_out_dates_are_entries_ordered_by_their_day(self):
@@ -756,7 +756,7 @@ class CompactionPlanTest(unittest.TestCase):
         self.assertIn('### Thread: A\r\n- 2026-09-10 A_ESKİ ' + FILLER * 3 + '\r\n```\r\n## 2026-01-01 kod içindeki başlık\r\n'
                       '2026-01-02: kod satırı\r\n```\r\n', result['archive'])
         self.assertEqual(result['moved_entries'], 1)
-        self.assertIn('## Kapanan konular\r\n\r\n' + self.POINTER + '\r\n', live)
+        self.assertIn('## Closed threads\r\n\r\n' + self.POINTER + '\r\n', live)
 
     def test_undated_structure_after_an_old_entry_stays(self):
         text = ('# Son oturum\n\n## Session: 2026-09-24\nYENİ\n\n## Session: 2026-09-01\nESKİ ' + FILLER * 3 +
@@ -1115,7 +1115,7 @@ class CompactionRaceTest(unittest.TestCase):
             notice_rules,
             'Memory hygiene: Kurallar.md opens clipped (fit ceiling 3496 of 10303 chars). '
             'Shorten each rule to one line and move reasons to a detail note; '
-            'move project rules to projects/<proje>/Kurallar.md.\n'
+            'move project rules to projects/<project>/Kurallar.md.\n'
         )
         # 2. Both handoff file over limit and rules clipped
         notice_both = companion_module.hygiene_notice(report, rules=rules_clipped)

@@ -93,16 +93,16 @@ class ReleasesTest(unittest.TestCase):
             with self.subTest(url=url), self.assertRaises(releases.ReleaseError): releases.safe_url(url)
         self.assertEqual(releases.safe_url('https://release-assets.githubusercontent.com/a'), 'https://release-assets.githubusercontent.com/a')
 
-    def test_both_official_repository_names_are_accepted_and_nothing_broader(self):
-        # After a rename avenoxai/avenoxbeyin -> avenoxai/beyin the old API URL redirects and the
-        # API reports asset URLs under the new name; older installs must keep updating.
+    def test_official_repository_name_is_accepted_and_nothing_broader(self):
+        # This edition updates only from uy4nik-droid/avenoxbeyin-english; the original upstream
+        # slugs (avenoxai/avenoxbeyin, avenoxai/beyin) are foreign repositories here.
         def with_checksum(base):
             raw = fixture(); asset = raw['assets'][0]
             asset['browser_download_url'] = asset['browser_download_url'].replace(releases.WEB, base)
             raw['assets'].append(dict(asset, id=457, name=asset['name'] + '.sha256',
                                       browser_download_url=asset['browser_download_url'] + '.sha256'))
             return raw
-        for slug in ('avenoxai/avenoxbeyin', 'avenoxai/beyin'):
+        for slug in ('uy4nik-droid/avenoxbeyin-english',):
             with self.subTest(slug=slug):
                 base = 'https://github.com/' + slug + '/releases/'
                 metadata = releases.release_metadata(with_checksum(base))
@@ -113,17 +113,16 @@ class ReleasesTest(unittest.TestCase):
                 with patch.object(releases, 'fetch_metadata', return_value=(metadata, None)):
                     releases.refresh(state, now=1000)
                 self.assertEqual(releases.cache(state)['release']['release_url'], base + 'tag/v3.1.0')
-        for slug in ('avenoxai/beyin-evil', 'avenoxai/avenoxbeyin2', 'someone/beyin', 'someone/avenoxbeyin', 'AVENOXAI/beyin'):
+        for slug in ('avenoxai/avenoxbeyin', 'avenoxai/beyin', 'uy4nik-droid/avenoxbeyin-english-evil',
+                     'uy4nik-droid/avenoxbeyin', 'someone/avenoxbeyin-english', 'UY4NIK-DROID/avenoxbeyin-english'):
             with self.subTest(slug=slug), self.assertRaisesRegex(releases.ReleaseError, 'invalid_asset'):
                 releases.release_metadata(with_checksum('https://github.com/' + slug + '/releases/'))
-        mixed = with_checksum('https://github.com/avenoxai/beyin/releases/')
-        mixed['assets'][1]['browser_download_url'] = releases.WEB + 'download/v3.1.0/beyin-v3-3.1.0.zip.sha256'
-        with self.assertRaisesRegex(releases.ReleaseError, 'invalid_checksum_asset'):
-            releases.release_metadata(mixed)
-        mixed = with_checksum(releases.WEB)
-        mixed['assets'][1]['browser_download_url'] = 'https://github.com/avenoxai/beyin/releases/download/v3.1.0/beyin-v3-3.1.0.zip.sha256'
-        with self.assertRaisesRegex(releases.ReleaseError, 'invalid_checksum_asset'):
-            releases.release_metadata(mixed)
+        for slug in ('avenoxai/avenoxbeyin', 'avenoxai/beyin'):
+            with self.subTest(checksum_slug=slug):
+                mixed = with_checksum(releases.WEB)
+                mixed['assets'][1]['browser_download_url'] = 'https://github.com/' + slug + '/releases/download/v3.1.0/beyin-v3-3.1.0.zip.sha256'
+                with self.assertRaisesRegex(releases.ReleaseError, 'invalid_checksum_asset'):
+                    releases.release_metadata(mixed)
 
     def test_renamed_repository_api_redirect_is_followed_with_json_accept(self):
         request = releases.urllib.request.Request(releases.OFFICIAL, headers={'Accept': 'application/vnd.github+json', 'User-Agent': 'avenoxbeyin-updater'})
@@ -312,7 +311,7 @@ class ReleasesTest(unittest.TestCase):
         doctor = run_python(entry, ['doctor', '--human'], self.vault, self.env)
         self.assertEqual(doctor.returncode, 0, doctor.stderr)
         self.assertIn(b'3.1.0', doctor.stdout)
-        self.assertIn(b'Son kontrol:', doctor.stdout)
+        self.assertIn(b'Last check:', doctor.stdout)
         self.assertNotIn(b'UNTRUSTED', doctor.stdout)
 
     def test_invalid_cli_combinations_leave_vault_and_state_unchanged(self):

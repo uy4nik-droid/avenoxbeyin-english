@@ -601,7 +601,7 @@ test_pycache_untrack_failure_is_fatal() {
   set -e
 
   [ "$RUN_STATUS" -ne 0 ] || { diag "git rm hatasi yutuldu"; return 1; }
-  grep -q "izlemeden çıkarılamadı" "$case_dir/apply.out" \
+  grep -q "could not untrack" "$case_dir/apply.out" \
     || { diag "git rm hatasi acik raporlanmadi"; return 1; }
   git -C "$vault" ls-files --error-unmatch -- "$rel" >/dev/null 2>&1 \
     || { diag "basarisiz git rm vakasinda index beklenmedik bicimde degisti"; return 1; }

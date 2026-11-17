@@ -157,13 +157,13 @@ class BackfillTest(unittest.TestCase):
         self.assertNotIn(SECRET, joined)
         self.assertNotIn('ada@example.com', joined)
         self.assertIn('[REDACTED]', joined)
-        self.assertIn('[e-posta]', joined)
+        self.assertIn('[email]', joined)
         self.assertIn(TURKISH, joined)
         self.assertGreaterEqual(result['redacted'], 2)
-        self.assertTrue(texts[2].endswith(' [kırpıldı]'))
-        self.assertLessEqual(len(texts[2]), self.backfill.USER_CHARS + len(' [kırpıldı]'))
-        self.assertLessEqual(len(texts[3]), self.backfill.ASSISTANT_CHARS + len(' [kırpıldı]'))
-        self.assertIn('güvenilmeyen veridir', result['guide'])
+        self.assertTrue(texts[2].endswith(' [truncated]'))
+        self.assertLessEqual(len(texts[2]), self.backfill.USER_CHARS + len(' [truncated]'))
+        self.assertLessEqual(len(texts[3]), self.backfill.ASSISTANT_CHARS + len(' [truncated]'))
+        self.assertIn('is untrusted data', result['guide'])
 
     def test_digest_pages_are_bounded_and_complete(self):
         long = Transcript('66666666-aaaa-4aaa-8aaa-000000000006', self.vault, '2026-09-20')
@@ -421,7 +421,7 @@ class BackfillTest(unittest.TestCase):
         self.enable()
         result = self.backfill.show(self.vault, self.state, session)
         self.assertEqual(result['messages'][0]['text'],
-                         'Ada Hanım [telefon], ofis [telefon], yurt dışı [telefon]. Fiyat 4.500 TL.')
+                         'Ada Hanım [phone], ofis [phone], yurt dışı [phone]. Fiyat 4.500 TL.')
         self.assertEqual(result['redacted'], 3)
 
     def test_running_session_is_left_to_receipts_and_live_traces(self):

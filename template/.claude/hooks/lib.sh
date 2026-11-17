@@ -95,7 +95,7 @@ beyin_emit() {
   fi
 
   beyin_mark_python_missing
-  BEYIN_FALLBACK='Beyin uyarisi: python3 bulunamadi. beyin-doktor calistir.'
+  BEYIN_FALLBACK='Beyin warning: python3 not found. Run beyin-doktor.'
   BEYIN_FALLBACK=$(printf '%s' "$BEYIN_FALLBACK" | sed 's/\\/\\\\/g; s/"/\\"/g' 2>/dev/null || :)
   [ -n "$BEYIN_FALLBACK" ] || return 0
   printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":"%s"}}\n' \

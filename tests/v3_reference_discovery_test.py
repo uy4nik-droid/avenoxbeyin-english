@@ -296,8 +296,8 @@ class InstalledReferenceDiscoveryTest(unittest.TestCase):
                     for key in ('state_location', 'preferences', 'jev'):
                         self.assertIn(key, report)
             human = self.doctor('--human')
-            self.assertIn('Talimat ve skill baglanti denetimi tamamlanamadi (bilgi): PermissionError.', human)
-            self.assertNotIn('kirik baglanti (bilgi)', human)
+            self.assertIn('Instruction and skill link check could not finish (info): PermissionError.', human)
+            self.assertNotIn('Broken links in instruction and skill files (info)', human)
             self.assertNotIn('discovery-canary', human)
         finally:
             folder.chmod(mode)

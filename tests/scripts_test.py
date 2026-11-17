@@ -32,16 +32,16 @@ SOURCE_SCRIPTS = Path(
     )
 ).resolve()
 sys.path.insert(0, str(SOURCE_SCRIPTS))
-VALID_SUMMARY = """## Bağlam
-Kalıcı bağlam.
-## Önemli Konuşmalar
-- Önemli konuşma.
-## Alınan Kararlar
-- Karar.
-## Öğrenilenler
-- Öğrenilen.
-## Yapılacaklar
-- Açık iş."""
+VALID_SUMMARY = """## Context
+Lasting context.
+## Important Conversations
+- Important conversation.
+## Decisions Made
+- Decision.
+## Learnings
+- Learning.
+## To Do
+- Open work."""
 
 
 def load_module(name: str, path: Path):
@@ -426,9 +426,9 @@ raise SystemExit(int(os.environ.get("BEYIN_TEST_EXIT", "0")))
         daily_files = list(self.daily.glob("*.md"))
         self.assertEqual(len(daily_files), 1)
         body = daily_files[0].read_text(encoding="utf-8")
-        self.assertTrue(body.startswith(f"# Günlük Log: {daily_files[0].stem}"))
-        self.assertIn("## Oturumlar", body)
-        self.assertIn("### Oturum (", body)
+        self.assertTrue(body.startswith(f"# Daily Log: {daily_files[0].stem}"))
+        self.assertIn("## Sessions", body)
+        self.assertIn("### Session (", body)
         self.assertIn(VALID_SUMMARY, body)
 
         calls = self._stub_calls("haiku")
@@ -455,7 +455,7 @@ raise SystemExit(int(os.environ.get("BEYIN_TEST_EXIT", "0")))
         hook = self._write_hook("retry-session", transcript)
         first = self._run_flush(
             hook,
-            BEYIN_TEST_OUTPUT="## Bağlam\nEksik çıktı",
+            BEYIN_TEST_OUTPUT="## Context\nIncomplete output",
         )
         self.assertEqual(first.returncode, 0)
         self.assertEqual(list(self.daily.glob("*.md")), [])
@@ -468,12 +468,12 @@ raise SystemExit(int(os.environ.get("BEYIN_TEST_EXIT", "0")))
         self.assertEqual(second.returncode, 0)
         self.assertEqual(len(self._stub_calls("haiku")), 3)
         daily_body = next(self.daily.glob("*.md")).read_text(encoding="utf-8")
-        self.assertEqual(daily_body.count("### Oturum ("), 1)
+        self.assertEqual(daily_body.count("### Session ("), 1)
 
     def test_summary_preamble_is_trimmed_and_reported(self) -> None:
         transcript = self._write_transcript([("user", "kalıcı karar")])
         hook = self._write_hook("preamble-session", transcript)
-        preamble = "Şüpheli içerik uyarısı; şema gövdesi aşağıdadır.\n\n"
+        preamble = "Suspicious content warning; the schema body follows below.\n\n"
         result = self._run_flush(
             hook,
             BEYIN_TEST_OUTPUT=preamble + VALID_SUMMARY,
@@ -493,7 +493,7 @@ raise SystemExit(int(os.environ.get("BEYIN_TEST_EXIT", "0")))
         result = self._run_flush(
             hook,
             BEYIN_TEST_OUTPUT_SEQUENCE=json.dumps(
-                ["## Bağlam\nEksik çıktı", VALID_SUMMARY],
+                ["## Context\nIncomplete output", VALID_SUMMARY],
                 ensure_ascii=False,
             ),
             BEYIN_TEST_SEQUENCE_STATE=str(self.root / "summary-sequence"),
@@ -501,9 +501,9 @@ raise SystemExit(int(os.environ.get("BEYIN_TEST_EXIT", "0")))
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = self._stub_calls("haiku")
         self.assertEqual(len(calls), 2)
-        self.assertIn("Bu ikinci şema denemesidir", calls[1]["prompt"])
+        self.assertIn("This is the second schema attempt", calls[1]["prompt"])
         daily_body = next(self.daily.glob("*.md")).read_text(encoding="utf-8")
-        self.assertEqual(daily_body.count("### Oturum ("), 1)
+        self.assertEqual(daily_body.count("### Session ("), 1)
         health = json.loads(
             (self.state / "health.json").read_text(encoding="utf-8")
         )
@@ -546,7 +546,7 @@ raise SystemExit(int(os.environ.get("BEYIN_TEST_EXIT", "0")))
         self.assertEqual(second.returncode, 0, second_output)
         self.assertEqual(len(self._stub_calls("haiku")), 1)
         daily_body = next(self.daily.glob("*.md")).read_text(encoding="utf-8")
-        self.assertEqual(daily_body.count("### Oturum ("), 1)
+        self.assertEqual(daily_body.count("### Session ("), 1)
 
     def test_precompact_minimum_turns_records_success_without_call(self) -> None:
         transcript = self._write_transcript(
@@ -701,7 +701,7 @@ raise SystemExit(int(os.environ.get("BEYIN_TEST_EXIT", "0")))
         expected = self.daily / "2026-08-22.md"
         self.assertTrue(expected.exists())
         self.assertFalse((self.daily / "2026-08-23.md").exists())
-        self.assertIn("### Oturum (23:59)", expected.read_text(encoding="utf-8"))
+        self.assertIn("### Session (23:59)", expected.read_text(encoding="utf-8"))
 
     def test_hostile_transcript_cannot_persist_outside_allow_list(self) -> None:
         hooks_dir = self.vault / ".claude" / "hooks"
@@ -714,7 +714,7 @@ raise SystemExit(int(os.environ.get("BEYIN_TEST_EXIT", "0")))
         transcript = self._write_transcript([("user", directive)])
         hook_input = self._write_hook("hostile-session", transcript)
         hostile_summary = VALID_SUMMARY.replace(
-            "Kalıcı bağlam.",
+            "Lasting context.",
             directive,
         )
         flush_result = self._run_flush(

@@ -94,14 +94,14 @@ APP_JS = r"""
   const meta = function (name) { const node = document.querySelector('meta[name="' + name + '"]'); return node ? node.content : ''; };
   const CSRF = meta('beyin-csrf');
   const SALT_OKUNUR = meta('beyin-salt-okunur') === '1';
-  const DURUM = { inbox: 'Gelen', active: 'Aktif', waiting: 'Bekliyor', blocked: 'Engellendi', done: 'Bitti', cancelled: 'İptal' };
-  const TUR = { task: 'görev', note: 'not', receipt: 'receipt', inference: 'çıkarım', preference: 'tercih' };
+  const DURUM = { inbox: 'Inbox', active: 'Active', waiting: 'Waiting', blocked: 'Blocked', done: 'Done', cancelled: 'Cancelled' };
+  const TUR = { task: 'task', note: 'note', receipt: 'receipt', inference: 'inference', preference: 'preference' };
   // The statuses `beyin.py doctor` reports, and those of `beyin.py sync`.
-  const DOKTOR = { observed_metadata: ['Sağlıklı', 'iyi'], pending: ['İşlenmemiş hook olayı var', 'uyari'],
-    never_seen: ['Hook henüz çalışmadı', 'uyari'], needs_attention: ['Dikkat gerekiyor', 'kotu'] };
-  const ESITLEME = { succeeded: 'tamamlandı', degraded: 'uyarılarla tamamlandı', conflict: 'çakışma var' };
-  const HAFIZA = { within_limit: 'Sınır içinde', limit_off: 'Sınır kapalı', planned: 'Taşınacak', needs_rewrite: 'Elle kısaltılmalı',
-    needs_attention: 'Dikkat', compacted: 'Taşındı', ok: 'Sağlıklı', dry_run: 'Önizleme', conflict: 'Başka bir işlem sürüyor' };
+  const DOKTOR = { observed_metadata: ['Healthy', 'iyi'], pending: ['Unprocessed hook events', 'uyari'],
+    never_seen: ['Hook has not run yet', 'uyari'], needs_attention: ['Needs attention', 'kotu'] };
+  const ESITLEME = { succeeded: 'completed', degraded: 'completed with warnings', conflict: 'has conflicts' };
+  const HAFIZA = { within_limit: 'Within limit', limit_off: 'Limit off', planned: 'Will be moved', needs_rewrite: 'Shorten by hand',
+    needs_attention: 'Attention', compacted: 'Moved', ok: 'Healthy', dry_run: 'Preview', conflict: 'Another operation is running' };
   if (!CSRF) { return; }
 
   function el(tag, props) {
@@ -126,7 +126,7 @@ APP_JS = r"""
   function zaman(value) {
     if (!value) { return ''; }
     const date = new Date(value);
-    return isNaN(date) ? String(value) : date.toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' });
+    return isNaN(date) ? String(value) : date.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
   }
   function bildir(text, hata) {
     const item = el('div', { class: hata ? 'hata' : '', role: hata ? 'alert' : 'status', text: text });
@@ -149,48 +149,48 @@ APP_JS = r"""
     return data;
   }
 
-  // --- kokpit -----------------------------------------------------------
+  // --- cockpit ----------------------------------------------------------
   function kart(etiket, deger, rozet) {
     return el('div', { class: 'kart' }, el('div', { class: 'etiket', text: etiket }),
       el('div', { class: 'deger', text: deger }), rozet || null);
   }
   async function kokpit() {
     const alan = bosalt($('kokpit-kartlar'));
-    alan.append(el('p', { class: 'bos', text: 'Yükleniyor…' }));
+    alan.append(el('p', { class: 'bos', text: 'Loading…' }));
     const sonuclar = await Promise.allSettled([api('/api/doktor'), api('/api/gorevler'), api('/api/makbuzlar')]);
     bosalt(alan);
     if (sonuclar[0].status === 'fulfilled') {
       const d = sonuclar[0].value;
-      const durum = DOKTOR[d.durum] || [d.durum || 'bilinmiyor', 'uyari'];
-      alan.append(kart('Doktor', durum[0], el('span', { class: 'rozet ' + durum[1], text: d.durum || '?' })));
-      alan.append(kart('Bekleyen hook olayı', String(d.bekleyen_olay ?? 0)));
-      alan.append(kart('Ayıklanan gizli bilgi', String(d.ayiklanan_gizli ?? 0)));
+      const durum = DOKTOR[d.durum] || [d.durum || 'unknown', 'uyari'];
+      alan.append(kart('Doctor', durum[0], el('span', { class: 'rozet ' + durum[1], text: d.durum || '?' })));
+      alan.append(kart('Pending hook events', String(d.bekleyen_olay ?? 0)));
+      alan.append(kart('Redacted secrets', String(d.ayiklanan_gizli ?? 0)));
       const asan = (d.hafiza && d.hafiza.asan) || [];
-      alan.append(kart('Hafıza dosyaları', asan.length ? asan.length + ' dosya sınırı aşıyor' : 'Sınır içinde',
-        el('span', { class: 'rozet ' + (asan.length ? 'uyari' : 'iyi'), text: asan.join(', ') || 'tamam' })));
+      alan.append(kart('Memory files', asan.length ? asan.length + ' files over the limit' : 'Within limit',
+        el('span', { class: 'rozet ' + (asan.length ? 'uyari' : 'iyi'), text: asan.join(', ') || 'ok' })));
     } else {
-      alan.append(kart('Doktor', 'Okunamadı', el('span', { class: 'rozet kotu', text: sonuclar[0].reason.message })));
+      alan.append(kart('Doctor', 'Could not read', el('span', { class: 'rozet kotu', text: sonuclar[0].reason.message })));
     }
     if (sonuclar[1].status === 'fulfilled') {
       const sayim = {};
       sonuclar[1].value.gorevler.forEach(function (g) { sayim[g.durum] = (sayim[g.durum] || 0) + 1; });
       const acik = (sayim.inbox || 0) + (sayim.active || 0) + (sayim.waiting || 0) + (sayim.blocked || 0);
-      alan.append(kart('Açık görev', String(acik), el('span', { class: 'rozet', text: (sayim.active || 0) + ' aktif · ' + (sayim.blocked || 0) + ' engellenmiş' })));
+      alan.append(kart('Open tasks', String(acik), el('span', { class: 'rozet', text: (sayim.active || 0) + ' active · ' + (sayim.blocked || 0) + ' blocked' })));
     }
     const liste = bosalt($('kokpit-makbuzlar'));
     if (sonuclar[2].status === 'fulfilled') {
       const items = sonuclar[2].value.makbuzlar.slice(0, 5);
-      if (!items.length) { liste.append(el('li', { class: 'bos', text: 'Son ' + sonuclar[2].value.gun + ' günde receipt yok.' })); }
+      if (!items.length) { liste.append(el('li', { class: 'bos', text: 'No receipts in the last ' + sonuclar[2].value.gun + ' days.' })); }
       items.forEach(function (m) { liste.append(makbuzSatiri(m)); });
     } else {
       liste.append(el('li', { class: 'bos', text: sonuclar[2].reason.message }));
     }
   }
 
-  // --- görevler ---------------------------------------------------------
+  // --- tasks ------------------------------------------------------------
   let gorevVerisi = null;
   function durumSecici(secili, durumlar) {
-    const secim = el('select', { 'aria-label': 'Durum', disabled: SALT_OKUNUR });
+    const secim = el('select', { 'aria-label': 'Status', disabled: SALT_OKUNUR });
     durumlar.forEach(function (d) { secim.append(el('option', { value: d, text: DURUM[d] || d, selected: d === secili })); });
     return secim;
   }
@@ -200,16 +200,16 @@ APP_JS = r"""
       secim.disabled = true;
       try {
         await api('/api/gorev/durum', { id: g.id, revizyon: g.revizyon, durum: secim.value });
-        bildir('Görev güncellendi: ' + g.baslik);
-      } catch (error) { bildir('Güncellenemedi: ' + error.message, true); }
+        bildir('Task updated: ' + g.baslik);
+      } catch (error) { bildir('Could not update: ' + error.message, true); }
       gorevler();
     });
     const bilgi = el('div', { class: 'ust-bilgi' });
     if (g.proje) { bilgi.append(el('span', { text: '#' + g.proje })); }
     if (g.sorumlu) { bilgi.append(el('span', { text: '@' + g.sorumlu })); }
-    if (g.bitis) { bilgi.append(el('span', { text: 'bitiş ' + String(g.bitis).slice(0, 10) })); }
-    if (g.oncelik) { bilgi.append(el('span', { text: 'öncelik ' + g.oncelik })); }
-    if (g.kati) { bilgi.append(el('span', { text: 'kanıtlı kapanış' })); }
+    if (g.bitis) { bilgi.append(el('span', { text: 'due ' + String(g.bitis).slice(0, 10) })); }
+    if (g.oncelik) { bilgi.append(el('span', { text: 'priority ' + g.oncelik })); }
+    if (g.kati) { bilgi.append(el('span', { text: 'evidence-backed completion' })); }
     return el('div', { class: 'gorev', title: g.kaynak || '' }, el('strong', { text: g.baslik }), bilgi, secim);
   }
   function panoyuCiz() {
@@ -228,7 +228,7 @@ APP_JS = r"""
     catch (error) { bosalt($('gorev-pano')).append(el('p', { class: 'bos', text: error.message })); return; }
     const projeler = Array.from(new Set(gorevVerisi.gorevler.map(function (g) { return g.proje; }).filter(Boolean))).sort();
     const filtre = $('proje-filtre'); const onceki = filtre.value;
-    bosalt(filtre).append(el('option', { value: '', text: 'Tüm projeler' }));
+    bosalt(filtre).append(el('option', { value: '', text: 'All projects' }));
     projeler.forEach(function (p) { filtre.append(el('option', { value: p, text: p, selected: p === onceki })); });
     const liste = bosalt($('proje-onerileri'));
     projeler.forEach(function (p) { liste.append(el('option', { value: p })); });
@@ -237,8 +237,8 @@ APP_JS = r"""
       gorevVerisi.durumlar.forEach(function (d) { yeniDurum.append(el('option', { value: d, text: DURUM[d] || d, selected: d === 'inbox' })); });
     }
     const not = [];
-    if (gorevVerisi.eski) { not.push(gorevVerisi.eski + ' görev dosyası dizinden sonra değişti; Eşitle ile güncelle.'); }
-    if (gorevVerisi.kisaltildi) { not.push('İlk ' + gorevVerisi.gorevler.length + ' görev gösteriliyor (toplam ' + gorevVerisi.toplam + ').'); }
+    if (gorevVerisi.eski) { not.push(gorevVerisi.eski + ' task files changed after indexing; update with Sync.'); }
+    if (gorevVerisi.kisaltildi) { not.push('Showing the first ' + gorevVerisi.gorevler.length + ' tasks (total ' + gorevVerisi.toplam + ').'); }
     $('gorev-notu').textContent = not.join(' ');
     panoyuCiz();
   }
@@ -250,26 +250,26 @@ APP_JS = r"""
     form.querySelector('button').disabled = true;
     try {
       const sonuc = await api('/api/gorev', veri);
-      bildir('Görev oluşturuldu: ' + sonuc.gorev.baslik);
+      bildir('Task created: ' + sonuc.gorev.baslik);
       form.baslik.value = ''; form.aciklama.value = '';
       gorevler();
-    } catch (error) { bildir('Görev oluşturulamadı: ' + error.message, true); }
+    } catch (error) { bildir('Could not create task: ' + error.message, true); }
     form.querySelector('button').disabled = false;
   }
 
-  // --- arama ------------------------------------------------------------
+  // --- search -----------------------------------------------------------
   async function ara(event) {
     event.preventDefault();
     const sorgu = $('arama-sorgu').value.trim();
     const liste = bosalt($('arama-sonuclari'));
-    if (sorgu.length < 2) { liste.append(el('li', { class: 'bos', text: 'En az iki harf yaz.' })); return; }
+    if (sorgu.length < 2) { liste.append(el('li', { class: 'bos', text: 'Type at least two letters.' })); return; }
     try {
       const veri = await api('/api/ara?q=' + encodeURIComponent(sorgu));
-      if (!veri.sonuclar.length) { liste.append(el('li', { class: 'bos', text: 'Sonuç yok.' })); }
+      if (!veri.sonuclar.length) { liste.append(el('li', { class: 'bos', text: 'No results.' })); }
       veri.sonuclar.forEach(function (s) {
         const satir = el('li', { class: 'sonuc', tabIndex: 0 },
           el('strong', { text: s.baslik }),
-          el('div', { class: 'ust-bilgi' }, el('span', { text: TUR[s.tur] || s.tur || 'not' }), el('span', { text: s.kaynak || '' })),
+          el('div', { class: 'ust-bilgi' }, el('span', { text: TUR[s.tur] || s.tur || 'note' }), el('span', { text: s.kaynak || '' })),
           el('div', { class: 'ozet', text: s.ozet }));
         const ac = function () { onizle(s.id); };
         satir.addEventListener('click', ac);
@@ -283,54 +283,54 @@ APP_JS = r"""
     try {
       const kayit = await api('/api/kayit?id=' + encodeURIComponent(id));
       baslik.textContent = kayit.baslik + ' (' + kayit.kaynak + ')';
-      alan.textContent = kayit.metin + (kayit.kisaltildi ? '\n\n[Kısaltıldı]' : '');
-    } catch (error) { baslik.textContent = 'Önizleme'; alan.textContent = error.message; }
+      alan.textContent = kayit.metin + (kayit.kisaltildi ? '\n\n[Truncated]' : '');
+    } catch (error) { baslik.textContent = 'Preview'; alan.textContent = error.message; }
   }
 
-  // --- receipt'ler --------------------------------------------------------
+  // --- receipts -----------------------------------------------------------
   function makbuzSatiri(m) {
     const bilgi = el('div', { class: 'ust-bilgi' }, el('span', { text: zaman(m.zaman) }));
     (m.kaynaklar || []).slice(0, 6).forEach(function (k) { bilgi.append(el('span', { text: k })); });
     const gizli = m.gizlenen || {};
-    if (gizli.private) { bilgi.append(el('span', { text: gizli.private + ' gizli kaynak gösterilmiyor' })); }
-    return el('li', {}, bilgi, el('div', { class: 'ozet', text: m.ozet_gizli ? 'Özet gizli bir kaynağa bağlı; gösterilmiyor.' : m.ozet }));
+    if (gizli.private) { bilgi.append(el('span', { text: gizli.private + ' private sources not shown' })); }
+    return el('li', {}, bilgi, el('div', { class: 'ozet', text: m.ozet_gizli ? 'The summary depends on a private source; not shown.' : m.ozet }));
   }
   async function makbuzlar() {
     const liste = bosalt($('makbuz-listesi'));
     try {
       const veri = await api('/api/makbuzlar');
-      $('makbuz-notu').textContent = 'Son ' + veri.gun + ' gün, ' + veri.toplam + ' receipt. Özetler ajan beyanıdır; kaynaklarla doğrula.';
-      if (!veri.makbuzlar.length) { liste.append(el('li', { class: 'bos', text: 'Receipt yok.' })); }
+      $('makbuz-notu').textContent = 'Last ' + veri.gun + ' days, ' + veri.toplam + ' receipts. Summaries are agent statements; verify them against the sources.';
+      if (!veri.makbuzlar.length) { liste.append(el('li', { class: 'bos', text: 'No receipts.' })); }
       veri.makbuzlar.forEach(function (m) { liste.append(makbuzSatiri(m)); });
     } catch (error) { liste.append(el('li', { class: 'bos', text: error.message })); }
   }
 
-  // --- hafıza -----------------------------------------------------------
+  // --- memory -----------------------------------------------------------
   async function hafiza() {
     const liste = bosalt($('hafiza-listesi'));
     try {
       const veri = await api('/api/hafiza');
       $('hafiza-notu').textContent = (veri.dizin ? veri.dizin + ': ' : '') + (HAFIZA[veri.durum] || veri.durum || '') + (veri.neden ? ' · ' + veri.neden : '');
-      if (!veri.dosyalar.length) { liste.append(el('li', { class: 'bos', text: 'Sınırı olan hafıza dosyası yok.' })); }
+      if (!veri.dosyalar.length) { liste.append(el('li', { class: 'bos', text: 'No memory file has a limit.' })); }
       veri.dosyalar.forEach(function (f) {
         const olcu = el('meter', { min: 0, max: f.sinir || 1, value: Math.min(f.karakter || 0, f.sinir || 1) });
-        const tasinacak = f.tasinacak ? ' · taşınacak ' + f.tasinacak + ' karakter' : '';
+        const tasinacak = f.tasinacak ? ' · ' + f.tasinacak + ' characters to move' : '';
         liste.append(el('li', {}, el('strong', { text: f.ad }),
-          el('div', { class: 'ust-bilgi' }, el('span', { text: (f.karakter ?? 0) + ' / ' + (f.sinir || 'sınırsız') + ' karakter' + tasinacak }),
+          el('div', { class: 'ust-bilgi' }, el('span', { text: (f.karakter ?? 0) + ' / ' + (f.sinir || 'unlimited') + ' characters' + tasinacak }),
             el('span', { class: 'rozet', text: HAFIZA[f.durum] || f.durum || '' })), olcu));
       });
     } catch (error) { liste.append(el('li', { class: 'bos', text: error.message })); }
   }
   async function sikistir() {
-    if (!window.confirm('Eski Last-Session/Threads girdileri arşive aynen taşınacak; hiçbir şey silinmez. Devam edilsin mi?')) { return; }
+    if (!window.confirm('Old Last-Session/Threads entries will be moved verbatim to the archive; nothing is deleted. Continue?')) { return; }
     try {
       const sonuc = await api('/api/hafiza/sikistir', {});
-      bildir('Sıkıştırma: ' + (HAFIZA[sonuc.durum] || sonuc.durum) + (sonuc.neden ? ' · ' + sonuc.neden : ''));
-    } catch (error) { bildir('Sıkıştırılamadı: ' + error.message, true); }
+      bildir('Compaction: ' + (HAFIZA[sonuc.durum] || sonuc.durum) + (sonuc.neden ? ' · ' + sonuc.neden : ''));
+    } catch (error) { bildir('Could not compact: ' + error.message, true); }
     hafiza();
   }
 
-  // --- gezinme ------------------------------------------------------------
+  // --- navigation ---------------------------------------------------------
   const YUKLE = { kokpit: kokpit, gorevler: gorevler, arama: null, makbuzlar: makbuzlar, hafiza: hafiza };
   function goster() {
     let ad = window.location.hash.replace('#', '');
@@ -343,16 +343,16 @@ APP_JS = r"""
     const dugme = $('esitle'); dugme.disabled = true;
     try {
       const sonuc = await api('/api/esitle', {});
-      bildir('Eşitleme ' + (ESITLEME[sonuc.durum] || sonuc.durum) + ' (' + (sonuc.dizinlenen ?? 0) + ' kaynak, ' +
-        sonuc.cakisma + ' çakışma)', sonuc.durum === 'conflict');
+      bildir('Sync ' + (ESITLEME[sonuc.durum] || sonuc.durum) + ' (' + (sonuc.dizinlenen ?? 0) + ' sources, ' +
+        sonuc.cakisma + ' conflicts)', sonuc.durum === 'conflict');
       goster();
-    } catch (error) { bildir('Eşitlenemedi: ' + error.message, true); }
+    } catch (error) { bildir('Could not sync: ' + error.message, true); }
     dugme.disabled = SALT_OKUNUR;
   }
   async function kapat() {
-    if (!window.confirm('Web sunucusu kapatılsın mı?')) { return; }
+    if (!window.confirm('Stop the web server?')) { return; }
     try { await api('/api/kapat', {}); } catch (error) { bildir(error.message, true); return; }
-    document.body.append(el('div', { class: 'kapandi', text: 'Sunucu kapandı. Yeniden açmak için: beyin.py web ac' }));
+    document.body.append(el('div', { class: 'kapandi', text: 'Server stopped. To reopen it: beyin.py web ac' }));
   }
   let sonEtkinlik = 0;
   function etkinlik() {
@@ -363,7 +363,7 @@ APP_JS = r"""
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    $('mod-rozeti').textContent = SALT_OKUNUR ? 'Salt okunur' : 'Yazma açık';
+    $('mod-rozeti').textContent = SALT_OKUNUR ? 'Read-only' : 'Writing on';
     $('mod-rozeti').classList.add(SALT_OKUNUR ? 'iyi' : 'uyari');
     $('esitle').disabled = SALT_OKUNUR;
     $('sikistir').disabled = SALT_OKUNUR;
@@ -378,7 +378,7 @@ APP_JS = r"""
     window.addEventListener('hashchange', goster);
     api('/api/durum').then(function (d) {
       $('kasa-adi').textContent = d.kasa + (d.surum ? ' · v' + d.surum : '');
-      $('bosta-notu').textContent = d.bosta_kapanma_dk + ' dakika kullanılmazsa kapanır.';
+      $('bosta-notu').textContent = 'Closes after ' + d.bosta_kapanma_dk + ' minutes without use.';
     }).catch(function () {});
     goster();
   });
@@ -386,7 +386,7 @@ APP_JS = r"""
 """
 
 _INDEX = """<!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -401,63 +401,63 @@ _INDEX = """<!DOCTYPE html>
 <div class="kabuk">
   <aside class="yan">
     <div class="marka"><span class="limon" aria-hidden="true">🍋</span><div><strong>Beyin Web</strong><small id="kasa-adi"></small></div></div>
-    <nav aria-label="Bölümler">
-      <a href="#kokpit" data-gorunum="kokpit">Kokpit</a>
-      <a href="#gorevler" data-gorunum="gorevler">Görevler</a>
-      <a href="#arama" data-gorunum="arama">Arama</a>
-      <a href="#makbuzlar" data-gorunum="makbuzlar">Receipt'ler</a>
-      <a href="#hafiza" data-gorunum="hafiza">Hafıza</a>
+    <nav aria-label="Sections">
+      <a href="#kokpit" data-gorunum="kokpit">Cockpit</a>
+      <a href="#gorevler" data-gorunum="gorevler">Tasks</a>
+      <a href="#arama" data-gorunum="arama">Search</a>
+      <a href="#makbuzlar" data-gorunum="makbuzlar">Receipts</a>
+      <a href="#hafiza" data-gorunum="hafiza">Memory</a>
     </nav>
     <div class="alt">
       <span id="mod-rozeti" class="rozet"></span>
-      <button id="esitle" type="button">Eşitle</button>
-      <button id="kapat" type="button" class="ikincil">Sunucuyu kapat</button>
+      <button id="esitle" type="button">Sync</button>
+      <button id="kapat" type="button" class="ikincil">Stop server</button>
       <small id="bosta-notu" class="aciklama"></small>
     </div>
   </aside>
   <main>
     <section id="gorunum-kokpit" class="gorunum">
-      <h1>Kokpit</h1>
-      <p class="aciklama">Doktor özeti, açık görevler ve son receipt'ler. Gizli (private) ve hariç tutulan notlar bu görünüme hiç gelmez.</p>
+      <h1>Cockpit</h1>
+      <p class="aciklama">Doctor summary, open tasks and recent receipts. Private and excluded notes never reach this view.</p>
       <div id="kokpit-kartlar" class="izgara"></div>
-      <h2>Son receipt'ler</h2>
+      <h2>Recent receipts</h2>
       <ul id="kokpit-makbuzlar" class="liste"></ul>
     </section>
     <section id="gorunum-gorevler" class="gorunum" hidden>
-      <h1>Görevler</h1>
-      <p class="aciklama">tasks/ altındaki görevler. Yeni görev ve durum değişikliği, CLI'daki task-create ve task-update komutlarıyla aynı yoldan yazılır.</p>
+      <h1>Tasks</h1>
+      <p class="aciklama">Tasks under tasks/. New tasks and status changes are written through the same path as the CLI's task-create and task-update commands.</p>
       <form id="yeni-gorev" class="form" autocomplete="off">
-        <label>Başlık<input name="baslik" required maxlength="160"></label>
-        <label>Sorumlu<input name="sorumlu" required maxlength="80" placeholder="ör. ben"></label>
-        <label>Proje<input name="proje" maxlength="80" list="proje-onerileri"></label>
-        <label>Durum<select name="durum" id="yeni-durum"></select></label>
-        <label class="genis">Açıklama<textarea name="aciklama" rows="2" maxlength="4000"></textarea></label>
-        <div><button type="submit">Görev oluştur</button></div>
+        <label>Title<input name="baslik" required maxlength="160"></label>
+        <label>Owner<input name="sorumlu" required maxlength="80" placeholder="e.g. me"></label>
+        <label>Project<input name="proje" maxlength="80" list="proje-onerileri"></label>
+        <label>Status<select name="durum" id="yeni-durum"></select></label>
+        <label class="genis">Description<textarea name="aciklama" rows="2" maxlength="4000"></textarea></label>
+        <div><button type="submit">Create task</button></div>
       </form>
       <datalist id="proje-onerileri"></datalist>
-      <div class="arac-cubugu"><label>Proje <select id="proje-filtre"></select></label><span id="gorev-notu" class="aciklama"></span></div>
+      <div class="arac-cubugu"><label>Project <select id="proje-filtre"></select></label><span id="gorev-notu" class="aciklama"></span></div>
       <div id="gorev-pano" class="pano"></div>
     </section>
     <section id="gorunum-arama" class="gorunum" hidden>
-      <h1>Arama</h1>
-      <p class="aciklama">Ajanların gördüğü dizinde arar: gizli, güvenilmeyen ve hassas klasördeki notlar sonuçlara girmez.</p>
-      <form id="arama-formu" class="arac-cubugu"><input id="arama-sorgu" type="search" maxlength="200" placeholder="Ara…" aria-label="Arama"><button type="submit">Ara</button></form>
+      <h1>Search</h1>
+      <p class="aciklama">Searches the index the agents see: private, untrusted and sensitive-folder notes are not included in the results.</p>
+      <form id="arama-formu" class="arac-cubugu"><input id="arama-sorgu" type="search" maxlength="200" placeholder="Search…" aria-label="Search"><button type="submit">Search</button></form>
       <div class="ikili">
         <ul id="arama-sonuclari" class="liste"></ul>
-        <div><h2 id="onizleme-baslik">Önizleme</h2><pre id="onizleme" class="onizleme"></pre></div>
+        <div><h2 id="onizleme-baslik">Preview</h2><pre id="onizleme" class="onizleme"></pre></div>
       </div>
     </section>
     <section id="gorunum-makbuzlar" class="gorunum" hidden>
-      <h1>Receipt'ler</h1>
+      <h1>Receipts</h1>
       <p id="makbuz-notu" class="aciklama"></p>
       <ul id="makbuz-listesi" class="liste"></ul>
     </section>
     <section id="gorunum-hafiza" class="gorunum" hidden>
-      <h1>Hafıza</h1>
-      <p class="aciklama">Last-Session ve Threads boyutları. Sıkıştırma, eski girdileri özel arşive aynen taşır (beyin.py companion-compact); hiçbir şey silinmez.</p>
+      <h1>Memory</h1>
+      <p class="aciklama">Last-Session and Threads sizes. Compaction moves old entries verbatim to a private archive (beyin.py companion-compact); nothing is deleted.</p>
       <p id="hafiza-notu" class="aciklama"></p>
       <ul id="hafiza-listesi" class="liste"></ul>
-      <p><button id="sikistir" type="button">Sıkıştır</button></p>
+      <p><button id="sikistir" type="button">Compact</button></p>
     </section>
   </main>
 </div>
@@ -467,11 +467,11 @@ _INDEX = """<!DOCTYPE html>
 """
 
 _UNLOCK = """<!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Beyin Web: oturum</title>
+<title>Beyin Web: session</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/app.css">
 </head>
@@ -480,8 +480,8 @@ _UNLOCK = """<!DOCTYPE html>
   <div class="marka"><span class="limon" aria-hidden="true">🍋</span><strong>Beyin Web</strong></div>
   <p>{message}</p>
   <form method="get" action="/">
-    <input type="password" name="token" required autocomplete="off" aria-label="Oturum belirteci" placeholder="Oturum belirteci">
-    <button type="submit">Aç</button>
+    <input type="password" name="token" required autocomplete="off" aria-label="Session token" placeholder="Session token">
+    <button type="submit">Open</button>
   </form>
 </div></div>
 </body>
@@ -494,6 +494,6 @@ def index_page(csrf, read_only):
 
 
 def unlock_page(failed):
-    message = ('Belirteç geçersiz ya da bu sunucu yeniden başladı. ' if failed else '') + \
-        'Oturum açmak için terminalde beyin.py web ac çalıştır ya da yazdırdığı adresteki belirteci gir.'
+    message = ('The token is invalid or this server has restarted. ' if failed else '') + \
+        'To sign in, run beyin.py web ac in a terminal or enter the token from the address it printed.'
     return _UNLOCK.format(message=html.escape(message))

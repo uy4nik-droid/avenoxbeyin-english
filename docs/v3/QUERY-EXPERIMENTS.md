@@ -1,80 +1,85 @@
-# Sorgu değişikliğini ölçmek
+# Measuring a query change
 
-Bir sorgudaki dolgu sözcüklerini çıkarmak ile arama motorunun stopword listesini
-değiştirmek aynı deney değildir. #679'daki 48/54 → 52/54 saha sonucu bir **sorgu
-yeniden yazımıdır**; burada tekrarlandığı veya tüm kasalara genellendiği iddia edilmez.
+Removing filler words from a query is not the same experiment as changing the search
+engine's stopword list. The 48/54 → 52/54 field result in #679 is a **query
+rewrite**; it is not claimed here to be repeated or generalized to all vaults.
 
-## Aynı korpus ve etiketlerle iki sorguyu karşılaştırma
+## Comparing two queries on the same corpus and labels
 
-Repo kökünde, yalnız Python 3.11+ ile:
+From the repo root, with Python 3.11+ only:
 
 ```sh
 python scripts/compare_v3_queries.py --fixture tests/fixtures/v3/turkish_query_pairs.json --variants tests/fixtures/v3/turkish_query_variants.json
 ```
 
-- `fixture`, `evaluate_v3_search.py` biçimindeki sentetik veya hassas bilgilerden
-  arındırılmış `records` ve `cases` listelerini içerir. Her sorunun tek bir
-  `target_id` etiketi vardır.
-- `variants`, `{"variants": [{"id": "soru-kimliği", "query": "yeni sorgu"}]}`
-  biçimindedir. **Bütün sorular** tam bir kez bulunmalıdır; değiştirmediğiniz
-  kontrol sorularını da aynı metinle yazın. Eksik/ek/yinelenen kimlik, boş sorgu
-  veya etiketi değiştirme girişimi reddedilir. Böylece yalnız iyileşen soruları
-  seçerek bir karşılaştırma üretilemez.
-- İki kol aynı geçici korpus ve hedef etiketleriyle çalışır. Runtime, kayıt
-  tokenizasyonu, kalıcı ayarlar veya canlı kasa değiştirilmez. Model çağrısı yoktur.
-- `non_strict`, normal not düzeyi aramayı; `context`, ortak strict passage
-  bağlam yolunu ölçer. Bunlar ayrı raporlanır. Bu, gerçek hook teslimi veya Jev
-  kararlarının ölçümü değildir; kurulu kasanın ayarlarını kopyalamaz.
-- JSON her soru için önce/sonra hedef sırasını, iyileşen/gerileyen/değişmeyen
-  durumunu; toplamda recall@1/3/5, MRR ve farklarını içerir. Tek hedef etiketi
-  **precision** ölçmez: diğer dönen notların alakasız olduğu varsayılmaz.
-- Zamanlar tanısaldır. İlk kol önbelleği ısıtır; bu deneyden hız üstünlüğü çıkarılmaz.
+- `fixture` contains `records` and `cases` lists, in the format of
+  `evaluate_v3_search.py`, that are synthetic or stripped of sensitive information.
+  Each question has a single `target_id` label.
+- `variants` has the form `{"variants": [{"id": "question-id", "query": "new query"}]}`.
+  **All questions** must be present exactly once; write the control questions you did
+  not change with the same text too. A missing/extra/duplicate ID, an empty query or an
+  attempt to change a label is rejected. This way a comparison cannot be produced by
+  picking only the questions that improved.
+- The two arms run on the same temporary corpus and target labels. The runtime, record
+  tokenization, persistent settings and the live vault are not changed. There is no
+  model call.
+- `non_strict` measures normal note-level search; `context` measures the shared strict
+  passage context path. They are reported separately. This is not a measurement of real
+  hook delivery or of Jev decisions; it does not copy the installed vault's settings.
+- For each question the JSON contains the target rank before/after and whether it
+  improved/regressed/stayed the same; in total, recall@1/3/5, MRR and their differences.
+  A single target label does not measure **precision**: the other returned notes are not
+  assumed to be irrelevant.
+- Timings are diagnostic. The first arm warms the cache; no speed advantage should be
+  inferred from this experiment.
 
-Çıktı sorguları ve kaynak adlarını içerir. Özel kasadan türetilen fixture,
-varyant ve sonuçları herkese açık issue/PR'a koymayın. Komut sonuçları yalnız
-stdout'a yazar; dosyaya kaydetmek isterseniz özel bir konuma yönlendirin.
+The output contains the queries and the source names. Do not put a fixture, variants and
+results derived from a private vault into a public issue/PR. The command writes results
+to stdout only; if you want to save them to a file, redirect them to a private location.
 
-### Eklenen küçük örneğin sınırları
+### Limits of the small included example
 
-`turkish_query_pairs.json` v1: 10 sentetik not, 6 İngilizce konuya yöneltilmiş
-Türkçe dolgu sorusu ve 4 değiştirilmemiş kontrol. `var`, “Hakkında sayfası”,
-“ilgi/konu” ve yalnız dolgu içeren sorgu bilinçli olarak korunur. Bunlar gerçek
-konu veya başlık olabilir; kör bir sözcük silme kuralı değildir. Fixture ve
-varyantlar sonuçlara bakılmadan sabitlenmiştir; ayrı bir holdout seti değildir.
+`turkish_query_pairs.json` v1: 10 synthetic notes, 6 Turkish filler questions aimed at
+English topics and 4 unchanged controls. `var` ("there is"), the "Hakkında sayfası"
+("About page"), "ilgi/konu" ("interest/topic") and the query containing only filler are
+deliberately preserved. These can be real topics or titles; this is not a blind
+word-deletion rule. The fixture and variants were fixed without looking at the results;
+this is not a separate holdout set.
 
-`main@3841217` üzerinde bu örnekte normal aramanın recall@1 değeri **0.9 → 0.9**,
-strict bağlamınki **0.4 → 1.0** çıktı. Normal aramada raporlanan saha bozulmasını
-bu küçük korpus yeniden üretmedi. Strict sonuçtaki artış da üretim davranışını
-değiştirmek için tek başına yeterli değildir. Testler belirli bir kazancı
-zorunlu kılmaz; hesaplama ve eşleştirme sözleşmesini denetler. Mevcut dondurulmuş
-semantik/search fixture'ları değişmez.
+On `main@3841217`, in this example, normal search's recall@1 came out **0.9 → 0.9** and
+strict context's **0.4 → 1.0**. This small corpus did not reproduce the field
+degradation reported in normal search. The increase in the strict result is also not by
+itself enough to change production behavior. The tests do not require a particular gain;
+they check the calculation and matching contract. The existing frozen semantic/search
+fixtures do not change.
 
-## Kendi kasanızda mevcut salt-okunur ölçüm
+## Read-only measurement on your own vault today
 
-#675'in istediği kurulu `selftest` komutu, otomatik sonuç geçmişi veya güncelleme
-kapısı henüz yok. Kaynak repo üzerinden mevcut passage değerlendirmesi kullanılabilir:
+The installed `selftest` command, automatic result history or update gate that #675
+asked for does not exist yet. The existing passage evaluation can be used through the
+source repo:
 
 ```sh
-python scripts/evaluate_v3_passages.py --vault /kasanizin/yolu --questions /ozel/konum/sorular.json
+python scripts/evaluate_v3_passages.py --vault /path/to/your/vault --questions /private/location/questions.json
 ```
 
-Windows'ta da tam yolları tırnak içine alabilirsiniz. Soru dosyasının biçimi:
+On Windows too, you can put the full paths in quotes. The format of the question file:
 
 ```json
 {
   "questions": [
-    {"query": "örnek proje yedek sırası", "source": "knowledge/ornek.md", "sentence": "Yedek önce doğrulanır."}
+    {"query": "example project backup order", "source": "knowledge/example.md", "sentence": "The backup is verified first."}
   ],
-  "controls": {"unrelated": ["Bugün kahve içelim mi?"]}
+  "controls": {"unrelated": ["Shall we get coffee today?"]}
 }
 ```
 
-`source` kasa içindeki gerçek göreli yol, `sentence` nottaki gerçek cevap
-cümlesidir. Önce 10–20 temsilî soruyu ve ilgili notlarını etiketleyin; sonuçlara
-bakarak yalnız başarılı soruları seçmeyin. Bu betik not ve passage yollarını
-ayrı karşılaştırır: `recall` kaynak teslimini, `answerable` ayrıca cevap
-cümlesinin teslim edilen metinde yer almasını, `noise` kontrol sorgularında
-herhangi bir kayıt teslimini ölçer. Kullanıcının mevcut indeksini/ayarlarını
-ölçmek yerine geçici runtime oluşturur; gerçek kasa veya kalıcı state yazılmaz.
-Önceki raporu kendiniz saklayın; aynı sorular/korpus/ayarlar olmadan iki sayıyı
-“sürüm iyileşmesi” olarak yorumlamayın.
+`source` is the real relative path inside the vault and `sentence` is the real answer
+sentence in the note. First label 10–20 representative questions and their relevant
+notes; do not pick only the successful questions after looking at the results. This
+script compares note and passage paths separately: `recall` measures source delivery,
+`answerable` additionally measures whether the answer sentence is in the delivered
+text, and `noise` measures delivery of any record for the control queries. Instead of
+measuring the user's existing index/settings, it creates a temporary runtime; the real
+vault or persistent state is not written. Keep the previous report yourself; without the
+same questions/corpus/settings, do not interpret two numbers as a "version improvement".

@@ -45,9 +45,9 @@ TITLE = 'Avenox Beyin'
 # 2 stays argparse's usage error: a typo in the scheduler command must never read as "attention".
 EXIT_CODES = {'ok': 0, 'error': 1, 'already_running': 3, 'needs_attention': 4}
 STATUSES = ('ok', 'needs_attention', 'error')
-ISSUE_LABELS = (('sync_conflict', 'sync cakismasi'), ('sync_degraded', 'sync uyarisi'),
-                ('hook', 'hook uyarisi'), ('skill_or_instruction', 'skill/talimat cakismasi'),
-                ('task', 'gorev kaydi sorunu'), ('validity', 'gecerlilik sorunu'))
+ISSUE_LABELS = (('sync_conflict', 'sync conflict'), ('sync_degraded', 'sync warning'),
+                ('hook', 'hook warning'), ('skill_or_instruction', 'skill/instruction conflict'),
+                ('task', 'task record issue'), ('validity', 'validity issue'))
 ISSUE_KINDS = tuple(kind for kind, _ in ISSUE_LABELS)
 DELIVERIES = ('shown', 'failed', 'unavailable')
 
@@ -131,10 +131,10 @@ def issues(sync_result, doctor_result):
 def message(status, found, reminder=False):
     """The notification text: issue kinds and counts, never a note title or a path."""
     if status == 'ok':
-        return 'Beyin: sorunlar giderildi, kasa saglikli.'
+        return 'Beyin: issues resolved, vault is healthy.'
     parts = [label + ' (' + str(found[kind]) + ')' for kind, label in ISSUE_LABELS if kind in found]
-    return ('Beyin' + (' (hatirlatma)' if reminder else '') + ': ' +
-            (', '.join(parts) or 'kontrol gerektiren bir sorun') + ' - ayrinti: beyin.py doctor')
+    return ('Beyin' + (' (reminder)' if reminder else '') + ': ' +
+            (', '.join(parts) or 'an issue that needs checking') + ' - details: beyin.py doctor')
 
 
 TOAST_SCRIPT = (
@@ -344,4 +344,4 @@ def session_notice(state):
     if not isinstance(text, str) or not text.startswith('Beyin') or len(text) > 300 \
             or not text.isascii() or '\n' in text or '\r' in text:
         return ''
-    return 'Zamanlanmis denetim dikkat gerektiren bir sonuc buldu; kullaniciya soyle: ' + text + '\n'
+    return 'The scheduled check found something that needs attention; tell the user: ' + text + '\n'

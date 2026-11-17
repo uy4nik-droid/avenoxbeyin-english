@@ -47,7 +47,7 @@ def _slugify(text: str, max_length: int = 40) -> str:
     text = unicodedata.normalize('NFKD', text)
     text = re.sub(r'[^\w\s-]', '', text).strip().lower()
     text = re.sub(r'[-\s]+', '-', text)
-    return text[:max_length].strip('-') or 'not'
+    return text[:max_length].strip('-') or 'note'
 
 
 def save_capture(vault: Path, data: dict | str, now: datetime | None = None) -> tuple[Path, int]:
@@ -60,20 +60,20 @@ def save_capture(vault: Path, data: dict | str, now: datetime | None = None) -> 
 
     if isinstance(data, str):
         text = data.strip()
-        first_line = text.splitlines()[0][:60] if text else "Mobil Not"
+        first_line = text.splitlines()[0][:60] if text else "Mobile Note"
         title = first_line.lstrip("# \t")
         url = None
-        tags = ["mobil", "yakalama"]
+        tags = ["mobile", "capture"]
         source = "mobile-ingest"
     else:
         text = str(data.get("text", "")).strip()
         title = str(data.get("title", "")).strip()
         if not title:
-            first_line = text.splitlines()[0][:60] if text else "Mobil Not"
+            first_line = text.splitlines()[0][:60] if text else "Mobile Note"
             title = first_line.lstrip("# \t")
         title = re.sub(r'[\r\n]+', ' ', title)
         url = data.get("url")
-        tags = data.get("tags") or ["mobil", "yakalama"]
+        tags = data.get("tags") or ["mobile", "capture"]
         source = data.get("source") or "mobile-ingest"
 
     slug = _slugify(title)
@@ -103,7 +103,7 @@ def save_capture(vault: Path, data: dict | str, now: datetime | None = None) -> 
     if title and not text.startswith("#"):
         lines.append(f"# {title}\n")
     if url and str(url) not in text:
-        lines.append(f"Kaynak: {url}\n")
+        lines.append(f"Source: {url}\n")
     lines.append(text)
     lines.append("")
 
@@ -264,7 +264,7 @@ class IngestHandler(BaseHTTPRequestHandler):
                 "status": "accepted",
                 "file": rel,
                 "bytes": nbytes,
-                "message": "Kayit basariyla gelen kutusuna eklendi."
+                "message": "Capture added to the inbox."
             })
         except ValueError as exc:
             self._send_json(400, {"error": "bad_request", "message": str(exc)})
@@ -302,16 +302,16 @@ def create_server(vault: Path, host: str = "127.0.0.1", port: int = 8484, token:
 
 def run_server(vault: Path, host: str = "127.0.0.1", port: int = 8484, token: str | None = None):
     server = create_server(vault, host=host, port=port, token=token)
-    auth_msg = " (Bearer token aktif)" if (token or os.environ.get("BEYIN_INGEST_TOKEN")) else " (Token korumasi yok - yerel ag)"
-    print("=== İkinci Beyin Ingest Sunucusu Başlatıldı ===")
-    print(f"Adres: http://{host}:{port}/ingest{auth_msg}")
-    print(f"Kasa: {vault}")
-    print("Gelen kutusu: hazir")
-    print("Durdurmak için: Ctrl+C")
+    auth_msg = " (Bearer token active)" if (token or os.environ.get("BEYIN_INGEST_TOKEN")) else " (No token protection - local network)"
+    print("=== Second Brain Ingest Server Started ===")
+    print(f"Address: http://{host}:{port}/ingest{auth_msg}")
+    print(f"Vault: {vault}")
+    print("Inbox: ready")
+    print("To stop: Ctrl+C")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nSunucu kapatıldı.")
+        print("\nServer stopped.")
     finally:
         server.server_close()
 

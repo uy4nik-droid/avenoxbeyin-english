@@ -42,10 +42,10 @@ class KontrolSkillTextTest(unittest.TestCase):
         text = SKILL.read_text(encoding='utf-8')
         front = text.split('\n---\n', 1)[0]
         self.assertIn('name: beyin-kontrol', front)
-        self.assertIn('Yalnız kullanıcı açıkça', front)
-        self.assertIn('kendiliğinden çalıştırma', front)
-        self.assertIn('Denetim salt okunurdur.', text)
-        self.assertIn('Hiçbir düzeltme onaylanmadıysa hiçbir şey yazma', text)
+        self.assertIn('Use only when the user explicitly asks', front)
+        self.assertIn('or on your own', front)
+        self.assertIn('The audit is read-only.', text)
+        self.assertIn('If no fix was approved, write nothing', text)
         for character in ('—', '–', 'â'):
             self.assertNotIn(character, text)
         source = (ROOT / 'scripts/beyin_v3.py').read_text(encoding='utf-8')

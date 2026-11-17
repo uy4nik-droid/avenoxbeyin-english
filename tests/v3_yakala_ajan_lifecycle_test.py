@@ -243,15 +243,15 @@ class AgentOrphanRecoveryTest(fixtures.AgentFiles):
     def test_unqueryable_reused_agent_pid_is_quarantined_without_blocking_queue(self):
         identity = {'pid': os.getpid(), 'kind': 'windows-filetime', 'birth': 'old-process-generation'}
         recovered = self.recover(identity, identity_lookup=PermissionError(5, 'Access denied'))
-        self.assertIn('surec kimligi dogrulanamadi', recovered['result_summary'])
-        self.assertIn('kismi etkiler bilinmiyor', recovered['result_summary'])
+        self.assertIn('Could not verify the previous agent process identity', recovered['result_summary'])
+        self.assertIn('partial effects are unknown', recovered['result_summary'])
 
     def test_guardian_identity_becoming_unreadable_during_wait_is_quarantined(self):
         identity = yakala._agent_process_identity(os.getpid())
         with patch('time.sleep') as sleep:
             recovered = self.recover(identity, identity_lookup=[identity, OSError('Process metadata unavailable')])
         sleep.assert_called_once_with(0.1)
-        self.assertIn('surec kimligi dogrulanamadi', recovered['result_summary'])
+        self.assertIn('Could not verify the previous agent process identity', recovered['result_summary'])
 
 
 class AgentBridgeLeaseTest(unittest.TestCase):
@@ -265,12 +265,12 @@ class AgentBridgeLeaseTest(unittest.TestCase):
                 ('read_note', {'path': 'AGENTS.md'}), ('search_notes', {'query': 'x'}),
                 ('fetch_source', {'url': self.job['url']}), ('download', {'url': self.job['url'], 'filename': 'a.mp3'}),
                 ('write_note', {'title': 'x', 'content': 'x'}), ('complete', {'status': 'completed', 'summary': 'x'})):
-            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'araclar kapatildi'):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'tools were closed'):
                 self.call(name, **arguments)
 
     def test_expired_lease_closes_bridge_even_if_worker_still_lives(self):
         self.job['runtime_deadline_ns'] = time.monotonic_ns() - 1
-        with self.assertRaisesRegex(ValueError, 'suresi gecersiz'):
+        with self.assertRaisesRegex(ValueError, 'duration is invalid'):
             self.call('search_notes', query='x')
 
     def test_missing_legacy_owner_closes_before_any_capability_is_published(self):
@@ -284,7 +284,7 @@ class AgentBridgeLeaseTest(unittest.TestCase):
         for error in (PermissionError(5, 'Access denied'), OSError('Process metadata unavailable')):
             with self.subTest(error=type(error).__name__), \
                     patch.object(yakala, '_agent_process_identity', side_effect=error), \
-                    self.assertRaisesRegex(ValueError, 'artik dogrulanamiyor'):
+                    self.assertRaisesRegex(ValueError, 'can no longer be verified'):
                 self.call('search_notes', query='x')
 
     def test_existing_mcp_connection_stops_listing_tools_when_lease_expires(self):

@@ -1,63 +1,64 @@
-# İkinci Beyin V3
+# Second Brain V3
 
-Vault dışındaki seçili proje oturumları için: [opsiyonel global köprü](GLOBAL-BRIDGE.md).
+For selected project sessions outside the vault: [optional global bridge](GLOBAL-BRIDGE.md).
 
-V3'te Markdown kaynak, SQLite yerel indeks, Codex/Claude Code/Antigravity, [Hermes Agent](HERMES.md), [OpenCode](OPENCODE.md), [OMP](OMP.md), [Kiro](KIRO.md) ve [Pi](PI.md) ise aynı motora bağlanan istemcilerdir. Python 3.11+ dışında ek Python paketi gerekmez. Varsayılan akışta Mem0, API anahtarı, daemon veya ayrı sunucu kurulmaz. [Jev danışmanı](JEV.md) isteğe bağlıdır ve varsayılan kapalıdır; `beyin.py jev` ile açılmadıkça normal arama ve hook akışını değiştirmez. Aynı danışman ayrı kurulan yerel Laya sunucusunu da yalnız gölge modda, ölçüm için kullanabilir (`jev shadow --provider laya`).
+In V3, Markdown is the source and SQLite is the local index; Codex/Claude Code/Antigravity, [Hermes Agent](HERMES.md), [OpenCode](OPENCODE.md), [OMP](OMP.md), [Kiro](KIRO.md) and [Pi](PI.md) are clients that connect to the same engine. No extra Python packages are needed beyond Python 3.11+. In the default flow, Mem0, an API key, a daemon or a separate server is not installed. The [Jev advisor](JEV.md) is optional and off by default; unless it is turned on with `beyin.py jev`, it does not change the normal search and hook flow. The same advisor can also use a separately installed local Laya server, only in shadow mode, for measurement (`jev shadow --provider laya`).
 
-[Yeni kullanıcı başlangıcı](../../README.md) · [Ajanla kurulum](../../SETUP-V3.md) · [Güncelleme/geri alma](UPDATE.md) · [Birden çok makine](MULTI-MACHINE.md) · [Kasa yedeği](BACKUP.md) · [Kaynak şeması](MARKDOWN.md) · [Runtime](RUNTIME.md)
+[Getting started for new users](../../README.md) · [Setup with an agent](../../SETUP-V3.md) · [Update/rollback](UPDATE.md) · [Multiple machines](MULTI-MACHINE.md) · [Vault backup](BACKUP.md) · [Source schema](MARKDOWN.md) · [Runtime](RUNTIME.md)
 
-[Sorgu değişikliklerini karşılaştırma ve kendi kasanızda ölçüm](QUERY-EXPERIMENTS.md).
+[Comparing query changes and measuring on your own vault](QUERY-EXPERIMENTS.md).
 
-Geliştiriciler için: [kaynak ve dağıtım sınırları envanteri](MODULE-BOUNDARIES.md).
+For developers: [inventory of source and distribution boundaries](MODULE-BOUNDARIES.md).
 
-Üçüncü taraf [topluluk araçları](../COMMUNITY-TOOLS.md): proje tarafından desteklenmez ve denetlenmez.
+Third-party [community tools](../COMMUNITY-TOOLS.md): not supported or reviewed by the project.
 
-## Kullanıcı paketi
+## User package
 
-Kurucu ortak motoru, `beyin`, `beyin-doktor`, `beyin-guncelle`, `beyin-kontrol` skill'lerini, kurulu `beyin.py` girişini ve işletim sistemine uygun güncelleme kısayolunu dağıtır. Paket ZIP olarak açılıp kullanılabilir; Git gerekmez. Kurulu vault kaynak repo klasöründen bağımsız çalışır.
+The installer distributes the shared engine, the `beyin`, `beyin-doktor`, `beyin-guncelle`, `beyin-kontrol` skills, the installed `beyin.py` entry point and an update shortcut suited to the operating system. The package can be unpacked as a ZIP and used; Git is not required. The installed vault works independently of the source repo folder.
 
-[Son kararlı release](https://github.com/avenoxai/avenoxbeyin/releases/latest) ve içindeki `beyin-v3-X.Y.Z.zip` paketi stable dağıtım noktasıdır. V3.13.0 sürüm kapısı tam çevrimdışı test paketini, 10 development ve 6 holdout semantik senaryosunu kapsar; CI aynı paketi Windows, macOS ve Linux'ta doğrular.
+The [latest stable release](https://github.com/uy4nik-droid/avenoxbeyin-english/releases/latest) and the `beyin-v3-X.Y.Z.zip` package in it are the stable distribution point. The V3.13.0 release gate covers the full offline test suite and 10 development and 6 holdout semantic scenarios; CI verifies the same package on Windows, macOS and Linux.
 
-## Davranış
+## Behavior
 
-- Markdown ekleme, düzenleme, silme ve yeniden adlandırma indeksle birleşir. Task metadata güncellemesi effective revision ve kaynak hash kontrolü kullanır; gövde korunur.
-- Kısa lifecycle hook'ları kalıcı metadata kuyruğuna yazar. İş gerektiğinde başlar; istemciler kapalıyken sürekli çalışan servis yoktur.
-- Kaynak bağlantılı receipt tekrar denemede aynı sonucu verir. Önceki sonuç sonraki oturumda tarihsel iddia olarak bulunur; ham sohbet doğrulanmış bilgiye çevrilmez.
-- Yeni sonuçlar varsayılan olarak `daily/v3/` ve `knowledge/v3/outcomes.md` altında receipt bağlantılarıyla görünür. `preferences --daily-layout flat` ile günlükler `daily/` altında tek listede gösterilebilir; ayrıntılar [günlük receipt düzeninde](PREFERENCES.md#günlük-receipt-düzeni). Eski günlük ve bilgi metinleri yeniden yazılmaz. Receipt dosya adı kimlik olduğu için hash olarak kalır; Obsidian grafiğinde gizlemek için [Obsidian grafiği ve receipt dosyaları](PREFERENCES.md#obsidian-grafiği-ve-receipt-dosyaları).
-- Ortak skill kaynakları `.agents/skills` içindedir. Claude ve Kiro kendi proje kopyalarına erişir; kişisel skill çakışmaları gizlenmez.
-- Updater yalnız resmi stable release veya açıkça verilen yerel paketi kullanır. Yönetilen dosya yedekleri, kesinti journal'ı, checksum ve runtime ön kontrolleri uygulanır; başarılı sürüm kaydı en son yazılır.
+- Markdown additions, edits, deletions and renames merge into the index. A task metadata update uses an effective revision and source hash check; the body is preserved.
+- Short lifecycle hooks write to a persistent metadata queue. Work starts when needed; there is no service that runs continuously while the clients are closed.
+- A source-linked receipt gives the same result on a retry. The earlier result is found in the next session as a historical claim; the raw chat is not turned into verified information.
+- New results appear by default under `daily/v3/` and `knowledge/v3/outcomes.md` with receipt links. With `preferences --daily-layout flat`, journals can be shown in a single list under `daily/`; details are in [daily receipt layout](PREFERENCES.md#daily-receipt-layout). Because the receipt file name is an identifier, it stays a hash; to hide it in the Obsidian graph, see [Obsidian graph and receipt files](PREFERENCES.md#obsidian-graph-and-receipt-files).
+- The shared skill sources are in `.agents/skills`. Claude and Kiro reach their own project copies; personal skill conflicts are not hidden.
+- The updater uses only the official stable release or an explicitly given local package. Managed-file backups, an interruption journal, checksums and runtime pre-checks are applied; the successful version record is written last.
 
-### Yeniden bakılacak notlar
+### Notes to look at again
 
-`python beyin.py triage --human` (ve JSON çıktısı), `review_at` tarihi gelmiş
-notları `review` bölümünde en eski tarihten başlayarak bildirir. Bu yalnız
-bilgidir: görev oluşturmaz, notu değiştirmez veya terfi ettirmez. JSON en fazla
-20 kaynak, insan çıktısı ilk 5 kaynağı gösterir; toplam sayı ayrıca verilir.
+`python beyin.py triage --human` (and its JSON output) reports notes whose `review_at`
+date has arrived in the `review` section, starting from the oldest date. This is
+information only: it does not create a task, change the note or promote it. The JSON
+shows at most 20 sources, the human output the first 5; the total count is given
+separately.
 
-Triage otomatik `sync` yapmaz. Yalnız indeksteki, kaynak hash'i hâlâ aynı olan,
-güvenilir public/internal notlar sayılır; özel, emekli, reddedilmiş veya başka
-notla geçersiz kılınmış kaynaklar dışarıda kalır. Değişmiş/okunamayan kaynaklar
-`stale_count` ile belirtilir; yeni veya değiştirilmiş notların güncel sayımı için
-önce `python beyin.py sync` çalıştırın. Boş veya şablon tarihleri atlanır;
-geçersiz tarihler ayrı sayılır. Oturum açılışına yeni satır veya otomatik hatırlatma
-eklenmez; `doctor` mevcut tanılama davranışını korur.
+Triage does not run `sync` automatically. Only trusted public/internal notes that are
+in the index and whose source hash is still the same are counted; private, retired,
+rejected or invalidated-by-another-note sources are left out. Changed/unreadable sources
+are indicated with `stale_count`; for a current count of new or modified notes, run
+`python beyin.py sync` first. Empty or template dates are skipped; invalid dates are
+counted separately. No new line or automatic reminder is added to session start;
+`doctor` keeps its existing diagnostic behavior.
 
-## V2 geçişi
+## V2 migration
 
-[V2 migration rehberi](MIGRATION.md) eski kaynakların korunmasını ve writer geçişini anlatır. Tanınan V2 özetleyici/derleyici devreden çıkarılır. Modelle bilgi damıtmayı artık aktif ajan, `beyin` skill'i üzerinden bilinçli olarak yapar; deterministic görünümler bunun yerine bilgi uydurmaz. Özelleştirilmiş veya harici eski işler ayrıca değerlendirilir.
+The [V2 migration guide](MIGRATION.md) explains the preservation of old sources and the writer migration. The recognized V2 summarizer/compiler is taken out of service. Distilling information with a model is now done deliberately by the active agent through the `beyin` skill; the deterministic views do not make up information in its place. Customized or external old jobs are evaluated separately.
 
-İlk kurulum/geçiş dahil son sistem işlemi `rollback` ile geri alınabilir; yeni kullanıcı notları kalır. Yarım işlemi `recover` tamamlar. [Komutlar ve sınırlar](UPDATE.md).
+The last system operation, including the first install/migration, can be undone with `rollback`; new user notes stay. `recover` completes a half-finished operation. [Commands and limits](UPDATE.md).
 
-## Doğrulama sınırı
+## Verification limit
 
-[Platform testleri](PLATFORM-TESTS.md) ve [gerçek istemci oturumları](LIVE-CLIENTS.md) ayrı kanıtlardır. Runtime'ın daha önceki native CI başarısı yeni updater paketinin final CI veya release kanıtı yerine geçmez. Codex CLI kontrolü de Codex Desktop cold-session kontrolünün yerine geçmez.
+[Platform tests](PLATFORM-TESTS.md) and [real client sessions](LIVE-CLIENTS.md) are separate evidence. The runtime's earlier native CI success does not replace the final CI or release evidence of the new updater package. A Codex CLI check also does not replace a Codex Desktop cold-session check.
 
-Önceden sabitlenen [semantik sözleşme](SEMANTIC-TEST-CONTRACT.md) küçük, sentetik bir kaynak bulma/durum testidir. Motor kelime tabanlı arama kullanır; embedding veya genel doğal dil anlama başarısı iddia edilmez. Fixture'a göre kodlama yapılmaz; development ve holdout sonuçları ayrı kaydedilir. [Temel karşılaştırma](BASELINE.md).
+The pre-fixed [semantic contract](SEMANTIC-TEST-CONTRACT.md) is a small, synthetic source-finding/state test. The engine uses word-based search; no success with embeddings or general natural-language understanding is claimed. There is no coding to the fixture; development and holdout results are recorded separately. [Baseline comparison](BASELINE.md).
 
-Gerçek kullanımda kancanın enjekte ettiği kaynakların sonradan açılıp açılmadığını Claude Code transkriptlerinden salt okunur sayan geliştirici aracı: [kullanım raporu](USAGE-REPORT.md). Yayın paketine girmez.
+A developer tool that counts, read-only and from Claude Code transcripts, whether the sources the hook injected are opened afterwards in real use: [usage report](USAGE-REPORT.md). It is not in the release package.
 
-## Teknik ve tarihsel kayıt
+## Technical and historical record
 
-[Ürünleştirme durumu](PRODUCTIZATION-PLAN.md) · [Komut detayları](QUICKSTART.md) · [Serai desenleri](SERAI-PATTERNS.md).
+[Productization status](PRODUCTIZATION-PLAN.md) · [Command details](QUICKSTART.md) · [Serai patterns](SERAI-PATTERNS.md).
 
-İlk incelenen public taban `2e074cc` idi. [Public mimari](public-architecture.md), [yerel mimari](local-runtime-architecture.md), [eşitlik/migration değerlendirmesi](parity-and-migration.md) ve [sorun incelemeleri](issue-validation.md) tasarım geçmişidir; mevcut uygulamanın yerine kullanılmaz.
+The first public base examined was `2e074cc`. The [public architecture](public-architecture.md), [local architecture](local-runtime-architecture.md), [parity/migration assessment](parity-and-migration.md) and [issue reviews](issue-validation.md) are design history; they are not used in place of the current implementation.

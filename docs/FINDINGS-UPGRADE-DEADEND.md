@@ -24,7 +24,7 @@ secret file, `assert_no_secret_staged` fires, and the run dies **after every gat
 The vault is left migrated but unstamped, with no route forward: re-running hits the same wall.
 
 Reproduction before the fix: build the fixture, run apply then finalize. All gates print ✓,
-then `HATA: sır taşıyabilecek dosya commit'e girmek üzereydi` and exit 1, `.beyin-version` absent.
+then `HATA: sır taşıyabilecek dosya commit'e girmek üzereydi` (the script's Turkish error, "ERROR: a file that could carry a secret was about to be committed") and exit 1, `.beyin-version` absent.
 
 **Fix.** New `untrack_ignored_secrets`, called in apply immediately after `ensure_gitignore` and
 before the snapshot. It runs `git rm --cached` on `.claude/settings.local.json`, `.env`, and any

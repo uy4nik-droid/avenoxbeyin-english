@@ -196,7 +196,7 @@ class HermesHarnessTest(unittest.TestCase):
         with patch.object(self.module, 'run_hook', return_value='ctx'):
             for turn in range(1, self.module.REMINDER_EVERY * 2 + 1):
                 result = hooks['pre_llm_call'](session_id='long', turn_id=str(turn), user_message='devam', is_first_turn=turn == 1)
-                seen.append('[Hafıza]' in result['context'])
+                seen.append('[Memory]' in result['context'])
         reminders = [i + 1 for i, hit in enumerate(seen) if hit]
         self.assertEqual(reminders, [self.module.REMINDER_EVERY, self.module.REMINDER_EVERY * 2])
         with patch.object(self.module, 'run_hook', return_value=''):
@@ -228,7 +228,7 @@ class HermesHarnessTest(unittest.TestCase):
             for turn in range(1, self.module.REMINDER_EVERY + 1):
                 turn_res = hooks['pre_llm_call'](session_id='slack-long', turn_id=str(turn),
                                                 user_message='mesaj', is_first_turn=(turn == 1), platform='slack')
-            self.assertIn('[Hafıza]', turn_res['context'])
+            self.assertIn('[Memory]', turn_res['context'])
 
         # 3. Add custom bot as unattended
         self.module.save_platforms(self.state, unattended=['custom-bot'])

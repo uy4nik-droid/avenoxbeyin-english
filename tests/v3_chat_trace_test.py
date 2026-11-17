@@ -14,7 +14,7 @@ from v3_package_helpers import inherited_env, isolated_env
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / 'template/.claude/scripts'
 sys.path.insert(0, str(SCRIPTS))
-NOTICE = '[Sohbet izi]'
+NOTICE = '[Chat trace]'
 CANARY = 'SYNTHETIC_CHAT_TEXT_MUST_NOT_ENTER_STATE'
 
 

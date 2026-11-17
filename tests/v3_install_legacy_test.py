@@ -82,9 +82,16 @@ RELEASED_V2_HOOKS = {
 }
 # The V2 runners are recognized the same way (install_v3 legacy_hashes): every release from
 # v3.0.0 to v3.11.0 shipped these bytes, so a refactor here blocks the stock V2 upgrade.
+# The English edition translated both; these are its released bytes.
 RELEASED_V2_RUNNERS = {
-    'compile.py': '23af64eb892283b907de63fcb9241208a3edf13b4f2e41ff4cecb2a1a8570150',
-    'flush.py': 'f36f8eb4da19222c7a70ea2659b140595834ce7a52483a6549bcab869e2fb404',
+    'compile.py': 'a3c2fb52465a3e1e5094d19768c122be763f50661516361e000e1c4dce687061',
+    'flush.py': '6b07cb5192d32f7d84fb8341006c6636906ee6f8c7ef169920ec0c930c0d334c',
+}
+# The original Turkish upstream bytes (v3.0.0-v3.13.0): vaults installed from upstream hold them,
+# so the installer must keep recognising them as stock.
+UPSTREAM_V2_RUNNERS = {
+    '.claude/scripts/compile.py': '23af64eb892283b907de63fcb9241208a3edf13b4f2e41ff4cecb2a1a8570150',
+    '.claude/scripts/flush.py': 'f36f8eb4da19222c7a70ea2659b140595834ce7a52483a6549bcab869e2fb404',
 }
 
 
@@ -232,6 +239,12 @@ class InstallLegacyExemptionTest(unittest.TestCase):
         for root in ROOTS:
             with self.subTest(root=root):
                 self.assertIn(current, hashes[root + '/skills/beyin-doktor/SKILL.md'])
+
+    def test_original_upstream_runners_stay_stock(self):
+        # The git-history walk below is skipped on a shallow checkout; this pin is not.
+        for name, sha256 in UPSTREAM_V2_RUNNERS.items():
+            with self.subTest(name=name):
+                self.assertTrue(self.installer.stock_legacy_runner(name, sha256, None))
 
     def test_unknown_skill_content_is_still_an_unmanaged_conflict(self):
         for root in ROOTS:

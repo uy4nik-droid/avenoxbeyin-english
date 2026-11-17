@@ -53,8 +53,8 @@ class InboxDiagnosticTest(unittest.TestCase):
                 self.assertEqual(report['error'], 'PermissionError')
                 self.assertTrue(report['attention'])
                 rendered = triage.format_human({'inbox': report})
-                self.assertIn('Taranamadi:', rendered)
-                self.assertNotIn('Bekleyen kaynak: 0', rendered)
+                self.assertIn('Could not scan:', rendered)
+                self.assertNotIn('Waiting sources: 0', rendered)
                 self.assertNotIn('SECRET-PATH', json.dumps(report) + rendered)
 
     def test_partial_count_survives_and_error_text_is_not_echoed(self):
@@ -66,8 +66,8 @@ class InboxDiagnosticTest(unittest.TestCase):
         self.assertEqual(report['status'], 'partial')
         self.assertEqual(report['folders'], rows)
         human = triage.format_human({'inbox': report})
-        self.assertIn('Taranabilen bekleyen kaynak: 2 (eksik tarama)', human)
-        self.assertIn('2 not sayilabildi; tarama eksik', human)
+        self.assertIn('Waiting sources that could be scanned: 2 (incomplete scan)', human)
+        self.assertIn('2 notes could be counted; scan incomplete', human)
         with patch.object(triage, 'inbox_report', return_value={'folders': [], 'error': 'SECRET-PATH'}):
             report = triage.scan_inbox(self.vault, 0, self.state)
         self.assertNotIn('SECRET-PATH', json.dumps(report))
@@ -113,8 +113,8 @@ class InstalledInboxDiagnosticTest(unittest.TestCase):
                 self.assertTrue(report['attention'])
                 self.assertEqual(report['folders'], [])
                 self.assertIn('inbox-report.json', human)
-                self.assertIn('Taranamadi:', human)
-                self.assertNotIn('Bekleyen kaynak: 0', human)
+                self.assertIn('Could not scan:', human)
+                self.assertNotIn('Waiting sources: 0', human)
                 self.assertNotIn('SECRET-PATH', json.dumps(report) + human)
 
     def test_missing_folder_does_not_render_as_empty(self):
@@ -129,7 +129,7 @@ class InstalledInboxDiagnosticTest(unittest.TestCase):
         self.assertEqual(report['folders'][1]['error'], 'not_found')
         self.assertIn('not_found', human)
         self.assertNotIn('Missing Captures: 0 not', human)
-        self.assertIn('(eksik tarama)', human)
+        self.assertIn('(incomplete scan)', human)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX directory permission fixture')
     def test_unreadable_folder_with_real_installed_cli(self):
@@ -150,7 +150,7 @@ class InstalledInboxDiagnosticTest(unittest.TestCase):
             self.assertEqual(report['folders'][0]['error'], 'PermissionError')
             self.assertIn('PermissionError', human)
             self.assertNotIn('inbox: 0 not', human)
-            self.assertIn('(eksik tarama)', human)
+            self.assertIn('(incomplete scan)', human)
         finally:
             inbox.chmod(0o700)
         self.assertEqual(note.read_text(encoding='utf-8'), '# Pending\n')

@@ -1,49 +1,51 @@
-# Workspace ana sayfaları: kurmaca kullanım örnekleri
+# Workspace homepages: fictional usage examples
 
-Bu örneklerdeki Mavi Pusula görüşmeleri, dersler, tarihler ve dosyalar tümüyle
-uydurmadır. Betik geçici bir kasaya v3 paketini kurar, herkese açık CLI
-komutlarıyla örnekleri oluşturur ve sonuçları denetler. Gerçek bir kullanıcı
-kasasına dokunmaz.
+The Mavi Pusula ("Blue Compass") interviews, courses, dates and files in these
+examples are entirely made up. The script installs the v3 package into a temporary
+vault, creates the examples with the public CLI commands and checks the results. It
+does not touch a real user vault. The generated notes, file names and quoted page
+text are produced in Turkish by the script and are quoted here as they are.
 
-Depo kökünden çalıştır:
+Run from the repository root:
 
 ```sh
 python3 scripts/example_workspace_homepages.py --output /tmp/workspace-homepage-examples
 ```
 
-Windows'ta `--output` için kendi geçici klasöründen bir yol seçebilirsin.
-Komut, kontrol sonucunu ekrana ve `result.json` dosyasına yazar. Aynı çıktı
-klasöründeki Markdown dosyaları akışın okunabilir anlık görünümleridir;
-bağlama ait HTML yorumları bu kopyalardan çıkarılmıştır. `vault/` altındaki
-kurmaca not ve kaynak kopyalarıyla birlikte taşınabilirler. Görünümdeki
-bağlantılar, akışın **son durumundaki** bu dosyalara gider; geçmiş bir adımın
-kaynak içeriğini yeniden kurmaz. Betik özgün bağlantıları geçici kasada,
-dışa aktarılan bağlantıları çıktı klasöründe doğrular. Geçici kurulu çalışma
-ortamı dışa aktarılmaz.
+On Windows you can choose a path from your own temporary folder for `--output`.
+The command writes the check result to the screen and to the `result.json` file. The
+Markdown files in the same output folder are readable snapshots of the flow; the HTML
+comments belonging to the binding have been removed from these copies. They can be
+moved together with the fictional note and source copies under `vault/`. The links in
+the views go to these files in the **final state** of the flow; they do not rebuild
+the source content of a past step. The script verifies the original links in the
+temporary vault and the exported links in the output folder. The temporary installed
+working environment is not exported.
 
-## Kariyerim: seçilmiş bilgiyi iki yönde düzenleme
+## Kariyerim ("My Career"): editing selected information in both directions
 
-Kurmaca Mavi Pusula'nın **Akşam** ve **Gündüz** kayıtları ayrı esas notlardır.
-Her ikisi de önce **6 Nisan 2099** görüşme tarihini taşır; davet metni ayrı
-bir özgün dosyadır. `homepage-create`, kullanıcının seçtiği `facts.gorusme`
-alanlarını **Kariyerim** sayfasına bağlar. Her kaydın bağlantısı ana sayfaya
-göre görelidir. Görüşme tarihi düzenlenebilir hücrede, kişisel not hücrenin
-dışındadır.
+The **Akşam** (Evening) and **Gündüz** (Daytime) records of the fictional Mavi Pusula
+are separate main notes. Both first carry the interview date of **6 April 2099**
+(`6 Nisan 2099`); the invitation text is a separate original file.
+`homepage-create` links the `facts.gorusme` fields ("interview") the user selected to
+the **Kariyerim** page. The link of each record is relative to the homepage. The
+interview date is in an editable cell, and the personal note is outside the cell.
 
-Örnek kullanıcı isteği: “İki görüşmenin tarihini tek sayfada görmek ve oradan
-düzeltmek istiyorum. Akşam kaydının yanına da yol süresiyle ilgili not yazayım.”
-Bu cümle açıklayıcı bir kullanım taslağıdır; otomatik bir ajan konuşmasının
-çalıştırıldığı iddia edilmez.
+Example user request: "I want to see the dates of both interviews on one page and
+correct them from there. I'd also like to write a note next to the Akşam record about
+the travel time." This sentence is an explanatory usage draft; it is not claimed that
+an automatic agent conversation was run.
 
-Başlangıçta iki ayrı esas not vardır:
+At the start there are two separate main notes:
 
-| Esas not | Başlık | `facts.gorusme` | Özgün belge |
+| Main note | Title | `facts.gorusme` | Original document |
 | --- | --- | --- | --- |
 | `notes/Kariyer/Aksam.md` | Mavi Pusula — Akşam | 6 Nisan 2099 | `Davet.txt` |
 | `notes/Kariyer/Gunduz.md` | Mavi Pusula — Gündüz | 6 Nisan 2099 | `Davet.txt` |
 
-Betik bunları normal `note-create` ile oluşturur. Ardından şu isteği
-`homepage-create --file` girişine verir; değer veya hücre işareti hazırlamaz:
+The script creates these with a normal `note-create`. It then gives the following
+request to the `homepage-create --file` input; it does not prepare values or cell
+markers:
 
 ```json
 {
@@ -62,27 +64,28 @@ Betik bunları normal `note-create` ile oluşturur. Ardından şu isteği
 }
 ```
 
-Oluşan sayfada kullanıcı iki ayrı kaynak bağlantısı ve iki düzenlenebilir
-tarih görür. Normal `note-edit` ile eklenen “yol süresini ve adresi sor” notu
-yalnız Akşam bölümünde kalır; esas notun `facts` alanına yazılmaz.
+On the resulting page the user sees two separate source links and two editable dates.
+The note "yol süresini ve adresi sor" ("ask about the travel time and the address"),
+added with a normal `note-edit`, stays only in the Akşam section; it is not written to
+the main note's `facts` field.
 
-![Kariyerim sayfasının genel Markdown önizlemesi](career.png)
+![General Markdown preview of the Kariyerim page](career.png)
 
-*Kariyerim: üretilen Markdown'ın genel önizlemesi; gerçek Obsidian ekran görüntüsü değildir.*
+*Kariyerim: a general preview of the generated Markdown; it is not a real Obsidian screenshot.*
 
-Örnek akışı şu anlık görünümlerden izle:
+Follow the example flow through these snapshots:
 
-| İşlem ve anlık görünüm | Akşam esas notu | Akşam sayfa değeri | Gündüz | Kişisel not |
+| Operation and snapshot | Akşam main note | Akşam page value | Gündüz | Personal note |
 | --- | --- | --- | --- | --- |
-| [Oluştur](career-created.md) | 6 Nisan | 6 Nisan | 6 Nisan | yol süresini ve adresi sor |
-| [Esas notu düzenle](career-from-source.md) | 7 Nisan | 7 Nisan | 6 Nisan | korunur |
-| [Sayfadaki tarihi düzenle](career-from-homepage.md) | 9 Nisan | 9 Nisan | 6 Nisan | korunur |
-| [Kaynak yazımından sonra kes, son notu değiştir, eşitle](career-recovered.md) | 11 Nisan | 11 Nisan | 6 Nisan | adresi ve giriş kapısını sor |
-| [Aynı bilgiye iki farklı değer yaz](career-conflict.md) | 12 Nisan | 13 Nisan — çakışma | 8 Nisan'a ilerler | son not korunur |
-| [Kullanıcı esas nottaki değeri seçer](career-resolved.md) | 12 Nisan | 12 Nisan | 8 Nisan | son not korunur |
+| [Create](career-created.md) | 6 April | 6 April | 6 April | ask about the travel time and the address |
+| [Edit the main note](career-from-source.md) | 7 April | 7 April | 6 April | kept |
+| [Edit the date on the page](career-from-homepage.md) | 9 April | 9 April | 6 April | kept |
+| [Interrupt after the source write, change the last note, synchronize](career-recovered.md) | 11 April | 11 April | 6 April | ask about the address and the entrance door |
+| [Write two different values to the same information](career-conflict.md) | 12 April | 13 April — conflict | advances to 8 April | the last note is kept |
+| [The user chooses the value in the main note](career-resolved.md) | 12 April | 12 April | 8 April | the last note is kept |
 
-Tablodaki bütün tarihler 2099 yılındadır. Örneğin esas nottan gelen ilk
-değişiklik sonrası Akşam bölümünün okuma görünümü şöyledir:
+All the dates in the table are in 2099. For example, the reading view of the Akşam
+section after the first change coming from the main note is as follows:
 
 ```markdown
 ### Mavi Pusula — Akşam
@@ -92,66 +95,73 @@ değişiklik sonrası Akşam bölümünün okuma görünümü şöyledir:
 **Kişisel notum:** yol süresini ve adresi sor
 ```
 
-Gerçek çıktıda alt başlık [doğru esas nota](vault/notes/Kariyer/Aksam.md)
-açılır. Gündüz'ün ayrı dosyası ve özgün davet ilk iki değişiklikte aynı kalır.
+In the real output the subheading opens the [correct main note](vault/notes/Kariyer/Aksam.md).
+Gündüz's separate file and the original invitation stay the same in the first two
+changes.
 
-Kaynak nottaki düzenleme sayfaya, sayfadaki düzenlenebilir hücre ise doğru
-kaynak nota geçer. Diğer kayıt ve özgün davet dosyası korunur. Betik, kaynak
-yazıldıktan sonra eşitlemeyi yalnız örnek amaçlı bir kancayla keser. Sonraki
-`sync`, kaynağı yeniden yazmadan sayfayı tamamlar; arada güncellenen en son
-kişisel notu korur. Betik tam bu ilk toparlanmanın öncesi/sonrasında esas
-notun baytlarını ve sabitlenmiş mtime'ını karşılaştırır; aynı baytların tekrar
-yazılması da testi bozar. Gerçek ürünün bir kesinti kancası yoktur.
+An edit in the source note passes to the page, and an editable cell on the page passes
+to the correct source note. The other record and the original invitation file are
+kept. After the source is written, the script cuts the synchronization with a hook
+used only for the example. The next `sync` completes the page without rewriting the
+source; it keeps the latest personal note updated in between. The script compares the
+bytes and the pinned mtime of the main note before/after exactly this first recovery;
+rewriting the same bytes also fails the test. The real product has no interruption
+hook.
 
-Kesinti adımında önce sayfadaki 9 Nisan değeri 11 Nisan yapılır. Esas not 11
-Nisan olarak yazıldıktan, sayfanın eşitleme kaydı tamamlanmadan süreç
-durdurulur. Kullanıcı o sırada kişisel notunu “adresi ve giriş kapısını sor”
-yapar. Sonraki `sync` hem 11 Nisan'ı hem bu son notu koruyarak işi tamamlar.
+In the interruption step, the 9 April value on the page is first changed to 11 April.
+After the main note is written as 11 April, and before the page's synchronization
+record is completed, the process is stopped. At that moment the user changes their
+personal note to "adresi ve giriş kapısını sor" ("ask about the address and the
+entrance door"). The next `sync` completes the work, keeping both the 11 April and
+this last note.
 
-Akşam tarihi esas notta **12 Nisan**, sayfada **13 Nisan** yapılınca çakışma
-yalnız bu alan için bildirilir. Gündüz tarihi aynı eşitlemede **8 Nisan** olur.
-Örnek, Akşam hücresine kaynak değeri olan **12 Nisan** yazıp tekrar eşitler.
-Değişmeyen Markdown üzerinde tekrar `sync` çalıştırmak hem dosya baytlarını
-hem de değiştirilme zamanını korur.
+When the Akşam date is made **12 April** in the main note and **13 April** on the page,
+the conflict is reported only for this field. The Gündüz date becomes **8 April** in
+the same synchronization. The example writes **12 April**, the source value, into the
+Akşam cell and synchronizes again. Running `sync` again on unchanged Markdown
+preserves both the file bytes and the modification time.
 
-Bu son kontrol `homepage-create` tekrarını da içerir: aynı seçim `unchanged`
-döner ve kişisel sayfa düzenini yeniden yazmaz. Anahtarlı `note-edit`
-tekrarı, son hash ve gerçek kullanıcı düzenlemesi için ayrı
-[regresyon testleri](../../WORKSPACE-HOMEPAGES.md#regresyon-doğrulaması-ve-açık-kabul-sınırları)
-bulunur; bu örnekteki yazmasız `sync` kabulü o ayrı kontrolün yerine geçmez.
+This last check also includes repeating `homepage-create`: the same selection returns
+`unchanged` and does not rewrite the personal page layout. For the keyed `note-edit`
+repeat, the final hash and a real user edit, there are separate
+[regression tests](../../WORKSPACE-HOMEPAGES.md#regression-verification-and-open-acceptance-limits);
+the no-write `sync` acceptance in this example does not replace that separate check.
 
-## Derslerim: genel gezinme sayfası
+## Derslerim ("My Courses"): general navigation page
 
-**Bulut Bahçeleri**, **Ses Haritaları** ve **Işık Atölyesi** için uydurma ders
-notları, kaynak metinleri ve çalışma dosyaları oluşturulur. Genel sayfa ders
-notlarına, özgün kaynaklara ve ödev dosyalarına göreli bağlantılar verir.
-Bir dosyanın varlığı açık görev veya teslim yükümlülüğü anlamına gelmez.
+Made-up course notes, source texts and work files are created for **Bulut Bahçeleri**
+(Cloud Gardens), **Ses Haritaları** (Sound Maps) and **Işık Atölyesi** (Light
+Workshop). The general page gives relative links to the course notes, the original
+sources and the assignment files. The existence of a file does not mean an open task
+or a submission obligation.
 
-Örnek kullanıcı isteği: “Bütün kaynaklarımı ve ödev dosyalarımı genel bir
-sayfadan açabileyim. Teslim bilgisi, plan ve kişisel not için de yer olsun.”
-Bu amaç belirli bir ders seçilmesini veya tarih üretilmesini gerektirmez.
+Example user request: "I'd like to be able to open all my sources and assignment files
+from a general page. There should also be room for submission information, a plan and
+a personal note." This purpose does not require a particular course to be selected or
+a date to be produced.
 
-| Kurmaca ders notu | Özgün kaynak | Ödev/çalışma dosyası |
+| Fictional course note | Original source | Assignment/work file |
 | --- | --- | --- |
 | [Bulut Bahçeleri](vault/notes/Dersler/Bulut-Bahceleri.md) | [Kaynak.txt](vault/sources/Ornek-Dersler/Bulut-Bahceleri/Kaynak.txt) | [Calisma-Dosyasi.txt](vault/sources/Ornek-Dersler/Bulut-Bahceleri/Calisma-Dosyasi.txt) |
 | [Ses Haritaları](vault/notes/Dersler/Ses-Haritalari.md) | [Kaynak.txt](vault/sources/Ornek-Dersler/Ses-Haritalari/Kaynak.txt) | [Calisma-Dosyasi.txt](vault/sources/Ornek-Dersler/Ses-Haritalari/Calisma-Dosyasi.txt) |
 | [Işık Atölyesi](vault/notes/Dersler/Isik-Atolyesi.md) | [Kaynak.txt](vault/sources/Ornek-Dersler/Isik-Atolyesi/Kaynak.txt) | [Calisma-Dosyasi.txt](vault/sources/Ornek-Dersler/Isik-Atolyesi/Calisma-Dosyasi.txt) |
 
-Normal not yazıcısı bir genel sayfa ve üç ders notu oluşturur. Genel sayfadan
-hem ders notuna hem özgün dosyalara ulaşılır; ders notunda ise kaynak ve
-ödev dosyası ayrı başlıklarda görünür. Kaynakların asılları yerinde kalır.
+The normal note writer creates one general page and three course notes. From the
+general page both the course note and the original files can be reached; in the course
+note, the source and the assignment file appear under separate headings. The originals
+of the sources stay in place.
 
-![Derslerim sayfasının genel Markdown önizlemesi](lessons.png)
+![General Markdown preview of the Derslerim page](lessons.png)
 
-*Derslerim: üretilen Markdown'ın genel önizlemesi; gerçek Obsidian ekran görüntüsü değildir.*
+*Derslerim: a general preview of the generated Markdown; it is not a real Obsidian screenshot.*
 
-[lessons-homepage.md](lessons-homepage.md) genel gezinme sayfasını,
-[lessons-course.md](lessons-course.md) Bulut Bahçeleri notunu gösterir. Bu
-örnek normal `note-create` ve `note-edit` akışını kullanır. Doğrulanmış teslim
-tarihi, ilerleme veya seçilmiş çalışma sırası olmadığı için bunları üretmez;
-kişisel not yalnız verilen metinle güncellenir. Özgün dosyalar korunur.
+[lessons-homepage.md](lessons-homepage.md) shows the general navigation page,
+[lessons-course.md](lessons-course.md) the Bulut Bahçeleri note. This example uses the
+normal `note-create` and `note-edit` flow. Because there is no verified submission
+date, progress or selected study order, it does not produce them; the personal note is
+updated only with the given text. The original files are kept.
 
-Genel sayfanın dosya bağlantılarından sonraki gerçek çıktısı:
+The real output of the general page after the file links:
 
 ```markdown
 ## Teslimler
@@ -167,23 +177,30 @@ Henüz bir ders veya çalışma sırası seçilmedi.
 Kaynak bağlantıları burada toplu dursun; teslim bilgisi gelince ilgili ders notuna ekle.
 ```
 
-Son kişisel not, ilk “Kaynak bağlantıları burada toplu dursun.” cümlesinin
-normal `note-edit` ile düzenlenmesiyle oluşur. Ardından `sync` ve yazmasız
-tekrar denetlenir. Hiç görev oluşturulmaz, teslim tarihi atanmaz, belirli bir
-ders seçilmez ve ilerleme hesaplanmaz. `facts` veya bağlı hücre bulunmadığı
-için bu gezinme sayfasına kaynaktan otomatik değer güncellemesi iddia edilmez.
+(In English: "Submissions: no verified submission information has been given yet."
+"My study plan: no course or study order has been selected yet." "My personal note:
+keep the source links together here; add the submission information to the relevant
+course note when it arrives.")
 
-## İstek örneği
+The final personal note comes from editing the first sentence, "Kaynak bağlantıları
+burada toplu dursun." ("Keep the source links together here."), with a normal
+`note-edit`. After that, `sync` and a no-write repeat are checked. No task is created,
+no submission date is assigned, no particular course is selected and no progress is
+calculated. Because there are no `facts` or linked cells, no automatic value update
+from the source is claimed for this navigation page.
 
-Aşağıdaki konuşma **yalnızca açıklayıcı bir taslaktır**; betik bir ajanın
-kullanıcıyla konuşmayı yorumlayıp işlem yaptığı uçtan uca sınama değildir.
+## Request example
 
-> **Kullanıcı niyeti:** “Akşam ve Gündüz görüşmelerimin tarihlerini Kariyerim
-> sayfasında göreyim ve oradan düzeltebileyim. Kendi notumu da ekleyeyim.”
+The conversation below is **only an explanatory draft**; the script is not an
+end-to-end test in which an agent interprets a conversation with the user and acts.
+
+> **User intent:** "I want to see the dates of my Akşam and Gündüz interviews on the
+> Kariyerim page and be able to correct them from there. I'd also like to add my own
+> note."
 >
-> **Önerilen taslak:** “İki mevcut kaydın görüşme tarihi alanını sayfaya
-> bağlayayım. Tarihleri esas notlarla eşitleyeyim; kişisel notunu sayfada
-> tutayım.”
+> **Suggested draft:** "I'll link the interview-date field of the two existing records
+> to the page. I'll synchronize the dates with the main notes; I'll keep your personal
+> note on the page."
 
-Kurulumun kapsamı ve `homepage-create` istek biçimi için
-[özellik belgesine](../../WORKSPACE-HOMEPAGES.md) bak.
+For the scope of the setup and the `homepage-create` request format, see the
+[feature document](../../WORKSPACE-HOMEPAGES.md).

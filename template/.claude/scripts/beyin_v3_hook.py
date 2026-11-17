@@ -47,7 +47,7 @@ KNOWLEDGE_REMINDER = (
     "if no permanent note is required, state that in one sentence to proceed."
 )
 NO_LEARNING_CHALLENGE_REMINDER = (
-    "Receipt declared no learnings ('Öğrenilen: yok') but files were edited in this session. "
+    "Receipt declared no learnings ('Learned: none') but files were edited in this session. "
     "In V3, lasting lessons must be distilled into knowledge/ or staged as candidates: "
     'python3 beyin.py learn --session {session} --candidate "Lesson". If this edit was purely mechanical/routine '
     "without new lessons, state that in one sentence to proceed."
@@ -754,8 +754,8 @@ def main():
                 if event == 'SessionStart' and hygiene['folder_questions']:
                     questions = folder_questions(vault, state)
                     if questions:
-                        # ASCII Turkish; a question is data for the agent, never exact user knowledge.
-                        notice += 'Soru sirasi (bilgi): ' + ' | '.join(questions) + '\n'
+                        # A question is data for the agent, never exact user knowledge.
+                        notice += 'Question queue (info): ' + ' | '.join(questions) + '\n'
                 elif event == 'PostToolUse':
                     if hygiene['promotion']:
                         touch_log(state, vault, payload)

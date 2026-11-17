@@ -336,8 +336,8 @@ class SourceSyncTest(unittest.TestCase):
         self.note('notes/Sezon.md', 'Bir.\n')
         self.note('notes/Sezon 2.md', 'Iki.\n')
         text = entry.human_result(self.engine.sync(), 'sync')
-        self.assertIn('Senkron cakisma kopyasi indekse alinmadi: notes/task.sync-conflict-20261006-120000-ABCDEF7.md', text)
-        self.assertIn('Olasi senkron kopyasi: notes/Sezon 2.md / notes/Sezon.md (icerik farkli)', text)
+        self.assertIn('Sync conflict copy left out of the index: notes/task.sync-conflict-20261006-120000-ABCDEF7.md', text)
+        self.assertIn('Possible sync copy: notes/Sezon 2.md / notes/Sezon.md (different content)', text)
 
     def test_history_keeps_deleted_record_audit_trail_behind_last_snapshot(self):
         path = self.write()

@@ -94,8 +94,8 @@ class StandaloneCliTest(unittest.TestCase):
         raw = (self.vault / row['ham']).read_text(encoding='utf-8')
 
         self.assertEqual(row['durum'], 'cikarildi')
-        self.assertIn('bozuk.txt: okunamadı (UTF-8)', row['not'])
-        self.assertIn('bozuk.txt: okunamadı (UTF-8)', card)
+        self.assertIn('bozuk.txt: could not be read (UTF-8)', row['not'])
+        self.assertIn('bozuk.txt: could not be read (UTF-8)', card)
         self.assertIn('Düz geçerli içerik', raw)
         self.assertIn('BOM geçerli içerik', raw)
         self.assertNotIn('\ufeff', raw)
@@ -121,8 +121,8 @@ class StandaloneCliTest(unittest.TestCase):
         row = self.command('isle', captured['id'], '--tekrar', '--ses-yok')['kartlar'][0]
         card = (self.vault / captured['path']).read_text(encoding='utf-8')
         self.assertEqual((row['durum'], row['yontem']), ('cikarildi', 'ajan-okusun'))
-        self.assertIn('tek.txt: okunamadı (UTF-8)', row['not'])
-        self.assertIn('tek.txt: okunamadı (UTF-8)', card)
+        self.assertIn('tek.txt: could not be read (UTF-8)', row['not'])
+        self.assertIn('tek.txt: could not be read (UTF-8)', card)
         self.assertNotIn('ham:', card)
         self.assertNotIn('BOZUK', (self.vault / first['ham']).read_text(encoding='utf-8'))
 

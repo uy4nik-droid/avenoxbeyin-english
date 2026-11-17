@@ -49,7 +49,7 @@ class RecentReceiptsTest(unittest.TestCase):
         self.assertEqual(result['items'], [])
         self.assertEqual(result['undated_omitted'], 1)
         self.assertIn('not independently verified', result['meaning'])
-        self.assertIn('tarihsiz', human_result(result, 'recap'))
+        self.assertIn('undated', human_result(result, 'recap'))
 
     def test_invalid_bounds_rejected(self):
         for days, limit in ((0, 20), (367, 20), (7, 0), (7, 101)):
@@ -67,7 +67,7 @@ class RecentReceiptsTest(unittest.TestCase):
         self.assertFalse(any(ch in text for ch in '\x1b\x07‮'))
         self.assertIn('ilk / ?[2J', text)
         self.assertIn('Şirket', text)
-        self.assertIn('ozel kaynak baglantisi gizlendi', text)
+        self.assertIn('private source links hidden', text)
 
     def test_cli_withholds_private_and_missing_sources(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -60,7 +60,7 @@ class YakalaDocxTest(unittest.TestCase):
         self.assertEqual(result['kartlar'][0]['durum'], 'cikarildi')
         stored = (self.vault / result['kartlar'][0]['ham']).read_text(encoding='utf-8')
         self.assertIn('visibility: private', stored)
-        self.assertIn('Güvenilmeyen kaynak metni', stored)
+        self.assertIn('Untrusted source text', stored)
         self.assertIn('Sonuç 82', stored)
         self.assertEqual((self.vault / 'öğrenim.docx').read_bytes(), raw)
 
@@ -84,8 +84,8 @@ class YakalaDocxTest(unittest.TestCase):
         self.assertNotIn('PRIVATE_INVALID', stored)
         self.assertNotIn('\ufffd', stored)
         warning = yakala.find_card(self.vault, captured['id'])['meta']['uyari']
-        for expected in ('rapor.docx', 'unsupported_content', 'bozuk.txt: okunamadı (UTF-8)',
-                         'taranmis.pdf: PDF metni çıkarılamadı'):
+        for expected in ('rapor.docx', 'unsupported_content', 'bozuk.txt: could not be read (UTF-8)',
+                         'taranmis.pdf: could not extract PDF text'):
             self.assertIn(expected, warning)
             self.assertIn(expected, row['not'])
 
@@ -109,7 +109,7 @@ class YakalaDocxTest(unittest.TestCase):
         with patch.object(yakala, 'tools', return_value={}):
             row = yakala.process(self.vault, [card_id])['kartlar'][0]
         self.assertEqual((row['durum'], row['yontem']), ('cikarildi', 'dosya'))
-        self.assertIn('eksik olabilir', row['not'])
+        self.assertIn('may be incomplete', row['not'])
         card = yakala.find_card(self.vault, card_id)
         self.assertIn('öğrenim.docx: additional_content, unsupported_content', card['meta']['uyari'])
         self.assertIn('Görünen metin', (self.vault / row['ham']).read_text(encoding='utf-8'))

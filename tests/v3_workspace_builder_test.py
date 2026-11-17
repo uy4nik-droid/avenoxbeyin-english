@@ -299,7 +299,7 @@ class WorkspaceBuilderTest(unittest.TestCase):
         result = linter.generate_moc(self.vault, 'projects/alpha')
         self.assertEqual(result['status'], 'updated')
         text = (self.vault / 'projects/alpha/MOC.md').read_text(encoding='utf-8')
-        self.assertIn('[[projects/alpha/Kurallar|Çalışma Alanı Kuralları]]', text)
+        self.assertIn('[[projects/alpha/Kurallar|Workspace Rules]]', text)
         self.assertIn('[[projects/alpha/Karar.md|Karar kaydı]]', text)
 
     def test_cli_failed_provision_reports_reconciliation(self):
@@ -402,12 +402,12 @@ class WorkspaceBuilderTest(unittest.TestCase):
         self.assertTrue(notes_dir.is_dir())
 
         rules_text = rules_path.read_text(encoding="utf-8")
-        self.assertIn("# FinTech Engine — Kurallar", rules_text)
+        self.assertIn("# FinTech Engine — Rules", rules_text)
         self.assertIn("Zero lost update kuralı esastır", rules_text)
 
         moc_text = moc_path.read_text(encoding="utf-8")
         self.assertIn("# FinTech Engine — Map of Content (MOC)", moc_text)
-        self.assertIn("[[projects/fintech/Kurallar|Çalışma Alanı Kuralları]]", moc_text)
+        self.assertIn("[[projects/fintech/Kurallar|Workspace Rules]]", moc_text)
 
         # Inspect verification check
         info = workspaces.inspect_workspace(self.vault, "fintech")

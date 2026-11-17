@@ -41,12 +41,12 @@ def plan_launchers(vault, state):
         return {'Beyni Guncelle.cmd': body.encode('ascii')}
     name = 'Beyni Güncelle.command' if sys.platform == 'darwin' else 'Beyni Güncelle.sh'
     shell = ('#!/bin/sh\n' + shlex.join([sys.executable, str(entry), 'update']) +
-             '\nbeyin_update_exit=$?\nprintf "\\nKapatmak icin Enter tusuna basin. "\n' +
+             '\nbeyin_update_exit=$?\nprintf "\\nPress Enter to close. "\n' +
              'read -r beyin_update_reply || true\nexit "$beyin_update_exit"\n')
     files = {name: shell.encode('utf-8')}
     if sys.platform.startswith('linux'):
-        desktop = ('[Desktop Entry]\nType=Application\nName=Beyni Güncelle\n' +
-                   'Comment=Kurulu beyni resmi yeni surume guncelle\nTerminal=true\n' +
+        desktop = ('[Desktop Entry]\nType=Application\nName=Update Beyin\n' +
+                   'Comment=Update the installed brain to the new official release\nTerminal=true\n' +
                    'Exec=/bin/sh ' + _desktop_quote(vault / name) + '\nIcon=system-software-update\n')
         files['Beyni Güncelle.desktop'] = desktop.encode('utf-8')
     return files

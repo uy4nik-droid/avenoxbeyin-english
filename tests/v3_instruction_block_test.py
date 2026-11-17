@@ -18,14 +18,15 @@ ROOT = Path(os.environ.get('BEYIN_TEST_REPO', Path(__file__).resolve().parents[1
 START, END = '<!-- beyin-v3:start -->', '<!-- beyin-v3:end -->'
 ENGLISH = ('A preference, decision or fact the user states directly is not an inference; '
            'record it promptly without waiting to be asked.')
-TURKISH = ('Kullanıcının doğrudan söylediği tercih, karar ve olgu çıkarım değildir; '
-           'istenmesini beklemeden kaydedilir.')
+# The block's second (formerly Turkish) paragraph carries its own wording of both clauses.
+TURKISH = ('A preference, decision or fact the user states directly is not an inference; '
+           'it is recorded without waiting to be asked.')
 # #375: "record it promptly" is about timing; the target of a correction is chosen first.
 SCOPE_ENGLISH = ('Promptly is about timing, not target: a correction that belongs to one project or area goes to '
                  '`Kurallar.md` in the existing project folder (`🏰 300-Projects/<project>/` in the official template, or legacy `projects/<project>/`; do not create a second folder for the same project), leaving at most a one-line pointer in Kurallar.md.')
-SCOPE_TURKISH = ('Beklemeden kaydetmek hedefi değiştirmez: tek bir projeye ya da alana ait düzeltme '
-                 '`mevcut-proje-klasörü/Kurallar.md` (resmî şablonda `🏰 300-Projects/<proje>/Kurallar.md`, eski kasalarda `projects/<proje>/Kurallar.md`; aynı proje için ikinci klasör açma) dosyasına gider, Kurallar.md\'de en çok bir satırlık işaretçi kalır; '
-                 'yalnız her işte geçerli kural Kurallar.md\'ye tam metin girer.')
+SCOPE_TURKISH = ('Recording without waiting does not change the target: a correction that belongs to a single project or area '
+                 'goes to `existing-project-folder/Kurallar.md` (`🏰 300-Projects/<project>/Kurallar.md` in the official template, `projects/<project>/Kurallar.md` in older vaults; do not create a second folder for the same project), and at most a one-line pointer stays in Kurallar.md; '
+                 'only a rule that applies to all work goes into Kurallar.md in full.')
 CLAUSES = (ENGLISH, TURKISH, SCOPE_ENGLISH, SCOPE_TURKISH)
 NOTE = '\nKullanıcının kendi notu: bu paragraf blok dışında ve korunmalı.\n'
 RULES = '# Kurallarım\nUSER_RULE_SENTINEL: yalnız AGENTS.md içinde yaşar.\n'
@@ -171,19 +172,19 @@ class InstructionBlockTest(unittest.TestCase):
             sys.path.insert(0, scripts)
         import beyin_v3_companion as companion
         skill = ' '.join((ROOT / 'template/.agents/skills/beyin/SKILL.md').read_text(encoding='utf-8').split())
-        self.assertIn('ama önce hedefini seç', skill)
-        self.assertIn('`mevcut-proje-klasörü/Kurallar.md` (resmî şablonda `🏰 300-Projects/<proje>/Kurallar.md`, eski kasalarda `projects/<proje>/Kurallar.md`; aynı proje için ikinci klasör açma) dosyasına yaz', skill)
+        self.assertIn('but first choose its target', skill)
+        self.assertIn('write the rule to `Kurallar.md` in the existing project folder (`🏰 300-Projects/<project>/Kurallar.md` in the official template, `projects/<project>/Kurallar.md` in older vaults; do not create a second folder for the same project)', skill)
         # Document actual folder discovery and local project resolution (#456/#475).
         source = (ROOT / 'template/.claude/scripts/beyin_v3_companion.py').read_text(encoding='utf-8')
         folders = ast.literal_eval(re.search(r'for folder in (\([^)]*\))', source)[1])
         for folder in folders:
             self.assertIn('`' + folder + '/`', skill)
-        self.assertIn('çalışma dizininden veya sorguda geçen tek bir bilinen projeden', skill)
-        self.assertIn('belirsiz eşleşmede proje seçmez', skill)
-        self.assertIn('arama kapsamını değiştirmez', skill)
+        self.assertIn('the working directory, or a single known project named in the query', skill)
+        self.assertIn('on an ambiguous match it does not pick a project', skill)
+        self.assertIn('it does not change the search scope', skill)
         # The pointer the skill shows is a rule the hook really scopes.
         pointer = re.search(r'`(- \[kapsam: <proje>\][^`]*)`', skill)[1].replace('<proje>', 'alpha')
-        self.assertIn('mevcut-proje-klasörü/Kurallar.md', pointer)
+        self.assertIn('Kurallar.md in the existing project folder', pointer)
         self.assertIn('`🏰 300-Projects/`', skill)
         self.assertEqual(companion.rule_scopes(pointer), {'alpha'})
         self.assertEqual(companion.filter_scoped_rules(pointer, 'alpha'), pointer)
@@ -192,7 +193,7 @@ class InstructionBlockTest(unittest.TestCase):
         router = (ROOT / 'template/CLAUDE.md').read_text(encoding='utf-8')
         seeds = (companion.STARTERS['Kurallar.md'], (ROOT / 'template/🔮 850-Companion/Kurallar.md').read_text(encoding='utf-8'))
         for text in (skill, router) + seeds:
-            self.assertIn('projects/<proje>/Kurallar.md', ' '.join(text.split()))
+            self.assertIn('projects/<project>/Kurallar.md', ' '.join(text.split()))
         for text in (skill, router, self.block()) + seeds:
             for forbidden in ('\u2014', '\u2013', '\u00e2'):  # em dash, en dash, circumflex a
                 self.assertNotIn(forbidden, text)
@@ -452,10 +453,10 @@ class InstructionBlockTest(unittest.TestCase):
         for name in ('AGENTS.md', 'CLAUDE.md'):
             with self.subTest(file=name):
                 block = self.block(name)
-                self.assertIn('var olan insan notlarını `note-read` ile oku, `note-edit` ile düzenle', block)
+                self.assertIn('read existing human notes with `note-read`, edit them with `note-edit`', block)
                 self.assertIn('Read and edit existing human notes with `note-read` and `note-edit`.', block)
         router = (ROOT / 'template/CLAUDE.md').read_text(encoding='utf-8')
-        self.assertIn('var olan insan notlarını `note-read` ile oku, `note-edit` ile düzenle', router)
+        self.assertIn('read existing human notes with `note-read`, edit them with `note-edit`', router)
 
     def test_closing_protocol_indexes_concepts_before_final_receipt(self):
         self.seed('CLAUDE.md', CLAUDE)
@@ -463,9 +464,9 @@ class InstructionBlockTest(unittest.TestCase):
         texts = [self.block(name) for name in ('AGENTS.md', 'CLAUDE.md')]
         texts.append((ROOT / 'template/CLAUDE.md').read_text(encoding='utf-8'))
         for text in texts:
-            self.assertIn('Kavram yazınca `knowledge/index.md` kaydını tek satırla güncelle', text)
-            self.assertIn('gerçek ilişki varsa `knowledge/connections/`', text)
-            self.assertIn('receipt en son, kart ve Threads düzenlemelerinden sonra', text)
+            self.assertIn('When you write a concept, update its `knowledge/index.md` entry with a single line', text)
+            self.assertIn('create a justified link under `knowledge/connections/` only when there is a real relationship', text)
+            self.assertIn('receipt is sent last, after the card and Threads edits', text)
 
 if __name__ == '__main__':
     unittest.main()

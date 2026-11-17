@@ -775,7 +775,7 @@ def scan_knowledge_digest(vault: Path, now: float, digest_days: int = 7, state: 
         if age <= digest_days:
             recent_items.append({
                 'path': 'outcomes.md',
-                'title': 'Kazanimlar ve Sonuclar',
+                'title': 'Gains and Outcomes',
                 'age_days': round(age, 1),
                 'date_source': date_source,
             })
@@ -899,7 +899,7 @@ def scan_companion(vault: Path, state: Path | None = None, now: float | None = N
 def generate_recommendations(inbox: dict, tasks: dict, digest: dict, companion: dict, vault: Path | None = None, has_yakala: bool | None = None, threads: dict | None = None) -> list[str]:
     recs = []
     if tasks.get('status') == 'partial':
-        recs.append('Gorev taramasi eksik; sayilar yalniz okunabilen kaynaklari kapsiyor. Dosya/klasor erisimini kontrol edip triage komutunu yeniden calistirin.')
+        recs.append('Task scan incomplete; counts cover only the sources that could be read. Check file/folder access and run the triage command again.')
     if inbox.get('count', 0) > 0:
         yakala_ready = has_yakala if has_yakala is not None else inbox.get('has_yakala', False)
         if not yakala_ready and vault is not None:
@@ -910,39 +910,39 @@ def generate_recommendations(inbox: dict, tasks: dict, digest: dict, companion: 
                 yakala_ready = False
         if yakala_ready:
             recs.append(
-                f"Gelen kutusunda bekleyen {inbox['count']} kaynak var. Kalici bilgi notlarina donusturmek icin 'beyin-yakala' kullanin."
+                f"{inbox['count']} sources are waiting in the inbox. Use 'beyin-yakala' to turn them into lasting knowledge notes."
             )
         else:
             recs.append(
-                f"Gelen kutusunda bekleyen {inbox['count']} kaynak var. Kalici bilgi notlarina donusturmek icin 'note-create' / beyin skill'inin ham notu bilgi notuna cevirme akisini kullanin."
+                f"{inbox['count']} sources are waiting in the inbox. To turn them into lasting knowledge notes, use 'note-create' / the beyin skill's flow for turning a raw note into a knowledge note."
             )
     if tasks.get('stale_count', 0) > 0:
         recs.append(
-            f"{tasks['stale_count']} gorev {tasks['stale_days_threshold']} gunden uzun suredir hareketsiz (waiting/blocked dahil). Bu gorevleri tamamlayin, takibini yapin veya guncelleyin."
+            f"{tasks['stale_count']} tasks have been inactive for more than {tasks['stale_days_threshold']} days (including waiting/blocked). Complete, follow up on or update these tasks."
         )
     if tasks.get('undated_count', 0) > 0:
         recs.append(
-            f"{tasks['undated_count']} gorevde frontmatter tarih bilgisi (updated_at/created_at) eksik. Senkron guvenligi icin tarih ekleyin."
+            f"{tasks['undated_count']} tasks are missing a frontmatter date (updated_at/created_at). Add a date for sync safety."
         )
     if threads and threads.get('stale_count', 0):
-        recs.append(f"{threads['stale_count']} acik konunun son ISO tarih anmasi eski; gercek durumu kaynagindan dogrulayin.")
+        recs.append(f"The latest ISO date mention of {threads['stale_count']} open threads is old; verify their actual status at the source.")
     if companion.get('active_threads', 0) > 4:
         recs.append(
-            f"Threads.md icinde {companion['active_threads']} aktif konu var. Tamamlananlari 'beyin.py companion-compact' ile arsivleyin."
+            f"Threads.md has {companion['active_threads']} active threads. Archive the finished ones with 'beyin.py companion-compact'."
         )
     if companion.get('rules_count', 0) > 35:
         recs.append(
-            f"Kurallar.md dosyasinda {companion['rules_count']} kural birikmis. Ajanin dikkat penceresini rahatlatmak icin eski veya genel kurallari sadelestirin."
+            f"{companion['rules_count']} rules have piled up in Kurallar.md. Simplify old or general rules to ease the agent's attention window."
         )
     if digest.get('count', 0) == 0:
         recs.append(
-            f"Son {digest['digest_days']} gunde yeni bilgi/karar notu uretilmedi. Ogrenilenleri knowledge/ altina damitin."
+            f"No new knowledge/decision note was produced in the last {digest['digest_days']} days. Distill what was learned under knowledge/."
         )
     else:
         mtime_count = digest.get('mtime_count', 0)
-        mtime_note = f" ({mtime_count} notta mtime'a dayandi)" if mtime_count > 0 else ""
+        mtime_note = f" ({mtime_count} relied on mtime)" if mtime_count > 0 else ""
         recs.append(
-            f"Son {digest['digest_days']} gunde {digest['count']} bilgi notu tarih onceligine gore yeni sayildi{mtime_note}; ritim saglikli."
+            f"{digest['count']} knowledge notes counted as new in the last {digest['digest_days']} days by date priority{mtime_note}; the rhythm is healthy."
         )
     return recs
 
@@ -964,7 +964,7 @@ def triage(
     threads_report = scan_stale_threads(vault, now_ts, stale_days=stale_days, state=state)
     recs = generate_recommendations(inbox_report_res, tasks_report, digest_report, companion_report, vault=vault, threads=threads_report)
     if review and review.get('due_count', 0):
-        recs.append(f"{review['due_count']} notun yeniden bakma tarihi (review_at) geldi; kaynaklari gozden gecirin. Bu bir gorev veya otomatik terfi degildir.")
+        recs.append(f"{review['due_count']} notes have reached their review date (review_at); review their sources. This is not a task or an automatic promotion.")
 
     return {
         'schema': 1,
@@ -985,21 +985,21 @@ def _strip_terminal_controls(text: str) -> str:
 
 
 def format_human(report: dict) -> str:
-    lines = ['=== Ikinci Beyin Sindirim ve Durum Raporu (Triage) ===\n']
+    lines = ['=== Second Brain Digest and Status Report (Triage) ===\n']
     inbox = report.get('inbox', {})
-    lines.append('[Gelen Kutusu / Yakalananlar]')
+    lines.append('[Inbox / Captures]')
     if inbox.get('status') == 'unavailable':
         reason = inbox.get('reason', 'inbox_scan_failed')
         detail = 'inbox-report.json: ' if reason.startswith('inbox_settings_') else ''
-        lines.append('  Taranamadi: ' + detail + _strip_terminal_controls(reason))
+        lines.append('  Could not scan: ' + detail + _strip_terminal_controls(reason))
         if inbox.get('error'):
-            lines.append('  Hata: ' + _inbox_error_code(inbox['error']))
+            lines.append('  Error: ' + _inbox_error_code(inbox['error']))
     elif inbox.get('status') == 'partial':
-        lines.append(f"  Taranabilen bekleyen kaynak: {inbox.get('count', 0)} (eksik tarama)")
+        lines.append(f"  Waiting sources that could be scanned: {inbox.get('count', 0)} (incomplete scan)")
         if inbox.get('error'):
-            lines.append('  Hata: ' + _inbox_error_code(inbox['error']))
+            lines.append('  Error: ' + _inbox_error_code(inbox['error']))
     else:
-        lines.append(f"  Bekleyen kaynak: {inbox.get('count', 0)}")
+        lines.append(f"  Waiting sources: {inbox.get('count', 0)}")
     folders = inbox.get('folders', [])
     if folders:
         for f in folders:
@@ -1007,107 +1007,107 @@ def format_human(report: dict) -> str:
             cnt = f.get('notes', 0)
             od = f.get('oldest_days')
             if 'error' in f:
-                detail = f'{cnt} not sayilabildi; tarama eksik' if cnt else 'Taranamadi'
+                detail = f'{cnt} notes could be counted; scan incomplete' if cnt else 'Could not scan'
                 lines.append(f"  - {fn}: {detail} ({_inbox_error_code(f['error'])})")
             elif od is not None:
-                lines.append(f"  - {fn}: {cnt} not (en eski: {od} gun once)")
+                lines.append(f"  - {fn}: {cnt} notes (oldest: {od} days ago)")
             else:
-                lines.append(f"  - {fn}: {cnt} not")
+                lines.append(f"  - {fn}: {cnt} notes")
     elif inbox.get('oldest_days') is not None:
-        lines.append(f"  En eski: {inbox.get('oldest_days')} gun once")
+        lines.append(f"  Oldest: {inbox.get('oldest_days')} days ago")
     lines.append('')
 
     tasks = report.get('tasks', {})
     stale_count = tasks.get('stale_count', 0)
     undated_count = tasks.get('undated_count', 0)
     stale_thresh = tasks.get('stale_days_threshold', 14)
-    lines.append(f"[Hareketsiz Gorevler] (>{stale_thresh} gun)")
+    lines.append(f"[Inactive Tasks] (>{stale_thresh} days)")
     if tasks.get('status') == 'partial':
-        lines.append('  Gorev taramasi eksik; sayilar yalniz okunabilen kaynaklari kapsiyor.')
-        summary_parts = [f"Taranabilen acik gorev: {tasks.get('open_count', 0)}", f"Hareketsiz: {stale_count}"]
+        lines.append('  Task scan incomplete; counts cover only the sources that could be read.')
+        summary_parts = [f"Open tasks that could be scanned: {tasks.get('open_count', 0)}", f"Inactive: {stale_count}"]
     else:
-        summary_parts = [f"Acik gorev: {tasks.get('open_count', 0)}", f"Hareketsiz: {stale_count}"]
+        summary_parts = [f"Open tasks: {tasks.get('open_count', 0)}", f"Inactive: {stale_count}"]
     if undated_count > 0:
-        summary_parts.append(f"Tarihsiz: {undated_count}")
+        summary_parts.append(f"Undated: {undated_count}")
     lines.append('  ' + ', '.join(summary_parts))
 
     for t in tasks.get('stale_tasks', [])[:5]:
         title = _strip_terminal_controls(t.get('title', ''))
         st = t.get('status', 'open')
         st_label = f" [{st}]" if st not in ('open', 'active') else ""
-        lines.append(f"  - {t.get('path')}: {title}{st_label} ({t.get('age_days', 0)} gun once)")
+        lines.append(f"  - {t.get('path')}: {title}{st_label} ({t.get('age_days', 0)} days ago)")
     if stale_count > 5:
-        lines.append(f"  ... ve {stale_count - 5} gorev daha")
+        lines.append(f"  ... and {stale_count - 5} more tasks")
     if undated_count > 0:
-        lines.append(f"  (Not: {undated_count} gorevde frontmatter tarih alani yok; mtime yerine tarihsiz sayildi)")
+        lines.append(f"  (Note: {undated_count} tasks have no frontmatter date field; counted as undated instead of using mtime)")
     lines.append('')
 
     if 'threads' in report:
         threads = report['threads']
-        lines.append('[Acik Konular / Threads]')
-        lines.append(f"  Acik: {threads.get('open_count', 0)}, Hareketsiz: {threads.get('stale_count', 0)}, "
-                     f"Tarihsiz: {threads.get('undated_count', 0)}")
-        lines.append('  En yeni ISO tarih anmasi kullanilir; durumun dogrulandigi anlamina gelmez. mtime kullanilmaz.')
+        lines.append('[Open Threads]')
+        lines.append(f"  Open: {threads.get('open_count', 0)}, Inactive: {threads.get('stale_count', 0)}, "
+                     f"Undated: {threads.get('undated_count', 0)}")
+        lines.append('  The newest ISO date mention is used; it does not mean the status was verified. mtime is not used.')
         if threads.get('status') == 'unavailable':
-            lines.append('  Taranamadi: ' + _strip_terminal_controls(threads.get('reason', 'unavailable')))
+            lines.append('  Could not scan: ' + _strip_terminal_controls(threads.get('reason', 'unavailable')))
         for key in ('stale_threads', 'undated_threads'):
             for item in threads.get(key, [])[:5]:
                 title = _strip_terminal_controls(item.get('title', ''))
                 path = _strip_terminal_controls(item.get('path', ''))
-                age = f"{item['last_date']}, {item['age_days']} gun once" if item.get('last_date') else 'tarihsiz'
+                age = f"{item['last_date']}, {item['age_days']} days ago" if item.get('last_date') else 'undated'
                 lines.append(f"  - {path}: {title} ({age})")
             if len(threads.get(key, [])) > 5:
-                lines.append(f"  ... ve {len(threads[key]) - 5} konu daha")
+                lines.append(f"  ... and {len(threads[key]) - 5} more threads")
         lines.append('')
 
     if 'review' in report:
         review = report['review']
-        lines.append('[Yeniden Bakilacak Notlar] (review_at, bilgi)')
+        lines.append('[Notes Due for Review] (review_at, info)')
         if review.get('status') == 'unavailable':
-            lines.append('  Taranamadi; doctor ve sync ile kontrol edin.')
+            lines.append('  Could not scan; check with doctor and sync.')
         else:
-            lines.append(f"  Tarihi gelen: {review.get('due_count', 0)}")
+            lines.append(f"  Due: {review.get('due_count', 0)}")
             for item in review.get('due', [])[:5]:
                 source = _strip_terminal_controls(item.get('source') or '')
-                lines.append(f"  - {source}: {item['review_at']} ({item['days_overdue']} gun once)")
+                lines.append(f"  - {source}: {item['review_at']} ({item['days_overdue']} days ago)")
             if review.get('due_count', 0) > 5:
-                lines.append(f"  ... ve {review['due_count'] - 5} not daha")
+                lines.append(f"  ... and {review['due_count'] - 5} more notes")
             if review.get('stale_count', 0):
-                lines.append('  Degismis veya okunamayan indeks kaynaklari sayilmadi; sync calistirin.')
+                lines.append('  Changed or unreadable index sources were not counted; run sync.')
             if review.get('invalid_count', 0):
-                lines.append(f"  Gecersiz review_at: {review['invalid_count']}; doctor ile kontrol edin.")
+                lines.append(f"  Invalid review_at: {review['invalid_count']}; check with doctor.")
         lines.append('')
 
     digest = report.get('digest', {})
     digest_days = digest.get('digest_days', 7)
     digest_count = digest.get('count', 0)
     mtime_count = digest.get('mtime_count', 0)
-    lines.append(f"[Bilgi ve Karar Ozeti] (son {digest_days} gun)")
-    lines.append("  Tarih onceligi: created, yoksa updated, yoksa mtime; eski created varsa yeni updated sayilmaz.")
+    lines.append(f"[Knowledge and Decision Digest] (last {digest_days} days)")
+    lines.append("  Date priority: created, else updated, else mtime; a recent updated does not count when created is old.")
     if mtime_count > 0:
-        lines.append(f"  Tarih onceligine gore yeni sayilan not: {digest_count} ({mtime_count} notta mtime'a dayanildi)")
+        lines.append(f"  Notes counted as new by date priority: {digest_count} ({mtime_count} relied on mtime)")
     else:
-        lines.append(f"  Tarih onceligine gore yeni sayilan not: {digest_count}")
+        lines.append(f"  Notes counted as new by date priority: {digest_count}")
     for k in digest.get('items', [])[:5]:
         title = _strip_terminal_controls(k.get('title', ''))
         lines.append(f"  - {k.get('path')}: {title}")
     if digest_count > 5:
-        lines.append(f"  ... ve {digest_count - 5} not daha")
+        lines.append(f"  ... and {digest_count - 5} more notes")
     lines.append('')
 
     comp = report.get('companion', {})
-    lines.append('[Eslikci ve Akis]')
-    lines.append(f"  Kurallar: {comp.get('rules_count', 0)} kural")
-    lines.append(f"  Acik is parcaciklari: {comp.get('active_threads', 0)} thread")
+    lines.append('[Companion and Flow]')
+    lines.append(f"  Kurallar: {comp.get('rules_count', 0)} rules")
+    lines.append(f"  Open threads: {comp.get('active_threads', 0)}")
     if comp.get('last_session'):
-        lines.append(f"  Son oturum: {comp.get('last_session')}")
+        lines.append(f"  Last session: {comp.get('last_session')}")
     if comp.get('active_presence', 0) > 0:
-        lines.append(f"  Aktif diger cihaz oturumlari: {comp.get('active_presence')}")
+        lines.append(f"  Active sessions on other devices: {comp.get('active_presence')}")
     lines.append('')
 
     recs = report.get('recommendations', [])
     if recs:
-        lines.append('[Sindirim Onerileri]')
+        lines.append('[Digest Recommendations]')
         for i, r in enumerate(recs, 1):
             lines.append(f"  {i}. {r}")
 

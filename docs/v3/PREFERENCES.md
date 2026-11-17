@@ -1,180 +1,189 @@
-# Otomatik kontrol ve bağlam tercihleri
+# Automatic check and context preferences
 
-Kullanıcı ayarı `.beyin-preferences.json` içinde; yönetilen release dosyası değildir. Installer, updater ve rollback bu dosyayı değiştirmez. Dosya yoksa mevcut normal davranış korunur. Ortak Python uygulaması Windows, macOS ve Linux'ta aynı ayarları okur; yeni servis veya model bağımlılığı yoktur.
+The user setting is in `.beyin-preferences.json`; it is not a managed release file. The installer, updater and rollback do not change this file. If the file does not exist, the existing normal behavior is kept. The shared Python application reads the same settings on Windows, macOS and Linux; there is no new service or model dependency.
 
-`python3 beyin.py preferences --profile economical` ile ekonomik, `--profile normal` ile normal, `--profile manual` ile manuel kullanım. Argüman verilmezse ayarlar okunur. Ajan bunları beyin skill'i üzerinden uygular. `--human` okunabilir çıktı sağlar.
+Use `python3 beyin.py preferences --profile economical` for economical use, `--profile normal` for normal and `--profile manual` for manual use. If no argument is given, the settings are read. The agent applies them through the beyin skill. `--human` gives readable output.
 
-Alanlar: `auto_sync` boolean; `interval_minutes` 0–1440 (0 her olay); `context_mode` turn/session/off; `context_chars` 1000–12000. Karakter sınırı ek hook bağlamının tamamına uygulanır; token kotası değildir. Sayısal ve bilinmeyen alanlar doğrulanır, hatalı dosya sessizce ezilmez.
+Fields: `auto_sync` boolean; `interval_minutes` 0–1440 (0 means every event); `context_mode` turn/session/off; `context_chars` 1000–12000. The character limit applies to the whole of the additional hook context; it is not a token quota. Numeric and unknown fields are validated, and a faulty file is not silently overwritten.
 
-Ekonomik profil: auto_sync=true, interval_minutes=15, context_mode=session, context_chars=2000. Manuel: auto_sync=false ve context_mode=off. Mevcut ayarların yalnız bir alanını değiştirmek için örneğin `preferences --interval-minutes 30`; profil seçmek otomatik kontrol ve bağlam alanlarını o profile sıfırlar, bağımsız sır süzgeci tercihini korur. Aralık değiştirmek kapalı kontrolü açmaz.
+Economical profile: auto_sync=true, interval_minutes=15, context_mode=session, context_chars=2000. Manual: auto_sync=false and context_mode=off. To change just one field of the existing settings, for example `preferences --interval-minutes 30`; choosing a profile resets the automatic check and context fields to that profile, and keeps the independent secret filter preference. Changing the interval does not turn on a check that is off.
 
-## Günlük receipt düzeni
+## Daily receipt layout
 
-`python3 beyin.py preferences --daily-layout flat` günlük receipt görünümlerini
-`daily/YYYY-MM-DD.md` yoluna yazar. Varsayılan `v3`, mevcut `daily/v3/YYYY-MM-DD.md`
-düzenini korur; geri dönmek için `--daily-layout v3` kullan. Tercih sonraki `sync` ile
-uygulanır. Ayar vault kökündeki `.beyin-daily-layout.json` dosyasındadır; vault'u Git ile
-eşitliyorsan bu dosyayı da eşitle. Makineye özel değildir, profil değişimleri etkilemez.
-Ayrı dosya eski sürümlerin sıkı `.beyin-preferences.json` şemasıyla uyumluluğu korur;
-eski motorlar bu tercihi uygulamaz, aynı vault'a yazan tüm makineleri güncelle.
-Düz görünüm sahipliği ayrı `receipt_flat_views` tablosunda tutulur; 3.11.0'a
-`rollback` eski motorun görünüm tablosuna tanımadığı yollar bırakmaz. Eski motor
-`daily/v3/` düzenini kullanır ve mevcut düz görünümleri korur. Yeniden güncelleme
-sonrası tercih tekrar uygulanır. Obsidian günlük not eklentisi düz görünümü açarsa
-oraya yazılan metin de elle düzenlenmiş görünüm sayılır ve kurtarmada arşivlenir.
+`python3 beyin.py preferences --daily-layout flat` writes the daily receipt views
+to the path `daily/YYYY-MM-DD.md`. The default `v3` keeps the existing
+`daily/v3/YYYY-MM-DD.md` layout; to go back, use `--daily-layout v3`. The preference
+is applied with the next `sync`. The setting is in the `.beyin-daily-layout.json`
+file in the vault root; if you sync the vault with Git, sync this file too. It is not
+machine-specific, and profile changes do not affect it.
+A separate file keeps compatibility with the strict `.beyin-preferences.json` schema
+of older versions; older engines do not apply this preference, so update all machines
+that write to the same vault.
+The ownership of flat views is kept in a separate `receipt_flat_views` table; a
+`rollback` to 3.11.0 leaves no paths in the old engine's view table that it does not
+recognize. The old engine uses the `daily/v3/` layout and keeps the existing flat views.
+After updating again, the preference is applied again. If the Obsidian daily notes
+plugin opens the flat view, text written there also counts as a manually edited view and
+is archived on recovery.
 
-Flat hedefinde motorun takip etmediği, generated olmayan bir insan günlüğü varsa dosya
-korunur, görünüm yazılmaz ve çakışma oluşmaz. Receipt'ler `knowledge/v3/outcomes.md`
-içinde kalır; insan günlüğüne referans veren receipt'ler bağlamdan gizlenmez.
-Düzen değişince eski takip edilen görünüm yalnız son yazılan baytlarla aynıysa kaldırılır.
-Elle düzenlenmiş görünüm korunur ve `sync` ile `doctor` görünür uyarı verir.
-`python3 beyin.py sync --recover-views` bu düzenlemeyi yanındaki `.archive/` içine
-kayıpsız arşivleyip görünümü yeniden üretir veya eski görünümü kaldırır. Bu komut da
-takip edilmeyen insan günlüğüne dokunmaz.
+If the flat target has a non-generated human daily note that the engine does not track,
+the file is kept, no view is written and no conflict arises. Receipts stay in
+`knowledge/v3/outcomes.md`; receipts that reference a human daily note are not hidden
+from context. When the layout changes, the old tracked view is removed only if it is
+identical to the bytes last written.
+A manually edited view is kept, and `sync` and `doctor` give a visible warning.
+`python3 beyin.py sync --recover-views` archives this edit losslessly in the `.archive/`
+next to it and regenerates the view or removes the old view. This command also does not
+touch an untracked human daily note.
 
-`preferences --human` etkin düzeni ve hedef yol kalıbını gösterir. Flat hedefi sembolik
-bağlantıysa hedef dosyaya dokunulmaz; `sync` kaynak uyarısı ile diğer notları işlemeye
-devam eder. State yeniden kurulduktan sonra eski düzende kalan `generated: true` ve
-`kind: receipt-index` görünümleri de bulunur. Baytları yeni düzende üretilecek içerikle
-aynıysa emekliye ayrılır; eşleşmiyorsa elle değiştirilmiş olabilecekleri için korunur
-ve yalnız `--recover-views` ile kayıpsız arşivlenir. Flat dosya adı tek başına sahiplik
-kanıtı değildir; state ve generated başlığı birlikte kaybolmuşsa insan notu sayılır.
+`preferences --human` shows the active layout and the target path pattern. If the flat
+target is a symbolic link, the target file is not touched; `sync` keeps processing the
+other notes with a source warning. After the state is rebuilt, views left in the old
+layout with `generated: true` and `kind: receipt-index` are also found. If their bytes
+are identical to the content that would be generated in the new layout, they are
+retired; if they do not match, they are kept because they may have been changed by hand,
+and are archived losslessly only with `--recover-views`. A flat file name alone is not
+proof of ownership; if the state and the generated header are both lost, it counts as a
+human note.
 
-Üretilmiş bir görünüme dayandığı için bağlamdan dışlanan receipt'in kimlik kanıtı
-`receipts/<event-id-sha256>.md.view-provenance.json` içinde kalır. Receipt Markdown'ı
-değişmez; işaret özet metni veya not içeriği taşımaz. State silinip yeniden kurulduğunda
-ya da başka makineye geçildiğinde bu receipt dışarıda kalır; aynı eski günlük yolunu
-sonradan kullanan insan notuna dayanan **yeni kimlikli** receipt'ler görünür olabilir.
-`receipts/` eşitlenirken bu JSON dosyalarını da eşitle ve geçmiş kanıtı korumak için
-silme. İşaret bozuksa sessizce onarılmaz; ilgili receipt dışarıda tutulur, uyarı verilir
-ve mevcut görünümler korunur. İşaret yazılamadığında veya POSIX dizin `fsync` başarısız
-olduğunda da görünümün son kopyası silinmez; sorun giderilip `sync` yeniden çalıştırılır.
-Windows'ta Python'un standart API'siyle dizin `fsync` yoktur; dosya `fsync` ve atomik
-yenileme uygulanır. Eski motorlar yeni JSON işaretlerini okuyamaz; dosya biçimi onları
-bozmasa da state kaybından sonraki bu dışlama güvencesi için tüm makineleri güncelle.
-Önceki sürümden kalan SQLite dışlama satırları ilk `sync` sırasında bu işaretlere
-aktarılır. Güncellemeden önce hem state hem eski görünümün kanıtı zaten kaybolmuşsa
-geçmiş güvenle çıkarılamaz; eski state veya vault yedeği gerekir. İnsan günlüklerini
-yanlışlıkla gizlememek için yalnız dosya adından geçmiş sahiplik uydurulmaz.
+The identity evidence of a receipt that is excluded from context because it rests on a
+generated view stays in `receipts/<event-id-sha256>.md.view-provenance.json`. The receipt
+Markdown does not change; the marker carries no summary text or note content. When the
+state is deleted and rebuilt, or when moving to another machine, this receipt stays
+excluded; **new-identity** receipts that rest on a human note that later uses the same
+old daily path can become visible. When syncing `receipts/`, sync these JSON files too and
+do not delete them, to preserve the historical evidence. A corrupt marker is not silently
+repaired; the receipt concerned is kept out, a warning is given and existing views are
+kept. If the marker cannot be written or the POSIX directory `fsync` fails, the last copy
+of the view is not deleted either; fix the problem and run `sync` again.
+On Windows there is no directory `fsync` with Python's standard API; file `fsync` and
+atomic replacement are applied. Older engines cannot read the new JSON markers; even if
+the file format does not break them, update all machines for this exclusion guarantee
+after state loss. SQLite exclusion rows left from the previous version are moved to
+these markers during the first `sync`. If, before the update, the evidence of both the
+state and the old view is already lost, the history cannot be safely recovered; an old
+state or vault backup is needed. To avoid hiding human daily notes by mistake, historical
+ownership is not made up from the file name alone.
 
-### Obsidian grafiği ve receipt dosyaları
+### Obsidian graph and receipt files
 
-Her receipt `receipts/<event-id-sha256>.md` adıyla yazılır. Bu ad receipt'in kimliğidir:
-aynı gönderimin tekrarı, yarım kalan yazmanın kurtarılması, başka makineden gelen kopyanın
-eşleşmesi ve eski sürümler bu adla çalışır. Beyin bu yüzden receipt dosyalarını yeniden
-adlandırmaz; elle de yeniden adlandırma, adı eşleşmeyen dosya receipt olarak okunmaz.
+Each receipt is written under the name `receipts/<event-id-sha256>.md`. This name is the
+receipt's identity: repeating the same submission, recovering a half-finished write,
+matching a copy coming from another machine, and older versions all work with this name.
+For this reason Beyin does not rename receipt files; renaming them by hand too, a file
+whose name does not match is not read as a receipt.
 
-`daily/v3/` ve `knowledge/v3/outcomes.md` görünümleri receipt'e
-`[[receipts/<hash>.md|<event_id>]]` biçiminde bağlanır, okuma görünümünde hash yerine
-event id görünür. Özeti gizlenen receipt'te (özel, güvenilmeyen, okunamayan veya indeks
-dışı bırakılan kaynağa bağlı) event id de gösterilmez; bağlantı yalnız hash adıyla kalır,
-çünkü ajanın seçtiği id çoğu zaman özetle aynı işi anlatır. `recap` da event id göstermez.
+The `daily/v3/` and `knowledge/v3/outcomes.md` views link to the receipt in the form
+`[[receipts/<hash>.md|<event_id>]]`; in the reading view the event id appears instead of
+the hash. For a receipt whose summary is hidden (bound to a private, untrusted, unreadable
+or index-excluded source) the event id is not shown either; the link stays only with the
+hash name, because the id the agent chose often says the same thing as the summary.
+`recap` does not show the event id either.
 
-Obsidian grafiği düğümleri dosya adıyla etiketler; `aliases` veya `title` özelliği çekirdek
-grafikteki etiketi değiştirmez. Receipt düğümleri bu yüzden grafikte hash adıyla görünür ve
-her receipt'e bağlanan `outcomes` büyük bir merkez düğüm olur. Beyin `.obsidian/` ayarlarına
-dokunmaz; receipt'leri grafikten çıkarmak Obsidian'da kullanıcının seçimidir:
+The Obsidian graph labels nodes with the file name; the `aliases` or `title` property
+does not change the label in the core graph. For this reason receipt nodes appear in the
+graph with their hash name, and `outcomes`, which links to every receipt, becomes a large
+hub node. Beyin does not touch the `.obsidian/` settings; taking receipts out of the
+graph is the user's choice in Obsidian:
 
-- Yalnız grafikten gizlemek için Graph view ayarlarında (dişli simgesi) Filters > Search files
-  alanına `-path:"receipts/"` yaz. Üretilmiş görünümleri de gizlemek için
-  `-path:"receipts/" -path:"daily/v3/" -path:"knowledge/v3/"` kullan. `path:` yolun içinde
-  arar; adı `receipts` ile biten başka bir klasör de gizlenir. Arama ve dosya gezgini değişmez.
-- Grafikten ve aramadan birlikte çıkarmak için Settings > Files and links > Excluded files
-  listesine `receipts/` ekle (istersen `daily/v3/` ve `knowledge/v3/` de). Obsidian bu
-  kalıplara uyan dosyaları Graph view, Search ve unlinked mentions içinde göstermez, Quick
-  Switcher ve bağlantı önerilerinde geri plana alır.
+- To hide them only from the graph, type `-path:"receipts/"` into Filters > Search files
+  in the Graph view settings (gear icon). To hide the generated views too, use
+  `-path:"receipts/" -path:"daily/v3/" -path:"knowledge/v3/"`. `path:` searches inside the
+  path; another folder whose name ends with `receipts` is also hidden. Search and the file
+  explorer do not change.
+- To take them out of the graph and search together, add `receipts/` to the Settings >
+  Files and links > Excluded files list (and `daily/v3/` and `knowledge/v3/` too if you
+  like). Obsidian does not show files matching these patterns in Graph view, Search and
+  unlinked mentions, and de-emphasizes them in Quick Switcher and link suggestions.
 
-Bu ayarlar yalnız Obsidian'ı etkiler; `sync`, `recap`, `context` ve oturum açılış bağlamı
-aynı kalır. Flat düzende görünümler insan günlükleriyle aynı `daily/` klasöründedir;
-`daily/` klasörünü dışlarsan kendi günlüklerin de gizlenir.
+These settings affect only Obsidian; `sync`, `recap`, `context` and the session opening
+context stay the same. In the flat layout the views are in the same `daily/` folder as
+human daily notes; if you exclude the `daily/` folder, your own daily notes are hidden too.
 
-## Hafıza dosyası sınırları
+## Memory file limits
 
-`Last-Session.md` varsayılan olarak 3.000, `Threads.md` 8.000 karakterle sınırlıdır.
-`python3 beyin.py preferences --last-session-chars 4000 --threads-chars 12000` sınırları
-1.000 ile 200.000 arasında değiştirir, `0` ilgili sınırı kapatır. Bu iki alan vault
-tercih dosyasında değil, runtime klasöründeki `companion-limits.json` dosyasında tutulur:
-eski sürümler bilinmeyen tercih alanını reddettiği için rollback güvenli kalır, ayar ise
-makineye özeldir. Profil değişikliği sınırları sıfırlamaz. Hatalı değer veya bozuk sınır
-dosyası hiçbir ayarı kaydettirmez. Sınır aşılınca oturum başındaki uyarı, `doctor` raporu
-ve kayıpsız `companion-compact` komutu [companion incelemesinde](COMPANION-PARITY.md)
-anlatılır.
+`Last-Session.md` is limited to 3,000 characters by default and `Threads.md` to 8,000.
+`python3 beyin.py preferences --last-session-chars 4000 --threads-chars 12000` changes
+the limits between 1,000 and 200,000, and `0` turns off the limit concerned. These two
+fields are kept not in the vault preference file but in `companion-limits.json` in the
+runtime folder: since older versions reject an unknown preference field, rollback stays
+safe, while the setting is machine-specific. A profile change does not reset the limits.
+A faulty value or a corrupt limits file prevents any setting from being saved. The
+warning at the start of a session when the limit is exceeded, the `doctor` report and
+the lossless `companion-compact` command are described in [the companion review](COMPANION-PARITY.md).
 
-## Oturum başı hafıza bağlamı
+## Memory context at session start
 
-Oturum başındaki hafıza bağlamı (ve "nerede kaldık" gibi süreklilik soruları) `Core`, `Kurallar`,
-`Last-Session`, `Threads` ve `Journal` dosyalarını birlikte taşır. Yalnız iki handoff dosyasının
-sınırları 3.000 + 8.000 karakter olduğundan 12.000 tavanı dar kalabilir.
-`python3 beyin.py preferences --companion-context-chars 24000` bu açılış bağlamına 1.000 ile
-24.000 arasında ayrı bir bütçe verir; `0` yeniden `context_chars` değerini kullanır. Diğer
-turlardaki bağlam `context_chars` ile sınırlı kalır. Ayar vault tercih dosyasında değil,
-runtime klasöründeki `companion-context.json` dosyasında tutulur: eski sürümler tercih
-dosyasındaki bilinmeyen alanı ya da aralık dışı değeri reddettiği için rollback güvenli
-kalır. Bozuk dosya açılışı `context_chars` sınırına döndürür ve kendiliğinden ezilmez.
+The memory context at the start of a session (and continuity questions like "where did we leave off")
+carries the `Core`, `Kurallar`, `Last-Session`, `Threads` and `Journal` files together. Since the limits of
+the two handoff files alone are 3,000 + 8,000 characters, the 12,000 ceiling can be tight.
+`python3 beyin.py preferences --companion-context-chars 24000` gives this opening context a
+separate budget between 1,000 and 24,000; `0` uses the `context_chars` value again. The
+context in other turns stays limited by `context_chars`. The setting is kept not in the vault
+preference file but in `companion-context.json` in the runtime folder: since older versions reject
+an unknown field or an out-of-range value in the preference file, rollback stays safe. A corrupt file
+returns the opening to the `context_chars` limit and is not overwritten on its own.
 
-İstemcinin kendi sınırı bu bütçeden önce gelir. Claude Code, hook'un `additionalContext`
-metni 10.000 karakteri aşınca metni oturum klasöründe bir dosyaya yazar ve modele yalnız dosya
-yolu ile ilk ~2.000 karakterlik önizlemeyi verir; bu sınırı yükselten bir ayar yoktur. Dolu
-companion'da önizlemeye yalnız `Core` ve `Kurallar` sığar, `Last-Session`, `Threads` ve
-`Journal` otomatik bağlamdan düşer (#175). Bu yüzden Claude Code oturumlarında hem açılış hem
-tur bağlamı en fazla 9.500 karakterle üretilir (`context_chars` 12.000 olsa da); `preferences`
-çıktısı bunu `client_context_notice` ile söyler. Codex de varsayılan olarak 10.000 UTF-8 baytı
-(4 baytlık 2.500 yaklaşık token) aşan hook bağlamını dosyaya taşır ve modele yalnız baş ve son
-önizlemeyi verir; ortası düşer (`codex-rs/hooks/src/output_spill.rs`). Türkçe harfler 2 bayt
-tuttuğu için Codex oturumlarında bağlam aynı 9.500 karakter bütçesiyle üretilir, metin 10.000
-baytı geçerse bütçe orantılı küçültülüp yeniden üretilir; bölümler sondan kesilmez. Codex'in
-hook başına `additionalContextLimit` ayarı `.codex/hooks.json` içindedir ve bu dosyayı
-değiştirmek hook güvenini düşürdüğü için Beyin onu kullanmaz. Antigravity, OpenCode, Hermes ve
-OMP için böyle bir sınır ölçülmedi.
+The client's own limit comes before this budget. In Claude Code, when the hook's `additionalContext`
+text exceeds 10,000 characters, it writes the text to a file in the session folder and gives the model
+only the file path and a preview of the first ~2,000 characters; there is no setting that raises this limit.
+With a full companion only `Core` and `Kurallar` fit into the preview; `Last-Session`, `Threads` and
+`Journal` drop out of the automatic context (#175). For this reason, in Claude Code sessions both the opening
+and the turn context are produced with at most 9,500 characters (even if `context_chars` is 12,000); the
+`preferences` output says this with `client_context_notice`. By default Codex also moves hook context that exceeds
+10,000 UTF-8 bytes (about 2,500 tokens of 4 bytes) to a file and gives the model only a head and tail preview;
+the middle is dropped (`codex-rs/hooks/src/output_spill.rs`). Since Turkish letters take 2 bytes, in Codex sessions
+the context is produced with the same 9,500-character budget, and if the text exceeds 10,000 bytes the budget is
+reduced proportionally and regenerated; sections are not cut from the end. Codex's per-hook `additionalContextLimit`
+setting is in `.codex/hooks.json`, and since changing this file lowers hook trust, Beyin does not use it. No such
+limit was measured for Antigravity, OpenCode, Hermes and OMP.
 
-Açılışta hafıza dosyaları kırpılıyorsa sorgusuz seçilen ilgisiz bir not eklenmez; kalan
-bütçe kırpılan dosyalara döner. Dosyalar tam sığıyorsa en fazla 1.500 karakterlik bir
-güncel not eklenebilir.
+If the memory files are being trimmed at the opening, an unrelated note selected without a query is not added; the remaining
+budget goes back to the trimmed files. If the files fit completely, a recent note of at most 1,500 characters can be added.
 
-`Kurallar.md`'nin bu bütçede en fazla kaç karakterinin tam geldiğini `doctor`
-`companion_rules_opening` altında söyler; kurallar kırpılıyorsa `--human` çıktısı bunu tek
-satırla bildirir (#374). Sayı öbür companion dosyalarının boyutuyla ve receipt'le değişir.
-Core 544, Last-Session 1.743, Threads 543 karakter ve bir receipt taşıyan örnek bir kasada
-varsayılan 5.000 karakterlik açılış yaklaşık 1.550-1.750, 8.000 yaklaşık 3.050-3.300
-karakter gösterir; satır başına ~50 karakterlik kurallarla bu 30 ile 60 kural arasıdır.
+`doctor` reports under `companion_rules_opening` how many characters of `Kurallar.md` arrive in full within this budget;
+if the rules are trimmed, the `--human` output reports this in a single line (#374). The number changes with the size of the other
+companion files and with the receipt. In a sample vault carrying Core 544, Last-Session 1,743, Threads 543 characters and one
+receipt, the default 5,000-character opening shows about 1,550-1,750 and 8,000 about 3,050-3,300 characters; with rules of
+~50 characters per line this is between 30 and 60 rules.
 
-## Opt-in sır süzgeci
+## Opt-in secret filter
 
-`python3 beyin.py preferences --secret-filter on` komutu receipt özeti, note-create ve task-create gövdesi, bu komutların ve task-update değişikliklerinin `title`, `next_action`, `completion_criterion` ve `facts` alanlarında yaygın erişim anahtarı biçimlerini yazmadan önce `[REDACTED]` ile değiştirir. Varsayılan kapalıdır; profil değişikliği bu bağımsız tercihi değiştirmez. Kapatmak için `--secret-filter off` kullan.
+The command `python3 beyin.py preferences --secret-filter on` replaces common access-key formats with `[REDACTED]` before writing, in the receipt summary, the note-create and task-create body, and the `title`, `next_action`, `completion_criterion` and `facts` fields of these commands and of task-update changes. It is off by default; a profile change does not change this independent preference. To turn it off, use `--secret-filter off`.
 
-`TYPESAFE_API_KEY=...`, `OPENAI_API_KEY=...`, `MY_SECRET=...`, `DB_PASSWORD=...`, `AWS_SECRET_ACCESS_KEY=...` ve `PRIVATE_KEY=...` gibi ön ekli ortam değişkeni atamaları da tanınır; `export`, `set`, `$env:`, `os.environ["..."] = ...` ve tırnaklı yazım desteklenir. Ad ile değer arasında `=` veya `:` olmayan Windows `setx` ve `[Environment]::SetEnvironmentVariable` ile fish `set -x` komutları da tanınır; bu komutlarda tırnaksız değer en az bir rakam içermelidir, böylece düz yazıdaki bir sonraki kelime karartılmaz. Tanınan sır adı değişkenin sonunda olmalıdır: `PUBLIC_API_KEY_NAME`, `API_KEY_COUNT` ve `SSH_PRIVATE_KEY_PATH` gibi yapılandırma adları bu nedenle karartılmaz. Hugging Face tokenizer alanları (`pad_token`, `eos_token`, `bos_token`, `unk_token`, `sep_token`, `cls_token`, `mask_token`) sır sayılmaz. Türkçe harf içeren bir adda (`KİŞİSEL_API_KEY=...`) değer karartılır, adın Türkçe kısmı korunur. Mevcut değer uzunluğu ve biçim sınırları geçerlidir; her ortam değişkeni veya kısa parola sır olarak algılanmaz.
+Prefixed environment variable assignments like `TYPESAFE_API_KEY=...`, `OPENAI_API_KEY=...`, `MY_SECRET=...`, `DB_PASSWORD=...`, `AWS_SECRET_ACCESS_KEY=...` and `PRIVATE_KEY=...` are also recognized; `export`, `set`, `$env:`, `os.environ["..."] = ...` and quoted forms are supported. Windows `setx` and `[Environment]::SetEnvironmentVariable` and fish `set -x` commands, which have no `=` or `:` between the name and the value, are also recognized; in these commands an unquoted value must contain at least one digit, so that the next word in plain text is not redacted. The recognized secret name must be at the end of the variable: configuration names such as `PUBLIC_API_KEY_NAME`, `API_KEY_COUNT` and `SSH_PRIVATE_KEY_PATH` are therefore not redacted. Hugging Face tokenizer fields (`pad_token`, `eos_token`, `bos_token`, `unk_token`, `sep_token`, `cls_token`, `mask_token`) are not counted as secrets. In a name containing a Turkish letter (`KİŞİSEL_API_KEY=...`), the value is redacted and the Turkish part of the name is kept. The existing value length and format limits apply; not every environment variable or short password is detected as a secret.
 
-Ek sabit sır değerleri vault dışındaki runtime klasöründe `secret-patterns.txt` dosyasına, satır başına bir değer olarak yazılabilir. Dosya regex çalıştırmaz; yorum satırları `#` ile başlar. Eşleşen metinler veya değerler sağlık kaydına yazılmaz, yalnız toplam eşleşme sayısı `doctor` sonucunda gösterilir. Bu önlem kazara kalıcı yazımı azaltır; tam bir DLP veya önceden yazılmış notları temizleme aracı değildir.
+Additional fixed secret values can be written, one value per line, to the `secret-patterns.txt` file in the runtime folder outside the vault. The file runs no regex; comment lines start with `#`. The matched texts or values are not written to the health record, only the total number of matches is shown in the `doctor` result. This measure reduces accidental persistent writes; it is not a full DLP tool or a tool for cleaning notes already written.
 
-Süre en son otomatik başlatmaya göre yerel SQLite kaydıyla, istemciler arasında atomik olarak sınırlandırılır. Bir sonraki olay gelmedikçe kontrol çalışmaz. Yeni oturumda daima taze kontrol; kaydedilmiş worker hatasında yeniden deneme. Kayıt yazılamıyorsa (başka istemci kilidi tutuyor, kadans dosyası salt okunur ya da disk dolu) o turun otomatik kontrolü atlanır: hook hata üretmez, tur bağlamı önceki indeksten gelir ve uyarı sebebi söyler — aralık atlamasında "aralık tercihin" satırı, yazma reddinde kaydın yazılamadığını belirten ve `doctor`a yönlendiren satır. Yalnız kilit ve yazma reddi atlanır; bozuk kadans tablosu gibi gerçek hatalar görünür kalır. Runtime klasörünün bütünü yazılamıyorsa hook bu noktaya gelmeden olay kuyruğuna yazmayı dener; o durum ayrı bir hook davranışıdır ve bu kural onu kapsamaz. Bu düşük seviyeli kontrol model çağırmaz. Otomatik bağlam kapalı olsa bile açık not/görev/receipt ve context komutları çalışır. Kapatmadan önce başlatılmış bir işlem tamamlanabilir; önceden bekleyen metadata saklanır. Açık `--drain-queue` bakım komutu bu kuyruğu işler.
+The interval is limited, by the local SQLite record, atomically across clients, from the most recent automatic start. The check does not run unless the next event arrives. In a new session there is always a fresh check; on a recorded worker failure, a retry. If the record cannot be written (another client holds the lock, the cadence file is read-only or the disk is full), the automatic check of that turn is skipped: the hook produces no error, the turn context comes from the previous index, and a warning says the reason — in the case of an interval skip the "interval preference" line, in the case of a write refusal a line saying the record could not be written and pointing to `doctor`. Only the lock and the write refusal are skipped; real errors such as a corrupt cadence table stay visible. If the runtime folder as a whole cannot be written, the hook tries to write to the event queue before reaching this point; that is a separate hook behavior and this rule does not cover it. This low-level check calls no model. Even when automatic context is off, explicit note/task/receipt and context commands work. An operation started before turning it off can complete; metadata that was already pending is kept. The explicit `--drain-queue` maintenance command processes this queue.
 
-Aralığa takılmış bir kontrolde turn bağlamı istenirse eski kayıtları güncel diye sunmak yerine kısa tazeleme uyarısı verilir. Ekonomik modda sonraki mesajlarda tekrar bağlam eklenmez; beyin skill'i bilgi gerektiğinde kaynakları doğrudan tazeler.
+If turn context is requested during a check held back by the interval, a short refresh warning is given instead of presenting old records as current. In economical mode, context is not added again in later messages; the beyin skill refreshes the sources directly when information is needed.
 
-Özel V2 cron/LaunchAgent/Task Scheduler işleri veya kullanıcının ayrı kurduğu 15 dakikalık ücretli ajan otomasyonları bu tercihlerle kapatılmaz. Önce ilgili işi tespit edip ayrı yönetmek gerekir. V3 kendiliğinden Luna/Sonnet çalıştırmaz.
+Custom V2 cron/LaunchAgent/Task Scheduler jobs or the 15-minute paid agent automations that the user set up separately are not turned off by these preferences. The job concerned must first be identified and managed separately. V3 does not run Luna/Sonnet on its own.
 
-Bu değişiklik yerel adaydır; yayımlanmış v3.0.0 paketine otomatik olarak eklenmez. Yeni paket yayımlanmadan kullanıcılara mevcut sürüm özelliği diye duyurulmamalıdır.
+This change is a local candidate; it is not automatically added to the published v3.0.0 package. Until a new package is published, it should not be announced to users as an existing version feature.
 
-## Projeyi tanıyan oturum başı
+## Project-aware session start
 
-`python3 beyin.py preferences --project-context on` komutu, [global köprünün](GLOBAL-BRIDGE.md) vault dışındaki bir projede açılan oturumun başına o projeye ait kısa bir blok eklemesini sağlar. Varsayılan kapalıdır; kapalıyken köprünün çıktısı değişmez. Vault içindeki oturumlar etkilenmez. Açıldığında:
+The command `python3 beyin.py preferences --project-context on` makes [the global bridge](GLOBAL-BRIDGE.md) add a short block about that project to the start of a session opened in a project outside the vault. It is off by default; when off, the bridge's output does not change. Sessions inside the vault are not affected. When on:
 
-- Aynı `project_id`'ye (klasör yolunun hash'i) bağlı en yeni receipt özeti tek satır olarak eklenir, en fazla 600 karakter. Receipt'in kaynak dosyası silinmişse ya da receipt veya `refs` içindeki bir kaynak `private` ya da güvenilmez ise o receipt atlanır ve bir öncekine bakılır.
-- O projenin tarihi gelmiş görevleri (`due_at` yerel tarihe göre bugün ya da geçmiş, durum `active` veya `waiting`) başlık ve sonraki adımla listelenir. Görevde açık `project_id` varsa yalnız aynı kanonik klasör kimliği eşleşir; farklı veya geçersiz kimlikte ada geri düşülmez. Bu alan yoksa eski davranış korunur: `project` alanı klasör adıyla (büyük/küçük harf duyarsız) eşleşir ve aynı adlı iki klasör aynı görevleri görür. CLI/web, görünen addan klasör kimliği üretmez. Bu kısmi koruma eski sürüme dönüldüğünde yoktur; kimlik ayrımı gerektiren kullanımda geri dönüş öncesi `--project-context off` kullanın.
-- Görevler normal bağlamla aynı kapılardan geçer: `private` ve güvenilmez kayıt, supersede edilmiş görev ve indekslendikten sonra değişmiş kaynak girmez.
-- Başka projelerin ya da projesiz görevlerin başlığı verilmez, yalnız sayı yazılır: `(bu proje disinda N tarihi gelmis gorev)`.
-- Blok köprünün `--context-chars` bütçesinden geriye kalanla ve en fazla 1.200 karakterle sınırlıdır. Görev varsa receipt özeti bu alanın yarısını aşmaz. Satırlar bütün olarak eklenir; sığmayan görevler `(+N gorev sigmadi)` ile sayılır.
-- Blok salt okunur SQLite okumasıyla kurulur; model çağrısı ve yazma yoktur. Okuma başarısız olursa yalnız bu blok düşer, köprünün başlangıç talimatı aynen verilir.
-- Ayar, eski sürümler bilinmeyen tercih alanını reddettiği için `.beyin-preferences.json` içinde değil, runtime klasöründeki `project-context.json` dosyasında tutulur; makineye özeldir ve rollback güvenlidir. Kapatmak için `--project-context off`.
+- The newest receipt summary bound to the same `project_id` (the hash of the folder path) is added as a single line, at most 600 characters. If the receipt's source file has been deleted, or the receipt or a source in `refs` is `private` or untrusted, that receipt is skipped and the previous one is looked at.
+- That project's due tasks (`due_at` today or earlier by local date, status `active` or `waiting`) are listed with title and next step. If the task has an explicit `project_id`, only the same canonical folder identity matches; with a different or invalid identity there is no fallback to the name. If this field is absent, the old behavior is kept: the `project` field matches the folder name (case-insensitive), and two folders with the same name see the same tasks. The CLI/web does not derive a folder identity from the display name. This partial protection does not exist when reverting to an older version; for use that needs identity separation, use `--project-context off` before rolling back.
+- Tasks go through the same gates as normal context: `private` and untrusted records, superseded tasks and sources that changed after being indexed do not enter.
+- The titles of other projects' tasks or of projectless tasks are not given, only a count is written: `(N due tasks outside this project)`.
+- The block is limited to what remains of the bridge's `--context-chars` budget and to at most 1,200 characters. If there are tasks, the receipt summary does not exceed half of this area. Lines are added whole; tasks that do not fit are counted with `(+N tasks did not fit)`.
+- The block is built with a read-only SQLite read; there is no model call and no write. If the read fails, only this block drops, and the bridge's start instruction is given exactly as is.
+- Since older versions reject an unknown preference field, the setting is kept not in `.beyin-preferences.json` but in `project-context.json` in the runtime folder; it is machine-specific and rollback-safe. To turn it off, `--project-context off`.
 
-## Hassas klasörlerin korunması
+## Protection of sensitive folders
 
-Adında `Kasa`, `Şifreler`, `Müşteriler`, `Özel`, `Private` gibi hassasiyet bildiren bir sözcük bulunan klasörler ana hafıza taramasına alınmaz. Aynı kural alt klasörlerde de geçerlidir; Türkçe harfler, büyük/küçük harfler ve baştaki emoji veya numaralar fark etmez. Bu dosyalar silinmez ya da değiştirilmez.
+Folders whose name contains a word that signals sensitivity, such as `Kasa`, `Şifreler`, `Müşteriler`, `Özel`, `Private`, are not included in the main memory scan. The same rule applies in subfolders as well; Turkish letters, upper/lower case, and a leading emoji or numbers make no difference. These files are not deleted or modified.
 
-Eski sürümden kalan bir indeks henüz senkronize edilmemiş olsa bile bu klasörlerdeki kaynaklar otomatik hafıza bağlamında gösterilmez. Bu kaynaklara bağlı receipt özetleri de otomatik açılış bağlamından çıkarılır. Görünür bir hafıza kaydı istiyorsan dosyayı hassas klasör dışında tutmalısın. `visibility: private` kişisel notlar için ayrıca kullanılabilir; yalnızca klasör adı, dosyanın işletim sistemi ve Git izinlerini değiştirmez.
+Even if an index left from an older version has not been synchronized yet, sources in these folders are not shown in the automatic memory context. Receipt summaries bound to these sources are also removed from the automatic opening context. If you want a visible memory record, you must keep the file outside the sensitive folder. `visibility: private` can additionally be used for personal notes; the folder name alone does not change the file's operating system and Git permissions.
 
-## Opt-in hijyen sinyalleri
+## Opt-in hygiene signals
 
-Üç sinyal vardır ve üçü de varsayılan olarak kapalıdır; açılmadıkça hook çıktısı ve `doctor` raporu değişmez:
+There are three signals and all three are off by default; unless turned on, the hook output and the `doctor` report do not change:
 
 ```bash
 python3 beyin.py preferences --word-cap-warning on --max-words 800
@@ -182,52 +191,52 @@ python3 beyin.py preferences --folder-questions on
 python3 beyin.py preferences --promotion on
 ```
 
-- `--word-cap-warning`: Claude veya Codex bir notu yazdıktan sonra (PostToolUse) not tavanı aşıyorsa tek satırlık bir bölme sinyali verir. Bu bir sinyaldir, dosya bölünmez ya da taşınmaz. Tavan `--max-words` ile 10 ile 100000 arasında ayarlanır (varsayılan 500). Codex'in `apply_patch` düzenlemeleri de ölçülür. Antigravity, OpenCode, OMP ve Hermes'te bu sinyal gösterilmez.
-- `--folder-questions`: oturum başında 14 günden uzun süredir sessiz üst klasörler için en fazla üç soru ekler. Yalnız klasörün kendisine ve doğrudan içeriğine bakılır, vault taranmaz. Aynı klasör, yeniden hareketlenene kadar bir kez sorulur.
-- `--promotion`: düzenlenen notların vault içi yollarını runtime klasöründeki `touch-log.tsv` dosyasına yazar; `doctor` bunlardan sıcak ve soğuk klasör raporu çıkarır. Taşıma kararı her zaman senindir.
+- `--word-cap-warning`: after Claude or Codex writes a note (PostToolUse), if the note exceeds the cap, it gives a one-line split signal. This is a signal; the file is not split or moved. The cap is set between 10 and 100000 with `--max-words` (default 500). Codex's `apply_patch` edits are also measured. This signal is not shown in Antigravity, OpenCode, OMP and Hermes.
+- `--folder-questions`: at session start, adds at most three questions for top-level folders that have been quiet for more than 14 days. Only the folder itself and its direct contents are looked at; the vault is not scanned. The same folder is asked once until it becomes active again.
+- `--promotion`: writes the in-vault paths of edited notes to the `touch-log.tsv` file in the runtime folder; `doctor` produces a hot and cold folder report from them. The decision to move is always yours.
 
-Companion klasörü, kasa sınıfı adlar (`Kasa`, `Şifreler`, `Müşteriler`, `Özel`, `Private` gibi, emoji ya da numara önekli yazımlar dahil), arşiv, şablon ve kod klasörleri bu sinyallerin hepsinden muaftır. Ayarlar, eski sürümler bilinmeyen tercih alanını reddettiği için `.beyin-preferences.json` içinde değil, runtime klasöründeki `hygiene.json` dosyasında tutulur; makineye özeldir, profil değişimi onlara dokunmaz ve rollback güvenlidir. Kapatmak için aynı seçeneği `off` ile ver.
+The companion folder, vault-class names (`Kasa`, `Şifreler`, `Müşteriler`, `Özel`, `Private`, including spellings with an emoji or number prefix), archive, template and code folders are exempt from all of these signals. Since older versions reject an unknown preference field, the settings are kept not in `.beyin-preferences.json` but in `hygiene.json` in the runtime folder; it is machine-specific, a profile change does not touch them, and they are rollback-safe. To turn off, give the same option with `off`.
 
 
-### Gelen kutusu raporu
+### Inbox report
 
 ```bash
 python3 beyin.py preferences --inbox-report on --inbox-max-items 10 --inbox-max-days 7
 ```
 
-Varsayılan kapalıdır. Açıkken `doctor`, adında `inbox` sözcüğü ya da `gelen kutusu` ifadesi geçen üst klasörlerdeki (`📥 000-Inbox`, `00_INBOX`, `Gelen Kutusu`) Markdown notlarını sayar ve en eski notun yaşını gösterir (`inbox` alanı). Yaş notun frontmatter `created` tarihinden alınır; tarih yoksa ya da gerçek bir tarih değilse dosya değişiklik zamanına düşer (klon ve eşitleme istemcileri bu zamanı sıfırlayabilir). Gelen kutun başka bir adla duruyorsa üst klasör adını kendin ver; liste ad tanımanın yerine geçer, büyük/küçük harf ve Unicode yazımı fark etmez:
+It is off by default. When on, `doctor` counts the Markdown notes in top-level folders whose name contains the word `inbox` or the phrase `gelen kutusu` (`📥 000-Inbox`, `00_INBOX`, `Gelen Kutusu`) and shows the age of the oldest note (the `inbox` field). The age is taken from the note's frontmatter `created` date; if there is no date or it is not a real date, it falls back to the file modification time (clone and sync clients can reset this time). If your inbox sits under another name, give the top-level folder name yourself; the list replaces name recognition, and upper/lower case and Unicode spelling make no difference:
 
 ```bash
-python3 beyin.py preferences --inbox-folder "Yakalama" --inbox-folder "📥 Notlar"
-python3 beyin.py preferences --inbox-folder ""   # listeyi boşalt, ad tanımaya dön
+python3 beyin.py preferences --inbox-folder "Capture" --inbox-folder "📥 Notes"
+python3 beyin.py preferences --inbox-folder ""   # empty the list, go back to name recognition
 ```
 
-Listede olup vault'ta bulunmayan klasör `error: not_found` ile gösterilir. Not sayısı `--inbox-max-items` değerine ya da en eski not `--inbox-max-days` gününe ulaşan klasör `attention` ile işaretlenir; bu yalnız bir sinyaldir, `doctor` durumunu değiştirmez. Hiçbir not taşınmaz, sınıflandırılmaz ve ajan başlatılmaz; işleme kararı senindir. Okunamayan klasör boş sayılmaz, `error` ile listelenir. Companion ve kasa sınıfı klasörler muaftır, nokta klasörler ve sembolik bağlar sayılmaz. Eski sürümler bilinmeyen `hygiene.json` anahtarını reddettiği için ayar runtime klasöründe ayrı bir `inbox-report.json` dosyasında tutulur; rollback diğer hijyen sinyallerini kapatmaz. Kapatmak için `--inbox-report off`.
+A folder that is in the list but not found in the vault is shown with `error: not_found`. A folder whose note count reaches the `--inbox-max-items` value or whose oldest note reaches `--inbox-max-days` days is marked `attention`; this is only a signal and does not change the `doctor` status. No note is moved, classified or any agent started; the decision to process is yours. An unreadable folder is not counted as empty, it is listed with `error`. Companion and vault-class folders are exempt; dot folders and symbolic links are not counted. Since older versions reject an unknown `hygiene.json` key, the setting is kept in a separate `inbox-report.json` file in the runtime folder; rollback does not turn off the other hygiene signals. To turn off, `--inbox-report off`.
 
-## Zamanlanmış sağlık denetimi ve bildirim
+## Scheduled health check and notification
 
-Otomatik kontroller bir istemci olayıyla çalışır; hiçbir istemci açılmazsa `doctor`'un gördüğü sorun (sync çakışması, bayat hook yolu, skill/talimat çakışması, görev ve geçerlilik sorunları) bir sonraki oturuma kadar görünmez (#267). `beyin.py scheduled-check` bunu senin kurduğun işletim sistemi zamanlayıcısıyla kapatır: önce `sync`, sonra `doctor` çalıştırır ve sonucu runtime klasöründeki `scheduled-check.json` dosyasına yazar. `doctor` son koşuyu `scheduled_check` alanında yaşıyla gösterir (hiç kurulmadıysa `never_run`); bu alan bilgi amaçlıdır, durumu değiştirmez. Komut model çağırmaz, servis kurmaz, hiçbir şeyi onarmaz; Beyin zamanlayıcı kurmaz.
+Automatic checks run on a client event; if no client is opened, a problem that `doctor` sees (sync conflict, stale hook path, skill/instruction conflict, task and validity problems) stays invisible until the next session (#267). `beyin.py scheduled-check` closes this with an operating system scheduler that you set up: it first runs `sync`, then `doctor`, and writes the result to the `scheduled-check.json` file in the runtime folder. `doctor` shows the last run with its age in the `scheduled_check` field (`never_run` if it was never set up); this field is informational and does not change the status. The command calls no model, installs no service, repairs nothing; Beyin does not install a scheduler.
 
-Çıkış kodu: `0` sağlıklı, `4` dikkat gerekiyor, `1` denetimin kendisi tamamlanamadı, `3` başka bir denetim hâlâ çalışıyor. `2` argparse'ın kullanım hatasıdır (yanlış yazılmış komut, eski sürümde olmayan seçenek); "dikkat" anlamına gelmez. Kilit işletim sisteminin dosya kilididir: çöken bir koşunun kilidi onunla birlikte bırakılır, beklenecek bayat kilit yoktur.
+Exit code: `0` healthy, `4` attention needed, `1` the check itself could not complete, `3` another check is still running. `2` is argparse's usage error (a misspelled command, an option that does not exist in an older version); it does not mean "attention". The lock is the operating system's file lock: the lock of a crashed run is released with it, so there is no stale lock to wait for.
 
-Sonuç dikkat gerektirdiğinde satır runtime klasöründeki `scheduled-notice.json` dosyasına yazılır ve bir sonraki ajan oturumunun açılışında tek satır olarak bir kez söylenir. Bu kanal her zaman çalışır; `--notify` olsun olmasın.
+When the result needs attention, a line is written to the `scheduled-notice.json` file in the runtime folder and is said once, as a single line, at the opening of the next agent session. This channel always works; with or without `--notify`.
 
-`--notify` eklersen (varsayılan kapalı) aynı anlarda işletim sistemi bildirimi de gösterilir. Ek bağımlılık yoktur: Windows'ta Windows PowerShell 5.1 toast (`pwsh` 7'de bu türler yok), macOS'ta `osascript`, Linux'ta `notify-send` (yoksa bildirim sessizce atlanır, oturum açılışındaki satır yine çıkar). Bildirimin gerçekten görüldüğü bilinemez (`osascript` Odak modunda da başarı döner, Windows toast'ı sessizce düşebilir); bu yüzden bildirim ek kanaldır, oturum satırının yerini tutmaz.
+If you add `--notify` (off by default), an operating system notification is also shown at the same moments. There is no extra dependency: on Windows a Windows PowerShell 5.1 toast (these types do not exist in `pwsh` 7), on macOS `osascript`, on Linux `notify-send` (if absent the notification is silently skipped, the line at session opening still appears). It cannot be known that the notification was actually seen (`osascript` returns success even in Focus mode, a Windows toast can silently drop); so the notification is an additional channel and does not replace the session line.
 
-- Yalnız durum değişince: sağlıklıdan dikkate geçişte bir kez, düzelince bir kez (`Beyin: sorunlar giderildi, kasa saglikli.`). Sorun sürdükçe her gece tekrar etmez; yedi günde bir hatırlatır. Denetimin kendisi tamamlanamazsa bildirim değişmez, `doctor` `error` gösterir.
-- Metin sabit kalıplardan ve sayılardan oluşur; not adı, yol ya da proje adı yazmaz: `Beyin: sync cakismasi (2), hook uyarisi (1) - ayrinti: beyin.py doctor`. Metin bildirim aracına kabuk üzerinden değil argüman olarak geçer; her alt süreçte zaman aşımı vardır.
-- Oturum satırını ilk açılan oturum bir kez söyler; sorun düzelirse söylenmemiş satır geri alınır.
-- Bütün durum (son koşu, son söyleme zamanı, bekleyen satır) makineye özel runtime klasöründe ayrı dosyalardadır, vault'a ve `.beyin-preferences.json`'a yazılmaz; rollback bu yüzden bozulmaz ve her makine kendi sağlığını kendisi bildirir. `doctor` bu dosyalardan yalnız bildiği alanları okur, hiçbirine yazmaz; oturum açılışı yalnız küçük satır dosyasını okur, vault taraması yapmaz.
+- Only on a state change: once on the transition from healthy to attention, once when it is fixed (`Beyin: issues resolved, vault is healthy.`). It does not repeat every night while the problem persists; it reminds once every seven days. If the check itself cannot complete, the notification does not change and `doctor` shows `error`.
+- The text consists of fixed patterns and numbers; it writes no note name, path or project name: `Beyin: sync conflict (2), hook warning (1) - details: beyin.py doctor`. The text is passed to the notification tool as an argument, not through a shell; every subprocess has a timeout.
+- The session line is said once by the first session that opens; if the problem is fixed, an unsaid line is withdrawn.
+- All the state (last run, last said time, pending line) is in separate files in the machine-specific runtime folder, not written to the vault or `.beyin-preferences.json`; rollback therefore does not break and each machine reports its own health. `doctor` reads from these files only the fields it knows and writes to none; the session opening reads only the small line file and does no vault scan.
 
-Bildirim yalnız kullanıcı oturumunda çalışan bir zamanlayıcıdan ekrana gelir. Aşağıdaki örnekler bu yüzden kullanıcı oturumunda çalışır; yolları kendi vault'unla değiştir.
+A notification reaches the screen only from a scheduler that runs in the user session. The examples below therefore run in the user session; replace the paths with your own vault.
 
-**Windows** (Görev Zamanlayıcı, "yalnız kullanıcı oturum açıkken çalıştır": `/RU` verilmeyen görev böyle kurulur; "oturum açık olsun olmasın" seçilirse toast ekrana gelmez). PowerShell'de `--%` satırın geri kalanını `schtasks`'a olduğu gibi geçirir; o olmadan Windows PowerShell 5.1 `/TR` içindeki `\"` kaçışlarını bozar ve vault yolu `/TR` değerinden kopar. `cmd.exe`'de `--%` yazılmaz:
+**Windows** (Task Scheduler, "run only when user is logged on": a task with no `/RU` given is set up this way; if "whether user is logged on or not" is chosen, the toast does not reach the screen). In PowerShell, `--%` passes the rest of the line to `schtasks` as is; without it, Windows PowerShell 5.1 breaks the `\"` escapes inside `/TR` and the vault path is split off from the `/TR` value. In `cmd.exe`, `--%` is not written:
 
 ```powershell
-schtasks --% /Create /TN "Beyin saglik" /SC DAILY /ST 20:00 /TR "py -3 \"C:\Users\SEN\Beynim\beyin.py\" scheduled-check --notify"
+schtasks --% /Create /TN "Beyin saglik" /SC DAILY /ST 20:00 /TR "py -3 \"C:\Users\YOU\Beynim\beyin.py\" scheduled-check --notify"
 ```
 
-**macOS** (LaunchAgent). `/usr/bin/python3` macOS'ta 3.9'dur; Beyin 3.11 ve üstünü ister. `python3 --version` ile 3.11+ olan yolu bul (Homebrew: `/opt/homebrew/bin/python3`, python.org: `/Library/Frameworks/Python.framework/Versions/3.13/bin/python3`). Vault iCloud Drive, Belgeler ya da Masaüstü altındaysa macOS bu klasörleri arka plan işlemlerine kapatır; Sistem Ayarları › Gizlilik ve Güvenlik › Tam Disk Erişimi'ne bu `python3`'ü ekle. Bildirim `osascript` üzerinden geldiği için Bildirim Merkezi'nde "Betik Düzenleyici" (Script Editor) adıyla görünür; ilk bildirimde izin isteyebilir. `~/Library/LaunchAgents/com.avenox.beyin-saglik.plist`:
+**macOS** (LaunchAgent). `/usr/bin/python3` is 3.9 on macOS; Beyin needs 3.11 and above. Find the path that is 3.11+ with `python3 --version` (Homebrew: `/opt/homebrew/bin/python3`, python.org: `/Library/Frameworks/Python.framework/Versions/3.13/bin/python3`). If the vault is under iCloud Drive, Documents or Desktop, macOS closes these folders to background processes; add this `python3` to System Settings › Privacy & Security › Full Disk Access. Because the notification comes through `osascript`, it appears in Notification Center under the name "Script Editor"; it may ask for permission on the first notification. `~/Library/LaunchAgents/com.avenox.beyin-saglik.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -236,12 +245,12 @@ schtasks --% /Create /TN "Beyin saglik" /SC DAILY /ST 20:00 /TR "py -3 \"C:\User
   <key>Label</key><string>com.avenox.beyin-saglik</string>
   <key>ProgramArguments</key><array>
     <string>/opt/homebrew/bin/python3</string>
-    <string>/Users/sen/Beynim/beyin.py</string>
+    <string>/Users/you/Beynim/beyin.py</string>
     <string>scheduled-check</string><string>--notify</string>
   </array>
   <key>StartCalendarInterval</key><dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>0</integer></dict>
-  <key>StandardOutPath</key><string>/Users/sen/Library/Logs/beyin-saglik.log</string>
-  <key>StandardErrorPath</key><string>/Users/sen/Library/Logs/beyin-saglik.log</string>
+  <key>StandardOutPath</key><string>/Users/you/Library/Logs/beyin-saglik.log</string>
+  <key>StandardErrorPath</key><string>/Users/you/Library/Logs/beyin-saglik.log</string>
 </dict></plist>
 ```
 
@@ -249,15 +258,15 @@ schtasks --% /Create /TN "Beyin saglik" /SC DAILY /ST 20:00 /TR "py -3 \"C:\User
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.avenox.beyin-saglik.plist
 ```
 
-**Linux** (systemd user timer; çıktı `journalctl --user -u beyin-saglik` ile okunur). Beyin Python 3.11 ve üstünü ister; dağıtımın `/usr/bin/python3`'ü daha eski olabilir. `/usr/bin/python3 --version` ile bak, eskiyse `ExecStart`'a 3.11+ olan yolu yaz (ör. `command -v python3.11` çıktısı). `~/.config/systemd/user/beyin-saglik.service`:
+**Linux** (systemd user timer; output is read with `journalctl --user -u beyin-saglik`). Beyin needs Python 3.11 and above; the distribution's `/usr/bin/python3` may be older. Check with `/usr/bin/python3 --version`, and if it is older, write the path that is 3.11+ into `ExecStart` (e.g. the output of `command -v python3.11`). `~/.config/systemd/user/beyin-saglik.service`:
 
 ```ini
 [Unit]
-Description=Beyin saglik denetimi
+Description=Beyin health check
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 /home/sen/Beynim/beyin.py scheduled-check --notify
+ExecStart=/usr/bin/python3 /home/you/Beynim/beyin.py scheduled-check --notify
 SuccessExitStatus=4
 ```
 
@@ -276,196 +285,196 @@ WantedBy=timers.target
 systemctl --user enable --now beyin-saglik.timer
 ```
 
-Düz `cron` kullanıcı oturumu dışında çalışır; bildirim ekrana gelmez ama kayıt ve oturum açılışındaki satır yine çalışır. Çıktıyı `/dev/null`'a atma, bir günlük dosyasına yönlendir (`>> ~/beyin-saglik.log 2>&1`); macOS'ta cron için de Tam Disk Erişimi gerekir.
+Plain `cron` runs outside the user session; the notification does not reach the screen but the record and the line at session opening still work. Do not throw the output away to `/dev/null`, redirect it to a log file (`>> ~/beyin-saglik.log 2>&1`); on macOS, Full Disk Access is needed for cron too.
 
-Kaldırmak için zamanlayıcı görevini sil; Beyin tarafında kapatılacak bir ayar yoktur.
+To remove it, delete the scheduler task; there is no setting to turn off on the Beyin side.
 
-Nerede nasıl doğrulandı:
+Where and how it was verified:
 
-| Platform | Gerçek masaüstünde | Yalnız testle |
+| Platform | On a real desktop | Only by test |
 |---|---|---|
-| Windows 11 (PowerShell 5.1) | Görev Zamanlayıcı'dan `scheduled-check --notify`: bildirim Bildirim Merkezi'ne düştü, ama tam ekran video açıkken ekrana açılır pencere olarak gelmedi (Windows bu sırada bildirimleri yalnız merkezde tutar; komut yine 0 döndü). Oturum açılışında satır bir kez söylendi | Kilit çakışması, durum geçişleri, argüman literal'i (gerçek `powershell.exe` ile) |
-| macOS | Denenmedi | `osascript` argv biçimi, sahte bildirim aracıyla |
-| Linux | Denenmedi | `notify-send` argv biçimi ve yokken atlanması |
+| Windows 11 (PowerShell 5.1) | `scheduled-check --notify` from Task Scheduler: the notification landed in Notification Center, but did not come as a popup on screen while a full-screen video was open (Windows keeps notifications only in the center at that time; the command still returned 0). At session opening the line was said once | Lock conflict, state transitions, argument literal (with a real `powershell.exe`) |
+| macOS | Not tried | `osascript` argv format, with a fake notification tool |
+| Linux | Not tried | `notify-send` argv format and being skipped when absent |
 
-## Paralel oturum bildirimi
+## Parallel session notification
 
-Aynı vault'ta birden çok oturum açıkken ajanlar ortak git index'ine, ortak geçici dosyalara ya da aynı nota dokunabilir. Kart tarafı companion protokolüyle çözülü; bu bildirim kartın dışında kalan ortak şeyler içindir (#170). Varsayılan kapalıdır:
+When multiple sessions are open in the same vault, agents can touch the shared git index, shared temporary files or the same note. The card side is solved with the companion protocol; this notification is for shared things outside the card (#170). It is off by default:
 
 ```bash
 python3 beyin.py preferences --parallel-sessions on
 ```
 
-- Açıkken her gerçek kullanıcı isteminde (UserPromptSubmit; ilk istemi SessionStart olarak gönderen Hermes, OpenCode ve Antigravity'de SessionStart) oturum kendi işaretini yazar. Son 45 dakikada etkin olan ve bu oturumda henüz duyurulmamış başka oturum varsa bağlamın başına tek satır eklenir: `[Paralel oturum] Bu vault'ta 2 oturum daha acik: #3f9a1c2b (3 dk once), #e5f6a7b8 (14 dk once). Ayni dosyaya dokunmadan once diskten yeniden oku; commit oncesi git status.`
-- Kimlik, o oturumun `Receipt session=` değerinin ilk 8 karakteridir; öbür oturumun Last-Session kartı başlığından bulunur. Satırda en fazla iki oturum adıyla yazılır, fazlası sayılır. Aynı oturum bir oturumda bir kez duyurulur; sonradan açılan bir oturum bir sonraki istemde bir kez söylenir. Alt ajan bildirimleri gibi sentetik turlar ne işaret yazar ne satır alır.
-- İşaret runtime klasöründe `session-markers/<sha256(harness + "\0" + session_id)>.json` dosyasıdır ve yalnız `schema, harness, session, first_at, last_at, announced` taşır: istem metni ve çalışma klasörü yazılmaz. Runtime klasörü vault başına ve makineye özel olduğundan başka vault'taki ya da başka makinedeki oturumlar sayılmaz.
-- SessionEnd kendi işaretini siler (`/clear` sonrası hayalet oturum kalmaz). Her yazımda 24 saatten eski işaretler silinir ve en fazla 128 işaret tutulur. Okunamayan işaret yok sayılır; işaret hatası hook'u düşürmez, yalnız satır düşer.
-- Ayar, eski sürümler bilinmeyen tercih alanını reddettiği için `.beyin-preferences.json` içinde değil, runtime klasöründeki `parallel-sessions.json` dosyasında tutulur; rollback güvenlidir. Kapalıyken hook çıktısı değişmez ve işaret yazılmaz. `doctor` açıkken etkin işaret sayısını salt okunur olarak yazar. Kapatmak için `--parallel-sessions off`.
+- When on, at every real user prompt (UserPromptSubmit; SessionStart in Hermes, OpenCode and Antigravity, which send the first prompt as SessionStart) the session writes its own marker. If there is another session that was active in the last 45 minutes and has not yet been announced in this session, a single line is added to the top of the context: `[Parallel session] 2 more session(s) open in this vault: #3f9a1c2b (3 min ago), #e5f6a7b8 (14 min ago). Re-read from disk before touching the same file; run git status before committing.`
+- The identity is the first 8 characters of that session's `Receipt session=` value; it is found from the title of the other session's Last-Session card. At most two sessions are written by name in the line, the rest are counted. The same session is announced once in a session; a session opened later is announced once on the next prompt. Synthetic turns like subagent notifications neither write a marker nor get a line.
+- The marker is a `session-markers/<sha256(harness + "\0" + session_id)>.json` file in the runtime folder and carries only `schema, harness, session, first_at, last_at, announced`: the prompt text and the working folder are not written. Since the runtime folder is per vault and machine-specific, sessions in another vault or on another machine are not counted.
+- SessionEnd deletes its own marker (no ghost session remains after `/clear`). On every write, markers older than 24 hours are deleted and at most 128 markers are kept. An unreadable marker is ignored; a marker error does not bring the hook down, only the line drops.
+- Since older versions reject an unknown preference field, the setting is kept not in `.beyin-preferences.json` but in `parallel-sessions.json` in the runtime folder; it is rollback-safe. When off, the hook output does not change and no marker is written. When on, `doctor` writes the number of active markers, read-only. To turn off, `--parallel-sessions off`.
 
-## Oturum içi bağlam tekrarını önleme (`--context-dedupe`)
+## Preventing context repetition within a session (`--context-dedupe`)
 
-`context_mode: turn` açıkken kanca her kullanıcı isteminde leksikal arama yapar. Uzun ve odaklı oturumlarda aynı notların her mesajda tekrar tekrar modele iletilmesi bağlam penceresini gereksiz yere doldurur (#363). Oturum içi tekrar önleme (de-duplication) etkinleştirildiğinde:
+When `context_mode: turn` is on, the hook does a lexical search on every user prompt. In long and focused sessions, passing the same notes to the model again and again with every message needlessly fills the context window (#363). When in-session de-duplication is enabled:
 
 ```bash
 python3 beyin.py preferences --context-dedupe on
 ```
 
-- Kanca, bu oturumda daha önce teslim ettiği kayıtları (`id`, `source_sha256` ve metin penceresi) runtime klasöründe `session-delivery/<sha256(harness + "\0" + session_id)>.json` dosyasında tutar. Oturum kimliğinin kendisi yazılmaz.
-- Mesaj bağlamı pasaj tabanlıdır: uzun bir notun başka bir bölümü (aynı `id`, farklı pencere) yeni sayılır ve teslim edilir; aynı pencere kısaltılmış olsa da tekrar sayılır. Geri tutulan kayıtların bütçesi yeni kayıtlara kalır.
-- Arama sonucunda gelen not daha önce iletildiyse ve dosya diskte değişmediyse filtrelenir; mesajda yalnızca yeni ya da güncellenen notlar modele teslim edilir.
-- Notların ardından eklenen son receipt bloğu da aynı defterle izlenir; defterde receipt metninin yalnız sha256 değeri tutulur. Aynı receipt oturumda bir kez verilir; yeni bir receipt yazılınca ya da receipt dosyası değişince ve sıkıştırmadan sonra yeniden verilir. Bütçeye sığmadığı için gösterilmeyen receipt teslim edilmiş sayılmaz.
-- Bir istemde hiç yeni not kalmazsa kanca boş ek bağlam (`{}`) döner; gereksiz token tüketimi ve dikkat dağınıklığı önlenir. Eşleşen notların hepsi geri tutulduğu halde son receipt bu oturum için yeniyse yalnız receipt verilir. Hiç not eşleşmeyen istemde, tekrar önleme kapalıyken olduğu gibi receipt de eklenmez.
-- **Sıkıştırma (Compaction):** Model bağlamı sıkıştırdığında (`PreCompact` veya Claude Code `SessionStart` olayında `source: compact`), eski notlar pencereden düştüğü için teslimat defteri otomatik sıfırlanır.
-- `SessionEnd` oturumun teslimat defterini temizler. Dosya diskte düzenlenirse `source_sha256` değiştiği için not yeni sayılır ve tekrar teslim edilir.
-- Tümü tekrar sayılan bir istem süreklilik çapasını (`topic-refs`) silmez; sıkıştırmadan sonra gelen kısa bir devam mesajı konuyu kaybetmez.
-- Defter oturum başına en çok 512 kayıt ve kayıt başına 8 pencere tutar (en eskisi düşer). Her yazımda 24 saatten eski defterler silinir ve en fazla 128 defter tutulur.
-- Ayar, rollback güvenliği için `.beyin-preferences.json` içinde değil, runtime klasöründeki `context-dedupe.json` dosyasında tutulur (varsayılan kapalı). Kapatmak için `--context-dedupe off`.
+- The hook keeps the records it already delivered in this session (`id`, `source_sha256` and text window) in a `session-delivery/<sha256(harness + "\0" + session_id)>.json` file in the runtime folder. The session identity itself is not written.
+- The message context is passage-based: another section of a long note (same `id`, different window) counts as new and is delivered; the same window counts as a repeat even if it has been shortened. The budget of the held-back records goes to the new records.
+- If a note coming up in the search result was delivered before and the file has not changed on disk, it is filtered; only new or updated notes are delivered to the model in the message.
+- The last receipt block added after the notes is also tracked with the same ledger; only the sha256 value of the receipt text is kept in the ledger. The same receipt is given once in a session; it is given again when a new receipt is written or the receipt file changes, and after compaction. A receipt not shown because it did not fit the budget is not counted as delivered.
+- If no new note is left in a prompt, the hook returns empty additional context (`{}`); unnecessary token consumption and distraction are avoided. If all the matching notes are held back but the last receipt is new for this session, only the receipt is given. In a prompt where no note matches, no receipt is added either, just as when dedupe is off.
+- **Compaction:** When the model compacts the context (`PreCompact` or the Claude Code `SessionStart` event with `source: compact`), the delivery ledger is reset automatically, because old notes drop out of the window.
+- `SessionEnd` clears the session's delivery ledger. If the file is edited on disk, the note counts as new because `source_sha256` changes, and it is delivered again.
+- A prompt where everything counts as a repeat does not delete the continuity anchor (`topic-refs`); a short follow-up message after compaction does not lose the topic.
+- The ledger keeps at most 512 records per session and 8 windows per record (the oldest drops). On every write, ledgers older than 24 hours are deleted and at most 128 ledgers are kept.
+- For rollback safety, the setting is kept not in `.beyin-preferences.json` but in `context-dedupe.json` in the runtime folder (off by default). To turn off, `--context-dedupe off`.
 
-## Stop'ta receipt hatırlatması
+## Receipt reminder at Stop
 
-Kurulum, Claude ve Codex için PostToolUse hook'unu yalnız dosya düzenleyen araçlara bağlar (`Edit|Write|apply_patch|MultiEdit|NotebookEdit`). Bu olay geldiğinde hook, vault dışındaki runtime klasörüne oturum kimliğinin hash'iyle adlandırılmış küçük bir düzenleme işareti yazar; transcript okunmaz. Kabuk komutları bu olayı tetiklemez; her komutta bir hook süreci başlatmamak için Bash eşleştiriciye eklenmez. Bunun yerine Claude Code'da, turda editör düzenlemesi yoksa Stop kancası yalnız o oturumun kendi transcript dosyasının son 2 MB'ını okur ve turun başındaki kullanıcı mesajında durur (#212). Turdaki bir Bash veya PowerShell komutunun adını açıkça verdiği (tırnaklı yol, düz yol ya da son parçada `*.md` gibi bir glob) bir vault Markdown dosyası, en son o komut çalışırken (çağrı ile sonuç kaydı arasında) değiştiyse aynı düzenleme işareti o komutun zamanıyla açılır. Komutun yalnız okuduğu bir notu daha sonra başka bir oturumun ya da editörün değiştirmesi bu oturuma yazılmaz. Komut metni hiçbir yere yazılmaz; yalnız zaman damgası tutulur. Değişkenle verilen yol, yolunu kendisi hesaplayan betik, arka planda yazan komut, taşıma ve silme görülmez; nokta klasörleri ve sync'in yeniden yazdığı receipt görünümleri sayılmaz. Task alt ajanlarının komutları (transcript'leri ayrı dosyadadır) ve aynı turda bir kesme, sıkıştırma ya da slash komutu kaydından önceki komutlar da görülmez. Codex'te kabuk komutları okunmaz. Bash aracından çalışan `note-create`, `note-edit`, `task-create` ve `task-update` oturumu `CLAUDE_CODE_SESSION_ID` ile bilir: düzenleme işaretini kendisi açar ve küçük bir bayrak bırakır; o oturumun bir sonraki Stop'u bu yazmayı yazma zamanıyla `observed: cli` işaretli `PostToolUse` metadata'sı olarak kuyruğa alır, böylece receipt kapsamı bu turu da düzenlenmiş tur sayar. Stop'ta runtime kaydında aynı istemci ve aynı `session` değeriyle, düzenlemelerden sonra yazılmış bir receipt yoksa hook oturum başına bir kez Stop'u engeller ve `python3 beyin.py receipt --harness claude --session <değer> --event-id ... --summary ... --ref ...` komutunu (Codex için `--harness codex`, Windows'ta `py -3`; JSON alternatifi `--file RECEIPT_JSON`) `Receipt session=<değer>` bilgisiyle birlikte hatırlatır. Bu değer `--session` ile ya da receipt JSON'undaki `session` alanına yazılmazsa receipt bu checkpoint'i kapatmaz. Receipt'ten sonra yapılan yeni düzenlemeler yeni bir pencere açar.
+The installation binds the PostToolUse hook, for Claude and Codex, only to tools that edit files (`Edit|Write|apply_patch|MultiEdit|NotebookEdit`). When this event arrives, the hook writes a small edit marker, named with the hash of the session identity, to the runtime folder outside the vault; the transcript is not read. Shell commands do not trigger this event; Bash is not added to the matcher so as not to start a hook process on every command. Instead, in Claude Code, if there are no editor edits in the turn, the Stop hook reads only the last 2 MB of that session's own transcript file and stops at the user message at the start of the turn (#212). If a vault Markdown file that a Bash or PowerShell command in the turn explicitly names (a quoted path, a plain path, or a glob such as `*.md` in the last segment) was changed while that command was running (between the call and the result record), the same edit marker is opened with that command's time. A note that the command only read and that another session or editor changes later is not written to this session. The command text is not written anywhere; only a timestamp is kept. A path given via a variable, a script that computes its own path, a command that writes in the background, moves and deletions are not seen; dot folders and receipt views that sync rewrites are not counted. Commands of Task subagents (their transcripts are in a separate file) and commands before an interruption, compaction or slash command record in the same turn are also not seen. In Codex, shell commands are not read. `note-create`, `note-edit`, `task-create` and `task-update` run from the Bash tool know the session through `CLAUDE_CODE_SESSION_ID`: they open the edit marker themselves and leave a small flag; that session's next Stop queues this write, with its write time, as `PostToolUse` metadata marked `observed: cli`, so that the receipt scope also counts this turn as an edited turn. At Stop, if there is no receipt written after the edits in the runtime record with the same client and the same `session` value, the hook blocks Stop once per session and reminds with the command `python3 beyin.py receipt --harness claude --session <value> --event-id ... --summary ... --ref ...` (`--harness codex` for Codex, `py -3` on Windows; JSON alternative `--file RECEIPT_JSON`) together with the `Receipt session=<value>` information. If this value is not written with `--session` or in the `session` field of the receipt JSON, the receipt does not close this checkpoint. New edits made after the receipt open a new window.
 
-Stop olayı hatırlatmadan önce kuyruğa alınır. Runtime kaydı okunamazsa akış durdurulmaz. `stop_hook_active` taşıyan ikinci Stop, manuel profil (`auto_sync: false`) ve `--metadata-only` hook çağrısı hatırlatma yapmaz; tek seferlik hakkı da harcamaz. Global köprü dış proje oturumu için aynı tek seferlik hatırlatmayı kendi düzenleme gözlemi ve mutlak CLI yoluyla verir ([global köprü](GLOBAL-BRIDGE.md#kaynaklı-kayıt-ve-doğrulama)). Kullanıcı mesajında `[kaydetme]` yazarak bu oturumdaki hatırlatmayı kapatabilir; `BEYIN_V3_NO_RECEIPT_REMINDER=1` özelliği tamamen kapatır.
+The Stop event is queued before the reminder. If the runtime record cannot be read, the flow is not stopped. A second Stop carrying `stop_hook_active`, the manual profile (`auto_sync: false`) and a `--metadata-only` hook call make no reminder; they do not spend the one-time allowance either. For an external project session, the global bridge gives the same one-time reminder with its own edit observation and the absolute CLI path ([global bridge](GLOBAL-BRIDGE.md#sourced-record-and-verification)). The user can turn off the reminder in this session by writing `[kaydetme]` in a user message; `BEYIN_V3_NO_RECEIPT_REMINDER=1` turns the feature off entirely.
 
-Receipt özetinde kalıcı bir öğrenim ayrı bir satırda, satır başında beyan edilir: `Öğrenilen: <tek cümle>` (ya da `Ders:`, `Learned:`, `Kalıcı öğrenim:`). Öğrenim yoksa gerekçe aynı satırda belirtilir: `Öğrenilen: yok (rutin kontrol)`. `yok`, `hiçbiri`, `bulunmadı`, `none` gibi cevaplar ve boş etiket öğrenim beyanı sayılmaz. Dosya düzenlenen bir oturumda gerekçesiz yalın `Öğrenilen: yok` cevabı bir kez sorgulanır; boş etiket liste başlığı olabileceğinden sorgulanmaz. Cevabın sonundaki parantezli açıklama da (`Öğrenilen: yok (rutin kontrol)`) cevabı değiştirmez; parantezden sonra gelen metin ise beyan sayılır. Etiket yalnız kendi satırında okunur; metin içinde geçen `machine learning:` gibi ifadeler beyan değildir. Receipt öğrenim beyan ettiği halde oturumda `knowledge/`, `🧠 500-Knowledge/` veya `500-Knowledge/` altında bir not yazılmadıysa ya da refs içinde böyle bir not yoksa, Stop kancası oturum başına bir kez ajana öğrenimi `knowledge/concepts/` altına damıtmasını hatırlatır. `knowledge/index.md`, `knowledge/log.md` ve `knowledge/v3/` damıtma sayılmaz; bunlar derleyici, git veya eşitleme tarafından da değişebilir. Receipt hatırlatmasına cevap olarak yazılan receipt, `stop_hook_active` taşıyan Stop'ta değil sonraki Stop'ta kontrol edilir. Kalıcı kavram gerekmiyorsa ajanın bunu tek cümleyle belirtmesi yeterlidir; kanca ikinci kez engellemez. Henüz kalıcı nota dönüşmemiş öğrenimler `python3 beyin.py learn --session SESSION --candidate "Öğrenim" --source notes/kaynak.md --scope PROJE` ile runtime içindeki `learning-state.jsonl` defterine kaydedilebilir; `learn --list` aktif adayları listeler. `--scope` verilmezse kapsam globaldir. Session değeri hook'un verdiği değer olmalıdır. Bu düzenleme penceresinin başlangıcından sonra kaydedilen bir aday, hem bilgi damıtımı hatırlatmasını hem de yalın `yok` sorgusunu karşılar; eski aday sonraki pencerelerde geçerli değildir. Gerekçeli `yok` cevabında, boş etikette ve hatırlatma gerekmeyen diğer receipt'lerde klasör taranmaz. Defter yerel bir ara kayıttır; otomatik damıtma yapmaz.
+In the receipt summary, a lasting learning is declared on a separate line, at the start of the line: `Öğrenilen: <one sentence>` (or `Ders:`, `Kalıcı öğrenim:`, `Learned:`, `Lesson:`, `Lessons learned:`, `Learning:`; plural forms such as `Öğrenilenler:` and `Learnings:` count too). If there is no learning, the reason is stated on the same line: `Öğrenilen: yok (rutin kontrol)`. Answers such as `yok`, `hiçbiri`, `bulunmadı`, `none` and an empty label do not count as a learning declaration. In a session where files were edited, a bare `Öğrenilen: yok` answer without a reason is questioned once; an empty label is not questioned because it can be a list heading. A parenthesized explanation at the end of the answer (`Öğrenilen: yok (rutin kontrol)`) also does not change the answer; text after the parenthesis counts as a declaration. The label is read only on its own line; expressions inside text such as `machine learning:` are not declarations. If the receipt declares a learning but no note was written under `knowledge/`, `🧠 500-Knowledge/` or `500-Knowledge/` in the session, or there is no such note in refs, the Stop hook reminds the agent once per session to distill the learning under `knowledge/concepts/`. `knowledge/index.md`, `knowledge/log.md` and `knowledge/v3/` do not count as distillation; these can also be changed by the compiler, git or sync. A receipt written in answer to the receipt reminder is checked not at the Stop carrying `stop_hook_active` but at the next Stop. If no lasting concept is needed, it is enough for the agent to say so in one sentence; the hook does not block a second time. Learnings that have not yet become a lasting note can be recorded with `python3 beyin.py learn --session SESSION --candidate "Learning" --source notes/source.md --scope PROJECT` in the `learning-state.jsonl` ledger in the runtime; `learn --list` lists active candidates. If `--scope` is not given, the scope is global. The session value must be the value the hook gave. A candidate recorded after the start of this edit window satisfies both the knowledge distillation reminder and the bare `yok` query; an old candidate is not valid in later windows. In an answer with a reasoned `yok`, an empty label and other receipts that need no reminder, the folder is not scanned. The ledger is a local intermediate record; it does no automatic distillation.
 
-`beyin.py doctor` komutu sessiz durgunluğu görünür kılmak için son bilgi damıtmasının kaç gün önce yapıldığını ve o tarihten bu yana kaç receipt kaydedildiğini yazar. Gerçek çıktı ASCII'dir, diğer doctor satırları gibi: `Son bilgi damitmasi: 3 gun once (o tarihten beri 12 makbuz)`; hiç kavram notu yoksa `Son bilgi damitmasi: henuz kavram notu damitilmadi (toplam N makbuz)`; ölçüm başarısız olursa `Son bilgi damitmasi: olculemedi (<hata>)`. Stop hatırlatıcısıyla aynı klasörler sayılır: `knowledge/`, `🧠 500-Knowledge/` ve `500-Knowledge/` altındaki Markdown notları. Bu yüzden elle düzenlenen bir `🧠 500-Knowledge/` notu da damıtma sayılır ve sayacı sıfırlar; 3.9.0 ve öncesinde doctor yalnız `knowledge/` klasörüne bakıyordu. Frontmatter'ında `generated: true` olan notu doctor saymaz; Stop hatırlatıcısı bu ayrımı yapmaz. Tarih notun frontmatter'ındaki `updated` ya da `modified` alanından, bu alan yoksa dosya zamanından okunur; çünkü git checkout ve iCloud geri yüklemesi dosya zamanını sıfırlar. `knowledge/index.md`, `knowledge/log.md` ve `knowledge/v3/` sayılmaz, her nottan yalnız ilk 4 KB okunur.
+To make silent stagnation visible, the `beyin.py doctor` command writes how many days ago the last knowledge distillation was done and how many receipts have been recorded since that date. The actual output is ASCII, like the other doctor lines: `Last knowledge distillation: 3 days ago (12 receipts since then)`; if there is no concept note at all `Last knowledge distillation: no concept note distilled yet (N receipts in total)`; if the measurement fails `Last knowledge distillation: not measurable (<error>)`. The same folders as the Stop reminder are counted: Markdown notes under `knowledge/`, `🧠 500-Knowledge/` and `500-Knowledge/`. For this reason a hand-edited `🧠 500-Knowledge/` note also counts as distillation and resets the counter; in 3.9.0 and earlier doctor looked only at the `knowledge/` folder. Doctor does not count a note with `generated: true` in its frontmatter; the Stop reminder does not make this distinction. The date is read from the note's frontmatter `updated` or `modified` field, if absent from the file time, because git checkout and iCloud restore reset the file time. `knowledge/index.md`, `knowledge/log.md` and `knowledge/v3/` are not counted, and only the first 4 KB of each note is read.
 
-Yönetilen blok dışında `AGENTS.md` ya da `CLAUDE.md` içinde `knowledge/` klasörünü derleyiciye bırakan V2 ifadesi (`derleyici yönetir`, `derleyici yazar`, `elle düzenlemeyin`, `compiler-managed` gibi) kalmışsa doctor `Talimat celiskisi: ...` satırını yazar ve durumu `needs_attention` yapar. Bu ifade ajanın knowledge notu yazmaktan kaçınmasına yol açar; satırı kaldırmak uyarıyı kapatır.
+If, outside the managed block, a V2 phrase that leaves the `knowledge/` folder to the compiler (such as `derleyici yönetir`, `derleyici yazar`, `elle düzenlemeyin`, `compiler-managed`) remains in `AGENTS.md` or `CLAUDE.md`, doctor writes a `Instruction conflict: ...` line and sets the status to `needs_attention`. This phrase leads the agent to avoid writing knowledge notes; removing the line turns off the warning.
 
-## Tur başı bağlam: pasaj düzeyinde strict arama
+## Turn-start context: passage-level strict search
 
-Her mesajda hook'un eklediği bağlam (`context_mode: turn`) strict aramadan gelir. Bu arama notun tamamını tek bir kelime kümesi olarak puanlamaz; notu Markdown bloklarına böler ve her kaynaktan soruyla en iyi eşleşen bloğu, başlık yoluyla birlikte teslim eder (#83). Cevap uzun bir notun ortasındaysa notun ilk karakterleri değil cevabı taşıyan blok gelir; neredeyse her kelimeyi içeren uzun bir oturum arşivi de her soruda öne çıkamaz. Model çağrısı ve yeni bağımlılık yoktur.
+The context the hook adds on every message (`context_mode: turn`) comes from strict search. This search does not score the whole note as a single set of words; it splits the note into Markdown blocks and, from each source, delivers the block that best matches the question, together with its heading path (#83). If the answer is in the middle of a long note, the block carrying the answer comes, not the first characters of the note; a long session archive that contains almost every word also cannot come to the front on every question. There is no model call and no new dependency.
 
-- Bölme: başlıklar (kod blokları içindekiler hariç) bölüm açar, boş satırlar paragrafları ayırır, yaklaşık 900 karakteri aşan bloklar cümle sınırından 200 karakter örtüşen pencerelere bölünür. Frontmatter okunmaz; başlık, takma ad ve `facts` alanları her bloğun arama kelimelerine eklenir.
-- Kabul ve sıralama: bir blok en az iki ortak kelime ister. Ağırlık mevcut göreli idf ailesiyle hesaplanır, soru kapsamasıyla (`ortak kelime / soru kelimesi`, payda en fazla 4) çarpılır ve `strict_floor` altında kalırsa blok elenir. Kabul blok frekansıyla, kabul edilen kaynakların sıralaması kaynak frekansıyla yapılır; çok bölüme ayrılmış bir not kendi kelimelerini yaygın göstermez. Uzun, sohbet havasında yazılmış bir mesaj uzunluğu yüzünden elenmez. Proje seçiliyse proje kelimeleri eşleşme sayılmaz.
-- Kapılar aynıdır: görünürlük, güven, proje, tazelik ve supersede kuralları not düzeyindeki yolla aynı `_eligible()` fonksiyonundan geçer; bütçe ve citation sözleşmesi aynı `pack_context`'tir.
-- Boş sonuç bir cevaptır. Not düzeyindeki eski yola yalnız gerçek bir hata olduğunda ya da indeks ilk kez kurulurken dönülür.
+- Splitting: headings (except those inside code blocks) open a section, blank lines separate paragraphs, blocks exceeding about 900 characters are split at a sentence boundary into windows overlapping by 200 characters. Frontmatter is not read; the title, alias and `facts` fields are added to each block's search words.
+- Acceptance and ranking: a block requires at least two shared words. The weight is computed with the existing relative idf family, multiplied by the question coverage (`shared words / question words`, the denominator at most 4), and if it falls under `strict_floor` the block is eliminated. Acceptance is done with block frequency, and the ranking of accepted sources with source frequency; a note split into many sections does not make its own words look common. A long message written in a chatty mood is not eliminated because of its length. If a project is selected, the project words do not count as a match.
+- The gates are the same: visibility, trust, project, freshness and supersede rules pass through the same `_eligible()` function as the note-level path; the budget and citation contract is the same `pack_context`.
+- An empty result is an answer. The old note-level path is returned to only when there is a real error or when the index is being built for the first time.
 
-İndeks türetilmiş veridir ve vault dışındaki runtime klasöründe `passages.json` olarak durur (JSON, 0600 izin, atomik yazım, 64 MB sınırı; pickle yoktur). Yalnız değişen kayıtlar yeniden işlenir; kelime ayırıcı değişirse önbellek kendiliğinden yeniden kurulur. İlk kurulum her turda en fazla yaklaşık 1 saniye çalışır ve kaldığı yerden devam eder; tamamlanana kadar o turlar eski yolu kullanır, böylece büyük bir vault hook süresini aşmaz.
+The index is derived data and is kept in the runtime folder outside the vault as `passages.json` (JSON, 0600 permission, atomic write, 64 MB limit; no pickle). Only changed records are reprocessed; if the tokenizer changes, the cache is rebuilt on its own. The first build runs at most about 1 second in each turn and resumes where it left off; until it is complete, those turns use the old path, so that a large vault does not exceed the hook time.
 
 ### `retrieval.json`
 
-Runtime klasöründeki (konumu için bkz. QUICKSTART) isteğe bağlı `retrieval.json` iki ayar taşır:
+The optional `retrieval.json` in the runtime folder (see QUICKSTART for its location) carries two settings:
 
 ```json
 {"strict_floor": 0.2, "strict_exclude": ["📦 900-Archive/", "Arsiv/Oturumlar/"]}
 ```
 
-- `strict_floor`: 0 ile 2 arası sayı, varsayılan 0,20. Yükseltmek yanlış eklemeyi azaltır, cevabı bulma oranını da düşürür.
-- `strict_exclude`: vault köküne göre en fazla 64 yol öneki. `daily/` ve `receipts/` her zaman dışarıdadır, liste bunlara eklenir. Karşılaştırma büyük/küçük harfe ve Unicode biçimine (NFC/NFD) duyarsızdır, `\` ayırıcısı da kabul edilir. Arşiv ya da oturum dökümü klasörleri için uygundur. Bu ayar strict arama yollarında, not düzeyi yedek arama dahil, sonuçları eler. `context_mode: session` açılışındaki companion kaynak seçimine uygulanmaz ve açık non-strict geçmiş aramasını engellemez. Arşiv klasörünü indeksten tamamen uzak tutmak için aşağıda anlatılan `--index-exclude-dir` tercih edilmelidir.
-- `unscoped_min_shared` (1 ya da 2, varsayılan 1) ve `unscoped_dominant_weight` (0'dan büyük, en fazla 1; varsayılan 1): yalnız `--project` verilmeden çalışan açık `beyin.py context` aramasına iki isteğe bağlı kural ekler. İkisi de varsayılan olarak kapalıdır; ayrıntı aşağıdaki bölümde.
-- Dosya bozuksa ya da bir değer geçersizse varsayılanlar kullanılır; hook bozulmaz.
+- `strict_floor`: a number between 0 and 2, default 0.20. Raising it reduces wrong additions, and also lowers the rate of finding the answer.
+- `strict_exclude`: at most 64 path prefixes relative to the vault root. `daily/` and `receipts/` are always excluded; the list is added to these. The comparison is insensitive to upper/lower case and Unicode form (NFC/NFD), and the `\` separator is also accepted. It is suitable for archive or session dump folders. This setting eliminates results in the strict search paths, including the note-level fallback search. It does not apply to the companion source selection at the `context_mode: session` opening and does not block an explicit non-strict history search. To keep an archive folder out of the index entirely, `--index-exclude-dir`, described below, should be preferred.
+- `unscoped_min_shared` (1 or 2, default 1) and `unscoped_dominant_weight` (greater than 0, at most 1; default 1): add two optional rules only to the explicit `beyin.py context` search that runs without `--project`. Both are off by default; details in the section below.
+- If the file is corrupt or a value is invalid, the defaults are used; the hook does not break.
 
-Bu ayar makineye özeldir ve `.beyin-preferences.json` şemasına girmez: eski bir sürüme dönüldüğünde tanımadığı bir tercih alanı yüzünden hook'un durması istenmedi. Eski sürümler bu dosyada okumadıkları anahtarları yok sayar.
+This setting is machine-specific and does not enter the `.beyin-preferences.json` schema: we did not want the hook to stop because of a preference field it does not recognize when an older version is reverted to. Older versions ignore keys they do not read in this file.
 
-### Projesiz açık arama: iki isteğe bağlı kural (#532)
+### Projectless explicit search: two optional rules (#532)
 
-`beyin.py context "<soru>"` proje verilmeden çalıştığında sonuçlar BM25 ile sıralanır ve soruyla tek bir kelime paylaşan not da sonuca girer. Notların çoğunu tek bir projede (ders notları, eski bir arşiv) tutan bir vault'ta bu iki şey olabilir: o proje her sorunun ilk beşini hacmiyle doldurur ve vault dışı bir soru tek ortak kelime yüzünden alakasız bir not getirir. İki kural bunlar için `retrieval.json` ile açılır:
+When `beyin.py context "<question>"` runs without a project, results are ranked with BM25 and a note sharing a single word with the question also enters the result. In a vault that keeps most of its notes in a single project (course notes, an old archive), these two things can happen: that project fills the top five of every question with its volume, and a question outside the vault brings an unrelated note because of a single shared word. Two rules for these are turned on with `retrieval.json`:
 
 ```json
 {"unscoped_min_shared": 2, "unscoped_dominant_weight": 0.25}
 ```
 
-- `unscoped_min_shared: 2`: çok kelimeli bir soru, notla en az iki kelime paylaşmalıdır (hook'un strict yolundaki kapının aynısı). Tek ortak kelimeyle gelen not elenir; hiçbir not kalmazsa sonuç `records: []` ve `abstained: true` olur. Tam ad eşleşmesi (#354) ya da notun kendi projesini adlandıran bir kelime tek başına yeter ("tavla oyunu ne durumda" tavla notlarına ulaşır). Tek kelimelik soru tek ortak kelimeyle çalışmaya devam eder; yazım hatası düzeltmesi düzelttiği kelimenin yerine sayılır, ikinci kelime sayılmaz.
-- `unscoped_dominant_weight`: uygun kayıtların yarısından fazlasını tek bir proje tutuyorsa (indeks en az 20 kayıt) o projenin kayıtlarının BM25 ağırlığı bu katsayıyla çarpılır. Kayıt silinmez, yalnız aşağı iner. Ad eşleşmesi, vadesi gelen görev ve kapalı görev düzeltmeleri ölçeklenmez. Soruda projenin adı ya da `.beyin-projects.json` içinde ona eşlenen klasörün adı geçiyorsa düşürme uygulanmaz. Kaydın projesi önce kendi `project` alanından, yoksa `.beyin-projects.json` klasör eşlemesinden gelir; `--project` ile aynı mantık.
-- Etkilemedikleri: `--project` verilen sorgular, her mesajdaki hook bağlamı (strict yol), oturum açılışındaki companion seçimi, Jev aday havuzları ve `--jev` yolu.
+- `unscoped_min_shared: 2`: a multi-word question must share at least two words with the note (the same gate as in the hook's strict path). A note coming with a single shared word is eliminated; if no note remains, the result is `records: []` and `abstained: true`. An exact name match (#354) or a word naming the note's own project is enough alone ("how is the backgammon game going" reaches the backgammon notes). A one-word question keeps working with one shared word; a typo correction counts in place of the word it corrected, it does not count as a second word.
+- `unscoped_dominant_weight`: if a single project holds more than half of the eligible records (the index has at least 20 records), the BM25 weight of that project's records is multiplied by this coefficient. The record is not deleted, it only moves down. Name match, due task and closed task corrections are not scaled. If the project's name, or the name of the folder mapped to it in `.beyin-projects.json`, appears in the question, the reduction is not applied. The record's project comes first from its own `project` field, otherwise from the `.beyin-projects.json` folder mapping; the same logic as `--project`.
+- What they do not affect: queries given `--project`, the hook context on every message (strict path), the companion selection at session opening, Jev candidate pools and the `--jev` path.
 
-Neden kapalı: kazanç vault'un yapısına bağlı. Katkıyı getiren ölçümde (698 not, notların %83'ü tek bir ders projesinde) iki kural birlikte İngilizce 20 soruda top-1'i 14'ten 16'ya çıkardı, top-3'ü 18'den 17'ye indirdi; vault dışı 4 sorunun 4'ünde boş sonuç döndü (önce 0), sonradan okunan notu ilk beşte bulma 8'den 7'ye indi. Depodaki sabit fixture'lar aynı projesiz açık arama yolundan sorulduğunda:
+Why off: the gain depends on the vault's structure. In the measurement that brought the contribution (698 notes, 83% of the notes in a single course project), the two rules together raised top-1 from 14 to 16 on 20 English questions and lowered top-3 from 18 to 17; they returned an empty result on 4 of the 4 questions outside the vault (0 before), and finding the note that was read afterwards in the top five fell from 8 to 7. When the fixed fixtures in the repository are asked through the same projectless explicit search path:
 
-| Ölçüm (projesiz açık `context`) | kapalı (varsayılan) | `unscoped_min_shared: 2` | `unscoped_dominant_weight: 0.25` |
+| Measurement (projectless explicit `context`) | off (default) | `unscoped_min_shared: 2` | `unscoped_dominant_weight: 0.25` |
 |---|---|---|---|
-| Arama benchmark'ı, 32 soru, proje yok: top-1 / top-3 | 30 / 32 | 30 / 32 | 30 / 32 |
-| Aynı benchmark, üst klasör proje sayıldığında (`knowledge` %57): top-1 / top-3 | 30 / 32 | 30 / 32 | 21 / 26 |
-| Pasaj korpusu, 42 kısa soru, cevaplar %71'lik projede: ilk beşte | 41 | 41 | 24 |
-| Aynı korpus, proje %80: ilk beşte, kısa / uzun soru | 41 / 38 | 41 / 38 | 10 / 0 |
-| Karar fixture'ı, 22 beklenen not: bulunan / fazladan teslim | 19 / 43 | 18 / 32 | 19 / 43 |
-| Pasaj korpusu gürültüsü, 15 gündelik / 15 ajan komutu: sonuç dönen | 12 / 13 | 5 / 4 | 12 / 13 |
-| Senaryo fixture'ı, 12 cevaplı soru: ilk beşte | 12 | 12 | 12 |
+| Search benchmark, 32 questions, no project: top-1 / top-3 | 30 / 32 | 30 / 32 | 30 / 32 |
+| Same benchmark, when the top folder is counted as a project (`knowledge` 57%): top-1 / top-3 | 30 / 32 | 30 / 32 | 21 / 26 |
+| Passage corpus, 42 short questions, answers in the 71% project: in the top five | 41 | 41 | 24 |
+| Same corpus, project 80%: in the top five, short / long question | 41 / 38 | 41 / 38 | 10 / 0 |
+| Decision fixture, 22 expected notes: found / extra delivered | 19 / 43 | 18 / 32 | 19 / 43 |
+| Passage corpus noise, 15 casual / 15 agent commands: returned a result | 12 / 13 | 5 / 4 | 12 / 13 |
+| Scenario fixture, 12 answered questions: in the top five | 12 | 12 | 12 |
 
-Düşürme, cevaplar baskın projenin içindeyken her katsayıda (0,25 ile 0,9 arası denendi) isabeti azaltıyor; eşiği yükseltmek yalnız sınırı kaydırıyor. İki kelime kuralı gürültüyü belirgin azaltıyor ama tek ortak kelimeyle doğru notu bulan bir soruyu ("aynı şekilde geri al") boş bırakıyor. Bu yüzden ikisi de açıkça seçilen ayarlar. Vault'unuzda notların çoğu tek bir projedeyse ve projesiz sorularınız genelde o projeyle ilgili değilse açmayı deneyin; önce ve sonra kendi sorularınızla ölçün.
+The reduction lowers the hit rate at every coefficient (0.25 to 0.9 were tried) when the answers are inside the dominant project; raising the threshold only moves the boundary. The two-word rule reduces noise noticeably but leaves a question that finds the right note with a single shared word ("revert it the same way") empty. For this reason both are explicitly chosen settings. If most of the notes in your vault are in a single project and your projectless questions are generally not about that project, try turning them on; measure before and after with your own questions.
 
-### Ölçüm ve varsayılan `strict_floor`
+### Measurement and the default `strict_floor`
 
-`python3 scripts/evaluate_v3_passages.py` iki yolu hook'un teslim yolundan (`context_for(strict=True)` ve `render_context`) 2000 ve 5000 bütçede ölçer. Varsayılan korpus sentetik ve deterministiktir; `--vault DIR --questions FILE` aynı ölçümü kendi vault'unuzda salt okunur yapar. `answerable`, etiketli notun teslim edilmesi ve cevap cümlesinin teslim edilen metinde birebir geçmesidir; gürültü, karşılığı olmayan kontrol mesajlarından kaçında kayıt eklendiğidir.
+`python3 scripts/evaluate_v3_passages.py` measures the two paths from the hook's delivery path (`context_for(strict=True)` and `render_context`) at 2000 and 5000 budgets. The default corpus is synthetic and deterministic; `--vault DIR --questions FILE` does the same measurement read-only on your own vault. `answerable` means the labeled note is delivered and the answer sentence appears verbatim in the delivered text; noise is in how many of the control messages with no counterpart a record was added.
 
-Sentetik korpus (152 not, 42 soru, iki soru biçimi; 15 gündelik, 15 ajan komutu ve 10 genel kelime kontrolü), `strict_floor` 0,20:
+Synthetic corpus (152 notes, 42 questions, two question formats; 15 casual, 15 agent commands and 10 common-word controls), `strict_floor` 0.20:
 
-| | not düzeyi 2000 | pasaj 2000 | not düzeyi 5000 | pasaj 5000 |
+| | note-level 2000 | passage 2000 | note-level 5000 | passage 5000 |
 |---|---|---|---|---|
-| kısa soru, answerable | 19/42 | 32/42 | 24/42 | 33/42 |
-| uzun sohbet mesajı, answerable | 17/42 | 27/42 | 20/42 | 28/42 |
-| gürültü: gündelik / ajan komutu | 0/15, 0/15 | 0/15, 1/15 | 0/15, 0/15 | 0/15, 1/15 |
+| short question, answerable | 19/42 | 32/42 | 24/42 | 33/42 |
+| long chat message, answerable | 17/42 | 27/42 | 20/42 | 28/42 |
+| noise: casual / agent command | 0/15, 0/15 | 0/15, 1/15 | 0/15, 0/15 | 0/15, 1/15 |
 
-Gerçek bir vault (1.285 not; 88 etiketli soru, her biri kısa, dolgu kelimeli ve uzun sohbet biçiminde, toplam 264 sorgu; 20 gündelik, 40 ajan komutu ve vault'un en sık kelimelerinden kurulmuş 20 kontrol mesajı), hook yolu:
+A real vault (1,285 notes; 88 labeled questions, each in short, filler-word and long chat form, 264 queries in total; 20 casual, 40 agent commands and 20 control messages built from the vault's most frequent words), hook path:
 
-| | not düzeyi | 0,15 | 0,20 | 0,25 | 0,20 ve arşiv dışlaması |
+| | note-level | 0.15 | 0.20 | 0.25 | 0.20 and archive exclusion |
 |---|---|---|---|---|---|
 | answerable, 2000 | 28/264 | 141/264 | 130/264 | 124/264 | 138/264 |
 | answerable, 5000 | 60/264 | 178/264 | 160/264 | 147/264 | 167/264 |
-| uzun sohbet mesajı, 5000 | 1/88 | 39/88 | 39/88 | 39/88 | 42/88 |
-| gürültü: gündelik | 4/20 | 5/20 | 1/20 | 0/20 | 2/20 |
-| gürültü: ajan komutu | 16/40 | 23/40 | 13/40 | 8/40 | 12/40 |
-| gürültü: vault'un sık kelimeleri | 0/20 | 19/20 | 16/20 | 5/20 | 16/20 |
+| long chat message, 5000 | 1/88 | 39/88 | 39/88 | 39/88 | 42/88 |
+| noise: casual | 4/20 | 5/20 | 1/20 | 0/20 | 2/20 |
+| noise: agent command | 16/40 | 23/40 | 13/40 | 8/40 | 12/40 |
+| noise: the vault's frequent words | 0/20 | 19/20 | 16/20 | 5/20 | 16/20 |
 
-Varsayılan 0,20 bu kurala göre seçildi: gündelik ve ajan komutu gürültüsünü bugünkü not düzeyindeki yolun üstüne çıkarmayan en düşük eşik. 0,15 cevabı biraz daha sık getiriyor ama iki gürültü türünde de bugünkü yolu geçiyor; 0,25 daha sessiz, daha az cevap getiriyor. Bedel açık: yalnız vault'un en sık kelimelerinden kurulmuş mesajlarda pasaj yolu çoğu zaman bir blok ekliyor (0,20'de 16/20, not düzeyinde 0/20). Bu size fazla geliyorsa `strict_floor` değerini 0,25 yapın.
+The default 0.20 was chosen by this rule: the lowest threshold that does not raise the casual and agent-command noise above today's note-level path. 0.15 brings the answer slightly more often but exceeds today's path in both noise types; 0.25 is quieter and brings fewer answers. The cost is clear: only in messages built from the vault's most frequent words does the passage path often add a block (16/20 at 0.20, 0/20 at note level). If this seems too much to you, make `strict_floor` 0.25.
 
-Aynı vault'ta ilk indeks kurulumu yaklaşık 3 saniye (birkaç tura bölünür), önbellek 9,1 MB (arşiv dışlanınca 5,5 MB). Ağır yük altında (10 çekirdekte yük ortalaması 40 civarı) sorgu başına ortanca süre not düzeyinde 1,8 saniye, pasaj yolunda 0,5 saniye; ikisinin de yaklaşık 0,3 saniyesi kaynak tazeliği kontrolü. Tek vault ve Türkçe ağırlıklı bir korpus üzerinde ölçüldü; kendi vault'unuzda ölçüp eşiği ona göre ayarlayın.
+In the same vault, the first index build is about 3 seconds (split over several turns), the cache is 9.1 MB (5.5 MB when the archive is excluded). Under heavy load (load average around 40 on 10 cores) the median time per query is 1.8 seconds at note level and 0.5 seconds on the passage path; about 0.3 seconds of both is the source freshness check. It was measured on a single vault and a Turkish-heavy corpus; measure on your own vault and tune the threshold accordingly.
 
-## İndeks dışı klasör adları (`index.json`)
+## Folder names excluded from the index (`index.json`)
 
-Vault'un içine gömülü bir kod deposu varsa, o deponun taşıdığı başka projelerin belgeleri (`3rdparty/SDL2/README.md`, `SECURITY.md` gibi) senin notların gibi indekse girer ve aramada gerçek notların önüne geçebilir. Hangi klasör adlarının indekse hiç girmeyeceğini sen söylersin:
+If there is a code repository embedded inside the vault, the documents of other projects that repository carries (such as `3rdparty/SDL2/README.md`, `SECURITY.md`) enter the index like your notes and can come ahead of real notes in search. You say which folder names will never enter the index:
 
 ```bash
 python3 beyin.py preferences --index-exclude-dir 3rdparty --index-exclude-dir target
-python3 beyin.py preferences --index-include-dir target   # listeden çıkar
+python3 beyin.py preferences --index-include-dir target   # remove from the list
 python3 beyin.py sync
 ```
 
-- Liste klasör **adı** tutar, yol değil: `3rdparty` yazınca vault'un her derinliğindeki `3rdparty` klasörleri taranmaz. Eşleşme yol parçasının tamamıyla yapılır (`3rdparty-notlari` ya da `my3rdparty` etkilenmez), büyük/küçük harf ve Unicode biçimi (NFC/NFD) fark etmez, Türkçe `İ/i/I/ı` aynı harf sayılır. En fazla 64 ad.
-- Beyin kendiliğinden yalnız `node_modules`, `receipts`, `__pycache__`, nokta ile başlayan klasörleri ve sembolik bağları atlar; bu adları listeye yazmak serbesttir ama hiçbir şeyi değiştirmez. `vendor`, `external`, `third_party` gibi adlar **otomatik atlanmaz**: bir vault'ta gömülü kod ağacı olan `Vendor`, başka bir vault'ta tedarikçi notlarının klasörüdür ve bir güncellemeyle notların sessizce aramadan düşmesi istenmedi. Bunun yerine `doctor`, bu adlardan birini taşıyan ve içinde `README.md`, `SECURITY.md`, `CONTRIBUTING.md` gibi yukarı akış belgeleri bulunan indeksli klasörleri sayısıyla birlikte gösterir (`Indeks kapsami (bilgi): ...`) ve çalıştırılacak komutu yazar. Karar senindir.
-- `notes`, `knowledge`, `tasks` ve companion klasörü listeye alınamaz: `note-create` ve `task-create` yazdığını indeksten geri okur, oturum başı hafıza bağlamı da companion dosyalarını indeksten alır. Komut bu adları gerekçesiyle reddeder. Aynı nedenle `note-create` ve `task-create`, listedeki bir adın altına düşen yeni bir kaynağı dosyayı yazmadan reddeder.
-- Etkin liste her yerde görünür: `sync` çıktısında `index_exclusions` (`excluded_dirs`, bu taramada atlanan klasör sayısı `pruned` ve ilk 20 yol `pruned_dirs`), `doctor` ve `preferences` çıktısında `Indeks disi klasor adlari` satırı. Listen yoksa bu çıktılar değişmez.
-- Bir ad eklendiğinde bir sonraki `sync` o klasörlerdeki kayıtları indeksten siler (`deleted` sayısı, `delete` olayları) ve arama onları getirmez; dosyalara dokunulmaz. Ad listeden çıkarıldığında bir sonraki `sync` aynı dosyaları yeniden indeksler. Atlanan klasörler hiç listelenmez ve okunmaz, yani büyük bir ağaç `sync` süresine de yük olmaz.
-- Ayar makineye özeldir ve runtime klasöründeki `index.json` dosyasında durur (`{"schema": 1, "excluded_dirs": ["3rdparty"]}`); `.beyin-preferences.json` şemasına girmez. Runtime klasörünün yolu `python3 beyin.py doctor --json` çıktısında `state_location.effective_state` alanındadır (varsayılan konumlar için bkz. QUICKSTART). Dosyayı elle de yazabilirsin; kurallar aynıdır.
-- Dosya bozuksa, sembolik bağsa, 64 KB'ı aşıyorsa ya da tek bir geçersiz giriş içeriyorsa (yol ayırıcı, `.`/`..`, boş ad, korunan ad, bilinmeyen anahtar) listenin **hiçbiri** uygulanmaz: `sync` bozulmaz, her şey indekslenir ve neden `sync` çıktısındaki `index_exclusions.error` alanında ve `doctor`da `index.json gecersiz (...)` satırında görünür. Yarım uygulanmış bir liste yerine görünür bir hata tercih edildi.
-- `doctor` indeks sorgusunu veya kayıtlarını okuyamazsa bu bölümü boş ve sağlıklı saymaz: `index_exclusions.status: unavailable` ve yalnız hata türünü bildirir. İnsan çıktısı `Indeks kapsami denetlenemedi (...)` der; bu, `index.json` dosyasının geçersiz olduğu ya da listenin uygulanmadığı anlamına gelmez. Diğer doktor denetimleri sürer; bu bilgi satırı tek başına genel durumu veya çıkış kodunu değiştirmez. İlk sync öncesinde Markdown indeks tablosunun henüz bulunmaması ise hata sayılmaz.
-- Bu bir gizlilik sınırı değildir. Bu ayarı tanımayan bir sürüme (3.9.0 ve öncesi) dönüldüğünde dosya yok sayılır ve o klasörler yeniden indekslenir; yeniden güncellendiğinde liste kaldığı yerden uygulanır. Bir kaynağı bağlamdan kesin olarak uzak tutan şey `visibility: private` alanıdır. İndekste olmayan bir dosyanın frontmatter'ı okunmadığı için görünürlüğü de bilinemez. Bu yüzden listedeki bir klasörün altındaki her dosya, bir receipt'e kaynak olarak verildiğinde özel bir kaynak gibi ele alınır: `recap` yolunu göstermez, yalnız sayar; oturum başı bağlamı ve proje köprüsü de o receipt'i göstermez. Klasör listeden çıkarılıp yeniden indekslendiğinde karar yine notun kendi `visibility` alanına döner.
-- Listedeki bir klasörde duran not indekste olmadığı için öbür kurallara da katılmaz: başka bir notu `supersedes` ile emekliye ayırıyorsa o eski not yeniden güncel sayılır, `validity: rejected` taşıyorsa aynı iddianın yeniden önerilmesini artık engellemez. Bir klasörü listeye almadan önce içinde böyle notlar olup olmadığına bak.
-- `retrieval.json` içindeki `strict_exclude` ile farkı: o strict aramada sonuçları eler; dosyalar yine taranır, indekslenir ve açık non-strict aramada bulunabilir. `index.json` ise taramanın kendisini keser.
-- Opt-in kelime tavanı sinyali de listedeki klasörleri atlar. Gelen kutusu raporu, kapalı görev raporu ve bilgi damıtması tarihi diskteki dosyalara bakar, indekse değil; bu liste onları değiştirmez.
+- The list holds folder **names**, not paths: when you write `3rdparty`, `3rdparty` folders at every depth of the vault are not scanned. The match is made on the whole path segment (`3rdparty-notes` or `my3rdparty` are not affected), upper/lower case and Unicode form (NFC/NFD) make no difference, and the Turkish `İ/i/I/ı` count as the same letter. At most 64 names.
+- Beyin on its own skips only `node_modules`, `receipts`, `__pycache__`, folders starting with a dot and symbolic links; writing these names in the list is allowed but changes nothing. Names like `vendor`, `external`, `third_party` are **not skipped automatically**: a `Vendor` that is an embedded code tree in one vault is the folder of supplier notes in another vault, and we did not want notes to silently drop out of search with an update. Instead, `doctor` shows the indexed folders that carry one of these names and contain upstream documents like `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, with their count (`Index scope (info): ...`) and writes the command to run. The decision is yours.
+- `notes`, `knowledge`, `tasks` and the companion folder cannot be put in the list: `note-create` and `task-create` read back what they wrote from the index, and the session-start memory context also takes the companion files from the index. The command rejects these names with the reason. For the same reason, `note-create` and `task-create` reject a new source that would fall under a name in the list before writing the file.
+- The active list is visible everywhere: `index_exclusions` in the `sync` output (`excluded_dirs`, the number of folders skipped in this scan `pruned` and the first 20 paths `pruned_dirs`), and the `Folder names excluded from the index` line in the `doctor` and `preferences` output. If you have no list, these outputs do not change.
+- When a name is added, the next `sync` deletes the records in those folders from the index (the `deleted` count, `delete` events) and search does not bring them; the files are not touched. When the name is removed from the list, the next `sync` indexes the same files again. Skipped folders are never listed or read, so a large tree adds no load to `sync` time either.
+- The setting is machine-specific and sits in the `index.json` file in the runtime folder (`{"schema": 1, "excluded_dirs": ["3rdparty"]}`); it does not enter the `.beyin-preferences.json` schema. The path of the runtime folder is in the `state_location.effective_state` field of the `python3 beyin.py doctor --json` output (see QUICKSTART for default locations). You can also write the file by hand; the rules are the same.
+- If the file is corrupt, a symbolic link, exceeds 64 KB, or contains a single invalid entry (path separator, `.`/`..`, empty name, protected name, unknown key), **none** of the list is applied: `sync` does not break, everything is indexed, and the reason appears in the `index_exclusions.error` field of the `sync` output and in the `index.json is invalid (...)` line in `doctor`. A visible error was preferred over a half-applied list.
+- If `doctor` cannot read the index query or its records, it does not count this section as empty and healthy: it reports `index_exclusions.status: unavailable` and only the error type. The human output says `Index scope could not be checked (...)`; this does not mean the `index.json` file is invalid or the list was not applied. Other doctor checks continue; this info line alone does not change the overall status or the exit code. The Markdown index table not yet existing before the first sync is not counted as an error.
+- This is not a privacy boundary. When reverting to a version that does not recognize this setting (3.9.0 and earlier), the file is ignored and those folders are indexed again; when updated again, the list is applied from where it left off. What reliably keeps a source out of context is the `visibility: private` field. Since the frontmatter of a file that is not in the index is not read, its visibility cannot be known either. So every file under a folder in the list is treated like a private source when it is given as a source to a receipt: `recap` does not show its path, only counts; the session-start context and the project bridge do not show that receipt either. When the folder is removed from the list and reindexed, the decision returns to the note's own `visibility` field.
+- A note sitting in a folder in the list does not take part in the other rules either, because it is not in the index: if it retires another note with `supersedes`, that old note counts as current again, and if it carries `validity: rejected`, it no longer blocks the same claim being proposed again. Before putting a folder in the list, check whether it contains such notes.
+- The difference from `strict_exclude` in `retrieval.json`: that one eliminates results in strict search; the files are still scanned, indexed and can be found in an explicit non-strict search. `index.json` cuts the scan itself.
+- The opt-in word cap signal also skips folders in the list. The inbox report, the closed task report and the knowledge distillation date look at files on disk, not the index; this list does not change them.
 
-## Bileşen ve skill hariç tutma (susturma)
+## Component and skill exclusion (muting)
 
-Kullanıcı gereksinim duymadığı başlangıç skill'lerini, adaptörleri, başlatıcıları veya kancaları susturabilir:
+The user can mute starter skills, adapters, launchers or hooks that they do not need:
 
 - `python3 beyin.py preferences --exclude-component skills/beyin-doktor`
 - `python3 beyin.py preferences --include-component skills/beyin-doktor`
 
-Hariç tutulabilen bileşenler:
+Components that can be excluded:
 `agents_block`, `adapters`, `adapters/hermes`, `adapters/kiro`, `adapters/omp`, `adapters/opencode`, `harnesses/antigravity`, `launchers`, `skills`, `skills/beyin`, `skills/beyin-doktor`, `skills/beyin-guncelle`.
 
-`adapters` grubu Pi extension'ını (`.pi/extensions/beyin-v3.ts`) da kapsar. Pi için ayrı bir ad yoktur: `.beyin-exclusions.json` kasayla birlikte taşınır ve 3.12.0 ve öncesi bilinmeyen bir adı gördüğünde güncellemeyi durdurur.
+The `adapters` group also covers the Pi extension (`.pi/extensions/beyin-v3.ts`). There is no separate name for Pi: `.beyin-exclusions.json` travels with the vault and 3.12.0 and earlier stop the update when they see an unknown name.
 
-`beyin-kontrol` skill'i yalnız kullanıcı açıkça istediğinde çalışır ve onay olmadan yazmaz; tek başına hariç tutma adı yoktur, `skills` dört başlangıç skill'ini birlikte kaldırır. Yeni bir ad eski sürümlerin `.beyin-exclusions.json` doğrulamasını bozacağı için rollback uyumluluğu adına eklenmedi.
+The `beyin-kontrol` skill runs only when the user explicitly asks and does not write without approval; it has no exclusion name of its own, and `skills` removes the four starter skills together. A new name was not added, for rollback compatibility, because it would break the `.beyin-exclusions.json` validation of older versions.
 
-Hariç tutma tercihleri vault kökünde bağımsız `.beyin-exclusions.json` dosyasında saklanır (`.beyin-preferences.json` dosyasını değiştirmez; böylece eski sürümlere rollback 3.4.0 uyumlu kalır). Tercih kaydedildiğinde bir sonraki kurulum veya güncellemede uygulanır (`update` veya `install`). Değiştirilmemiş hariç tutulan dosyalar temizlenir, kullanıcının değiştirdiği dosyalar ise çakışma vermeden korunur. `doctor` çıktısı hem uygulanan hariç tutmaları hem de bekleyen değişiklikleri gösterir.
+Exclusion preferences are stored in the independent `.beyin-exclusions.json` file in the vault root (it does not change the `.beyin-preferences.json` file; so rollback to older versions stays 3.4.0-compatible). When the preference is saved, it is applied at the next install or update (`update` or `install`). Unmodified excluded files are cleaned up, while files the user changed are kept without a conflict. The `doctor` output shows both the applied exclusions and the pending changes.
 
-## Hermes platform tercihi (`hermes-platforms.json`)
+## Hermes platform preference (`hermes-platforms.json`)
 
-Hermes Agent entegrasyonunda varsayılan olarak gözetimsiz (unattended / bot) sayılan kanallar (`a2a`, `cron`, `telegram`, `discord`, `slack`, `whatsapp`, `signal`, `matrix`, `email`, `sms`, `webhook`) için makbuz hatırlatması ve oturum sonu kontrol noktası üretilmez.
+In the Hermes Agent integration, no receipt reminder or end-of-session checkpoint is produced for channels counted as unattended (bot) by default (`a2a`, `cron`, `telegram`, `discord`, `slack`, `whatsapp`, `signal`, `matrix`, `email`, `sms`, `webhook`).
 
-Hermes'i Slack gibi bir kanal üzerinden kişisel interaktif asistan olarak kullananlar için bu kanal gözetimli olarak işaretlenebilir:
+For those who use Hermes as a personal interactive assistant over a channel like Slack, this channel can be marked as attended:
 
 ```bash
-# Slack'i gözetimli/insanlı say:
+# Count Slack as attended/with a human:
 python3 beyin.py preferences --hermes-attended-platform slack
 
-# Özel bir bot kanalını gözetimsiz say:
+# Count a custom bot channel as unattended:
 python3 beyin.py preferences --hermes-unattended-platform custom-bot
 
-# Varsayılanlara dön:
+# Go back to the defaults:
 python3 beyin.py preferences --hermes-reset-platforms
 ```
 
-Ayar runtime klasöründeki `hermes-platforms.json` dosyasında tutulur (`{"schema": 1, "attended": ["slack"], "unattended": []}`); `.beyin-preferences.json` şemasına girmez ve rollback güvenlidir.
+The setting is kept in the `hermes-platforms.json` file in the runtime folder (`{"schema": 1, "attended": ["slack"], "unattended": []}`); it does not enter the `.beyin-preferences.json` schema and is rollback-safe.

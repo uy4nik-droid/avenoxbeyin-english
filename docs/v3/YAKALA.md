@@ -1,233 +1,232 @@
-# Yakala: tek tuşla beyne at
+# Yakala (capture): throw it into your brain with one key
 
-Video, tweet, makale, mail, PDF ya da aklına gelen bir cümle: gördüğün yerde tek tuşla yakala,
-ajanın sonra okuyup dersleri ikinci beynine bağlasın. İsteğe bağlıdır; kurmazsan hiçbir şey değişmez.
+A video, a tweet, an article, an email, a PDF, or a sentence that crosses your mind: capture it with
+one key wherever you see it, and your agent will read it later and connect the lessons to your second brain.
+It is optional; if you don't install it, nothing changes.
 
-## Kurulum (bir kez)
+## Installation (once)
 
-Vault klasöründe:
+In the vault folder:
 
 ```sh
 python3 beyin.py yakala kur
 ```
 
-Windows'ta `py -3 beyin.py yakala kur`. Ya da ajanına "yakala aracını kur" de.
+On Windows, `py -3 beyin.py yakala kur`. Or tell your agent "install the yakala tool".
 
-Kurulum şunları yapar:
+The installation does the following:
 
 | | Mac | Windows |
 |---|---|---|
-| Her uygulamada kısayol | `Control+Option+B` | `Ctrl+Alt+B` |
-| Dosya gönderme | Finder'da dosyayı seç, kısayola bas | Sağ tık > Gönder > Beyne At |
-| Tarayıcı | Obsidian Web Clipper şablonu | Obsidian Web Clipper şablonu |
-| Ajan | `beyin-yakala` skill'i | `beyin-yakala` skill'i |
+| Shortcut in every app | `Control+Option+B` | `Ctrl+Alt+B` |
+| Sending a file | Select the file in Finder, press the shortcut | Right-click > Send to > Beyne At |
+| Browser | Obsidian Web Clipper template | Obsidian Web Clipper template |
+| Agent | `beyin-yakala` skill | `beyin-yakala` skill |
 
-Kısayol ek paket istemez; Python'un kendisiyle çalışır. Mac'te bir oturum açılış servisi
-(LaunchAgent), Windows'ta oturum açılışında başlayan küçük bir dinleyici tuşu dinler.
-Yalnız şablon ve skill istiyorsan: `python3 beyin.py yakala kur --kisayol-yok`.
+The shortcut needs no extra packages; it runs on Python itself. On Mac a login service
+(LaunchAgent), and on Windows a small listener that starts at login, listens for the key.
+If you only want the template and the skill: `python3 beyin.py yakala kur --kisayol-yok`.
 
-**Mevcut kurulum:** [#299 güvenlik güncellemesini](YAKALA-GUVENLIK-299.md) aldıktan sonra
-vault klasöründe `python3 beyin.py yakala kur` komutunu bir kez yeniden çalıştır
-(Windows'ta `py -3 beyin.py yakala kur`). Böylece daha önce yazılmış `beyin-yakala` skill'i
-yeni güvenilmeyen içerik ve rastgele sınır kurallarını alır. Yalnız şablon/skill kullanıyorsan
-`--kisayol-yok` ekle; kullanıcının kendi işaretsiz skill'i korunur.
+**Existing installation:** After you get the [#299 security update](YAKALA-GUVENLIK-299.md),
+run `python3 beyin.py yakala kur` once more in the vault folder
+(on Windows, `py -3 beyin.py yakala kur`). This way the `beyin-yakala` skill written earlier
+receives the new untrusted-content and random-boundary rules. If you only use the template/skill,
+add `--kisayol-yok`; the user's own unmarked skill is preserved.
 
 ### Linux
 
-Linux'ta arka planda dinleyen bir servis yok; kısayol masaüstünün kendi kısayol ayarına yazılır.
-`kur`, `~/.local/share/applications/beyne-at.desktop` dosyasını yazar (`XDG_DATA_HOME` mutlak bir
-yolsa orada). Komut `python3 <state>/yakala/beyin_v3_yakala.py pencere --vault <vault>` olur.
-Betiğin bu kopyası state klasöründe durur ve pencereyi açarken vault'taki güncel betiğe geçer;
-güncellemeden sonra `kur`'u yeniden çalıştırman gerekmez.
+On Linux there is no background listening service; the shortcut is written to the desktop's own shortcut settings.
+`kur` writes the file `~/.local/share/applications/beyne-at.desktop` (or under `XDG_DATA_HOME` if it
+is an absolute path). The command becomes `python3 <state>/yakala/beyin_v3_yakala.py pencere --vault <vault>`.
+This copy of the script sits in the state folder and, when opening the window, switches to the current script in the vault;
+you do not need to run `kur` again after an update.
 
-`Ctrl+Alt+B` (ya da `--tus`) masaüstüne göre kaydedilir:
+`Ctrl+Alt+B` (or `--tus`) is registered according to the desktop:
 
-| Masaüstü | Kısayol | Nerede denendi |
+| Desktop | Shortcut | Where it was tried |
 |---|---|---|
-| KDE Plasma 6 (Wayland) | `kur` kurar | Gerçek masaüstünde: kısayol, bağlantı ve düz metin |
-| GNOME | `kur` kurar | Gerçek masaüstünde denenmedi; yalnız birim testleri var |
-| KDE Plasma 5 | `kur` dener (`kwriteconfig5`) | Denenmedi |
-| Diğerleri (Hyprland, Sway, XFCE...) | Kurulmaz; `kur` bağlanacak komutu verir | Hyprland'de `kur` çıktısı ve `zenity` penceresi denendi |
+| KDE Plasma 6 (Wayland) | `kur` sets it up | On a real desktop: shortcut, link and plain text |
+| GNOME | `kur` sets it up | Not tried on a real desktop; unit tests only |
+| KDE Plasma 5 | `kur` tries (`kwriteconfig5`) | Not tried |
+| Others (Hyprland, Sway, XFCE...) | Not set up; `kur` gives the command to bind | On Hyprland, the `kur` output and the `zenity` window were tried |
 
-- **KDE Plasma:** `kwriteconfig6` (yoksa `kwriteconfig5`) ile `kglobalshortcutsrc` içine yazılır,
-  `gdbus` ile oturum kapatmadan etkinleştirilir. `kur` sonra tuşun kimde olduğunu kglobalaccel'e
-  sorar: çıktıdaki `kisayol_calisiyor` ancak tuş bu kısayola bağlıysa `true` olur; tuş başka bir
-  uygulamadaysa ya da soru yanıtsız kalırsa `false`. Sınır: kısayol daha önce başka bir komutla
-  kurulduysa (vault taşındı, Python değişti) KDE çalışan oturumda eski komutu çalıştırmayı
-  sürdürebilir; oturumu kapatıp açınca yenisi geçerli olur. İlk kurulumda bu sorun yok.
-- **GNOME:** `gsettings` ile özel bir kısayol (`custom-keybindings`) eklenir; mevcut kısayolların
-  korunur. Burada `kisayol_calisiyor` yalnız ayarın yazıldığını söyler, tuşun başka bir kısayolla
-  çakışmadığını söylemez. Tuş çalışmazsa Ayarlar > Klavye altındaki özel kısayollarda `Beyne at`
-  girdisine bak ve bir issue aç.
-- **Diğer masaüstleri:** `.desktop` dosyası yazılır, kısayol kurulmaz. `kur` çıktısındaki `ipucu`
-  bağlanacak komutun tamamını verir; onu masaüstünün kısayol ayarına ekle. KDE ya da GNOME'da kayıt
-  doğrulanamazsa da aynı komut `ipucu` olarak verilir.
+- **KDE Plasma:** It is written into `kglobalshortcutsrc` with `kwriteconfig6` (or `kwriteconfig5`
+  if absent) and activated without logging out using `gdbus`. `kur` then asks kglobalaccel who owns the key:
+  `kisayol_calisiyor` in the output becomes `true` only if the key is bound to this shortcut; if the key is in another
+  application, or the question goes unanswered, it is `false`. Limit: if the shortcut was previously
+  set up with another command (the vault was moved, Python changed), KDE may keep running the old command
+  in the running session; the new one takes effect after you log out and back in. This problem does not exist on first install.
+- **GNOME:** A custom shortcut (`custom-keybindings`) is added with `gsettings`; your existing shortcuts
+  are preserved. Here `kisayol_calisiyor` only says that the setting was written; it does not say that the key
+  does not conflict with another shortcut. If the key does not work, look at the `Beyne at`
+  entry under the custom shortcuts in Settings > Keyboard and open an issue.
+- **Other desktops:** The `.desktop` file is written, the shortcut is not set up. The `ipucu` in the `kur` output
+  gives the whole command to bind; add it to the desktop's shortcut settings. If the registration cannot be
+  verified on KDE or GNOME, the same command is also given as `ipucu`.
 
-Linux'ta tuş Ctrl, Alt ya da Super ile birlikte bir harf, rakam, boşluk ya da F1-F12 olabilir.
-Kısayol tek bir vault'a hizmet eder: başka bir vault'ta `kur` çalıştırırsan kısayol ona geçer ve
-çıktıdaki `onceki_vault` eskisini söyler. `kaldir` yalnız bu vault'un kurduğu `.desktop` dosyasını
-ve kısayolu siler. Masaüstü `XDG_CURRENT_DESKTOP` değişkeninden tanınır; `kur` ve `kaldir`'ı
-masaüstü oturumundaki bir terminalden çalıştır. SSH gibi bu değişkenin olmadığı bir oturumda
-kısayol kurulmaz, kaldırırken de masaüstündeki kısayol ayarı yerinde kalır.
+On Linux the key can be a letter, digit, space, or F1-F12 together with Ctrl, Alt or Super.
+The shortcut serves a single vault: if you run `kur` in another vault, the shortcut moves to it and
+`onceki_vault` in the output tells you the old one. `kaldir` deletes only the `.desktop` file and the shortcut
+that this vault set up. The desktop is recognized from the `XDG_CURRENT_DESKTOP` variable; run `kur` and `kaldir`
+from a terminal inside the desktop session. In a session where this variable is absent, such as SSH,
+the shortcut is not set up, and on removal the desktop's shortcut setting stays in place.
 
-Gercek X11 oturumunda pencere once asagidaki tarayici okuyucusunu dener. Tarayici baglami
-alinamazsa pano akisi kullanilir. Wayland'da otomatik sayfa/imlec okuma yoktur; pencere neyi
-kaydedecegini panodan okur. Wayland'da `wl-clipboard` paketi (`wl-paste`) gerekir.
-Kurulu değilse kısayol çalışsa bile pano bağlantısı/metni pencereye gelmeyebilir; `yakala kur`,
-`yakala durum` ve boş yakalama penceresi bunu belirtir. Paketi dağıtımının paket yöneticisiyle
-kurduktan sonra `yakala durum` ile uyarının kaybolduğunu kontrol et; Yakala'yı yeniden kurman gerekmez.
-X11'de tam pencere metni kendisi okur; kopyalanan dosyalar ve `kdialog`/`zenity` yolu için `xclip`
-ya da `xsel` gerekir. Panoda tek bir bağlantı varsa bağlantı, dosya
-yöneticisinden kopyalanan dosyalar (`file://` listesi) varsa dosyalar, başka metin varsa metin
-yakalanır. Wayland'da yalnız bir PNG görsel kopyalandıysa tam pencerede küçük önizlemesi görünür;
-başlangıçta eklenmez, `Tab` veya karta tıklama ile seçilip PNG dosya kartı olarak kaydedilebilir.
-Metin ya da bağlantı varsa öncelik onlardadır. Görsel okunamıyorsa veya `wl-paste` yoksa mevcut
-metin akışı değişmez. X11 pano görseli bu sürümde desteklenmez. Pano metninin en fazla 1 MB'ı,
-görselin en fazla 64 MB'ı okunur; metin kesilirse kartta belirtilir.
-Kopyalanan dosyaların yakalanması gerçek masaüstünde denenmedi, yalnız birim testleri var.
+In a real X11 session the window first tries the browser reader below. If the browser context
+cannot be obtained, the clipboard flow is used. On Wayland there is no automatic page/cursor reading; the window reads
+what to save from the clipboard. On Wayland the `wl-clipboard` package (`wl-paste`) is required.
+If it is not installed, the clipboard link/text may not reach the window even though the shortcut works; `yakala kur`,
+`yakala durum` and the empty capture window point this out. After installing the package with your
+distribution's package manager, check with `yakala durum` that the warning has disappeared; you do not need to reinstall Yakala.
+On X11 the full window reads the text itself; `xclip` or `xsel` is needed for copied files and for the `kdialog`/`zenity` path.
+If there is a single link on the clipboard, the link is captured; if there are files copied from a file
+manager (a `file://` list), the files are captured; if there is other text, the text is captured. On Wayland, if only a PNG image was copied, a small preview of it
+appears in the full window; it is not attached at the start, but it can be selected with `Tab` or by clicking the card and saved as a PNG file card.
+If there is text or a link, they take priority. If the image cannot be read or `wl-paste` is missing, the existing
+text flow does not change. X11 clipboard images are not supported in this version. At most 1 MB of clipboard text and
+at most 64 MB of an image are read; if the text is truncated, the card says so.
+Capturing copied files has not been tried on a real desktop, only in unit tests.
 
-Tam pencere `tkinter` ister. Arch tabanlı dağıtımlarda Python'un `tk` paketi ayrıdır
-(`sudo pacman -S tk`), Debian ve Ubuntu'da `sudo apt install python3-tk`. `tkinter` yoksa pencere
-yerine `kdialog`, o da yoksa `zenity` ile yalnız "neden" sorulur; iptal edersen kart yazılmaz.
-Üçü de yoksa hiçbir şey kaydedilmez ve `kur` bunu uyarı olarak söyler.
-Bazı paketli Python/Tk sürümleri yalnız `fixed` yazı tipini görür; Türkçe karakterler ve oklar
-pencerede Unicode kaçışları gibi görünebilir. Linux kısayolunun durum-kopyası, kendi Python'unun
-Tk fontlarını kontrol eder; uygunsuzsa ve `/usr/bin/python3` kullanılabilir Tk fontlarına sahipse
-pencereyi onunla açar. Sistem Tk yoksa dağıtımının paket yöneticisiyle kur; uygun başka Python da
-yoksa mevcut yorumlayıcı ve `kdialog`/`zenity` geri dönüşleri korunur. Bu denetim kart içeriğini
-başka bir yere göndermez. **Mevcut Yakala kurulumunda motor güncellemesinden sonra** kısayolun
-önceden kopyalanmış kodunu yenilemek için vault kökünde `python3 beyin.py yakala kur` çalıştır.
-Yalnız `yakala durum` veya `.desktop` dosyasını elle değiştirmek kopyayı yenilemez; KDE etkin
-kısayolun eski `Exec` satırını ayrıca bellekte tutabilir. Bu yeniden kurulum eski kartları taşımaz
-veya silmez; kayıtlı kısayol ve seçilmiş klasör kullanılır.
+The full window needs `tkinter`. On Arch-based distributions Python's `tk` package is separate
+(`sudo pacman -S tk`); on Debian and Ubuntu, `sudo apt install python3-tk`. If `tkinter` is missing, instead of the window
+only "why" is asked with `kdialog`, or with `zenity` if that is also missing; if you cancel, no card is written.
+If none of the three exist, nothing is saved and `kur` reports this as a warning.
+Some packaged Python/Tk versions see only the `fixed` font; Turkish characters and arrows may appear
+in the window as Unicode escapes. The Linux shortcut's state copy checks its own Python's
+Tk fonts; if they are unsuitable and `/usr/bin/python3` has usable Tk fonts, it opens
+the window with that. If system Tk is missing, install it with your distribution's package manager; if there is no suitable other Python either,
+the current interpreter and the `kdialog`/`zenity` fallbacks are kept. This check does not send the card's content
+anywhere else. **On an existing Yakala install, after an engine update**, to refresh the shortcut's
+previously copied code, run `python3 beyin.py yakala kur` in the vault root.
+Running only `yakala durum` or editing the `.desktop` file by hand does not refresh the copy; KDE may also keep the active
+shortcut's old `Exec` line in memory. This reinstall does not move or delete old cards;
+the saved shortcut and the selected folder are used.
 
-Doğrulamak için: `python3 beyin.py yakala durum` (`Kisayol dinleyicisi: calisiyor`), KDE'de
+To verify: `python3 beyin.py yakala durum` (`Shortcut listener: running`), on KDE
 `gdbus call --session -d org.kde.kglobalaccel -o /component/beyne_at_desktop -m org.kde.kglobalaccel.Component.isActive`
-(`(true,)` beklenir), sonra kısayola bas.
+(`(true,)` is expected), then press the shortcut.
 
-### Kısayolu değiştir
+### Change the shortcut
 
 ```sh
 python3 beyin.py yakala kisayol 'cmd+"'
 ```
 
-Tuşu yazdığın gibi tarif et: `cmd`, `ctrl`, `alt` (ya da `option`), `shift` ve en sonda tuş.
-Örnekler: `ctrl+alt+b` (varsayılan), `cmd+shift+space`, `alt+f5`, `⌘⇧K`. Mac'te karakter etkin klavye
-düzeninden bulunur; Türkçe Q'da `"` 1'in solundaki tuştur. Windows'ta kısayol
-yalnız Ctrl/Alt/Shift ile harf, rakam ya da F tuşunu kabul eder. Argümansız `kisayol` mevcut tuşu
-gösterir. Seçtiğin tuşu başka bir uygulama zaten kullanıyorsa komut uyarır; başka bir tuş dene.
+Describe the key the way you type it: `cmd`, `ctrl`, `alt` (or `option`), `shift`, and the key last.
+Examples: `ctrl+alt+b` (default), `cmd+shift+space`, `alt+f5`, `⌘⇧K`. On Mac the character is found from the active keyboard
+layout; on a Turkish Q layout `"` is the key to the left of 1. On Windows the shortcut
+accepts only a letter, digit or F key together with Ctrl/Alt/Shift. `kisayol` without arguments shows the current key.
+If another application already uses the key you chose, the command warns you; try a different key.
 
-Mac'te dinleyici arka planda çalışır, Dock'ta görünmez; kapanırsa sistem onu yeniden başlatır.
-Dinleyici `kur`'un yazdığı bir kopyadan çalışır: bir güncellemeden sonra onu da yenilemek için
-`python3 beyin.py yakala kur` komutunu yeniden çalıştır (tuşun korunur). Çalışıp çalışmadığını
-`python3 beyin.py yakala durum` söyler.
+On Mac the listener runs in the background and does not appear in the Dock; if it quits, the system restarts it.
+The listener runs from a copy that `kur` wrote: to refresh it after an update as well, run
+`python3 beyin.py yakala kur` again (your key is preserved). `python3 beyin.py yakala durum`
+tells you whether it is running.
 
-### Tarayici sayfasi ve imlec baglantisi
+### Browser page and cursor link
 
-19.10.2026 eklemesi; kod tabani `d9aa301`. Bu bolumdeki yeni Windows Gecko/Yandex, macOS AX ve
-Linux X11 yollarinin **gercek cihaz dogrulamasi yapilmadi**. Birim testleri saglayici, ABI,
-nesne sahipligi, zaman asimi ve belirsizlik kurallarini denetler; kurulu tarayicinin bu
-sozlesmeyi sundugunu kanitlamaz. Eski Opera Air olcumu asagida kendi surumuyle belirtilmistir.
+Added on 19.10.2026; code base `d9aa301`. The new Windows Gecko/Yandex, macOS AX and
+Linux X11 paths in this section have **not been verified on real devices**. Unit tests check the provider, ABI,
+object ownership, timeout and ambiguity rules; they do not prove that an installed browser offers this
+contract. The old Opera Air measurement is stated below with its own version.
 
-Hucreler `sayfa / imlec` yolunu gosterir. `UIA` mevcut Windows adres cubugu/Hyperlink yolu;
-`MSAA+UIA` renderer belge degeri ve renderer Hyperlink'i; `Gecko` yeni MSAA Document/Link yolu;
-`AX` macOS AXWebArea/AXLink yolu; `AS` yalniz sayfa icin sabit AppleScript yedegi;
-`SPI` gercek X11 penceresine baglanan AT-SPI Document/Hyperlink yoludur.
-`Bekliyor` okuyucu etkin degil, `Urun yok` ilgili platform icin guncel resmi dagitim yok demektir.
-UIA hucrelerinde sema gizliyse ayni child/butcede renderer belge URL'siyle dogrulama gerekir.
+Cells show the `page / cursor` path. `UIA` is the existing Windows address bar/Hyperlink path;
+`MSAA+UIA` is the renderer document value and the renderer Hyperlink; `Gecko` is the new MSAA Document/Link path;
+`AX` is the macOS AXWebArea/AXLink path; `AS` is a fixed AppleScript fallback for the page only;
+`SPI` is the AT-SPI Document/Hyperlink path bound to the real X11 window.
+`Waiting` means the reader is not active, `No product` means there is no current official distribution for that platform.
+If the schema is hidden in UIA cells, verification with the renderer document URL in the same child/bucket is required.
 
-| Aile / urun | Windows | macOS | Linux X11 | Linux Wayland |
+| Family / product | Windows | macOS | Linux X11 | Linux Wayland |
 |---|---|---|---|---|
-| Chrome / Chromium | UIA / UIA | AX veya AS / AX | SPI / SPI | Okunmaz |
-| Edge | UIA / UIA | AX veya AS / AX | SPI / SPI | Okunmaz |
-| Safari / STP | Urun yok | AX veya AS / AX | Urun yok | Urun yok |
-| Firefox | Gecko / Gecko | AX / AX | SPI / SPI | Okunmaz |
-| Opera | MSAA+UIA | AX veya AS / AX | SPI / SPI | Okunmaz |
-| Opera GX | `opera.exe` ise MSAA+UIA | AX veya AS / AX | Urun var; GX kimligi bekliyor | Okunmaz |
-| Opera Air | `opera.exe` ise MSAA+UIA | AX veya AS / AX | Urun yok | Urun yok |
-| Brave | UIA / UIA | AX veya AS / AX | SPI / SPI | Okunmaz |
-| Vivaldi | UIA / UIA | AX veya AS / AX | SPI / SPI | Okunmaz |
-| Arc | Bekliyor | AX / AX | Urun yok | Urun yok |
-| Zen | Gecko / Gecko | AX / AX | SPI / SPI | Okunmaz |
-| Yandex | MSAA+UIA, urun yolu zorunlu | AX / AX | SPI / SPI | Okunmaz |
-| Samsung Browser | Urun var; okuyucu bekliyor | Resmi dagitim bulunamadi | Resmi dagitim bulunamadi | Resmi dagitim bulunamadi |
+| Chrome / Chromium | UIA / UIA | AX or AS / AX | SPI / SPI | Not read |
+| Edge | UIA / UIA | AX or AS / AX | SPI / SPI | Not read |
+| Safari / STP | No product | AX or AS / AX | No product | No product |
+| Firefox | Gecko / Gecko | AX / AX | SPI / SPI | Not read |
+| Opera | MSAA+UIA | AX or AS / AX | SPI / SPI | Not read |
+| Opera GX | MSAA+UIA if `opera.exe` | AX or AS / AX | Product exists; GX identity waiting | Not read |
+| Opera Air | MSAA+UIA if `opera.exe` | AX or AS / AX | No product | No product |
+| Brave | UIA / UIA | AX or AS / AX | SPI / SPI | Not read |
+| Vivaldi | UIA / UIA | AX or AS / AX | SPI / SPI | Not read |
+| Arc | Waiting | AX / AX | No product | No product |
+| Zen | Gecko / Gecko | AX / AX | SPI / SPI | Not read |
+| Yandex | MSAA+UIA, product path required | AX / AX | SPI / SPI | Not read |
+| Samsung Browser | Product exists; reader waiting | No official distribution found | No official distribution found | No official distribution found |
 
-Ana hedef 10 ailedir: Chrome, Edge, Safari, Firefox, Opera, Brave, Vivaldi, Arc, Zen, Yandex.
-Opera varyantlari ayni aile icinde ayrica olculur; Samsung ek izleme adayidir. StatCounter'in
-Eylul 2026 dunya masaustu tablosunda ilk alti Chrome %65,09, Edge %14,64, Safari %8,06,
-Firefox %6,11, Opera %2,38, Brave %1,12'dir. Turkiye tablosunda Yandex %1,21 ile gorunur.
-Bu olcum sayfa goruntuleme payidir; kurulum veya tekil kullanici payi degildir. Vivaldi/Arc/Zen
-icin kesin ilk 10 sirasi iddia edilmiyor. [Dunya](https://gs.statcounter.com/browser-market-share/desktop/worldwide/),
-[Turkiye](https://gs.statcounter.com/browser-market-share/desktop/turkey/),
-[yontem](https://gs.statcounter.com/faq); erisim 19.10.2026.
+The main target is 10 families: Chrome, Edge, Safari, Firefox, Opera, Brave, Vivaldi, Arc, Zen, Yandex.
+Opera variants are measured separately within the same family; Samsung is an additional tracking candidate. In StatCounter's
+September 2026 worldwide desktop table, the top six are Chrome 65.09%, Edge 14.64%, Safari 8.06%,
+Firefox 6.11%, Opera 2.38%, Brave 1.12%. In the Turkey table Yandex appears at 1.21%.
+This measurement is page-view share; it is not install or unique-user share. No exact top-10 ranking
+is claimed for Vivaldi/Arc/Zen. [World](https://gs.statcounter.com/browser-market-share/desktop/worldwide/),
+[Turkey](https://gs.statcounter.com/browser-market-share/desktop/turkey/),
+[method](https://gs.statcounter.com/faq); accessed 19.10.2026.
 
-**macOS.** Okuyucu NSWorkspace uygulama PID/bundle kimligini ve pencere sunucusunun gorunur
-pencere kimligi/sinirlarini kaydeder. Accessibility izni varsa, sonlandirilabilir yardimci
-surecte odakli pencerenin altindaki tek gorunur ust AXWebArea'nin AXURL degeri okunur.
-Imlec linki sistemin nokta testiyle bulunur; AXLink siniri imleci icermeli, ust nesne zinciri
-ayni belge ve pencereye ulasmalidir. Iki belge/link okumasinda URL ve nesne kimlikleri, sonda
-uygulama/pencere/sinirlar ve sheet durumu ayni kalmalidir. Hareket eden imlecin linki atilir.
-AXLoadingProgress varsa sonlu ve tam 1 olmali; iki okumada bulunabilirligi de degismemelidir.
-Bu ek kontrol, incelenen Mozilla kaynaginda AXLoaded maskesinin yuklenmeyi kacirabilmesi
-nedeniyle eklendi; gercek Firefox/macOS surum davranisi ayrica olculmelidir.
+**macOS.** The reader records the NSWorkspace application PID/bundle identity and the window server's visible
+window identity/bounds. If Accessibility permission is present, in a terminable helper
+process the AXURL value of the single visible top AXWebArea under the focused window is read.
+The cursor link is found with the system's point test; the AXLink bounds must contain the cursor, and the parent object chain
+must reach the same document and window. Across the two document/link reads, the URL and object identities, and at the end the
+application/window/bounds and sheet state, must stay the same. The link of a moving cursor is discarded.
+If AXLoadingProgress is present it must be finite and exactly 1; its availability must also not change between the two reads.
+This extra check was added because, in the Mozilla source examined, the AXLoaded mask can miss loading;
+the real Firefox/macOS version behavior must be measured separately.
 
-Privacy & Security > Accessibility izni link icin gerekir. Automation ayri izindir; AX
-erisimi yoksa Safari ve izin listesindeki Chromium turevlerinde yalniz sayfa icin sabit
-`/usr/bin/osascript` denenebilir. Script on uygulama, pencere, etkin sekme ve iki tam URL'yi
-kontrol eder. AX iki belge/eksik belge URL'si gibi bir belirsizlik gorduyse AppleScript ile
-bu karar asilmaz. Izinler otomatik acilmaz. Safari'nin yerel SDEF'i ve her turevin sozlugu
-cihazda teyit edilmeli; ozellik/derleme/izin hatasinda adres yoktur. Arc/Firefox/Zen/Yandex
-genel Chromium AppleScript sozlugune zorlanmaz. Accessibility kapaliyken ayni pencereye
-bagli native sheet ve split view davranisi AppleScript kabul testinde ayrica olculmelidir.
+Privacy & Security > Accessibility permission is needed for the link. Automation is a separate permission; if there is no AX
+access, a fixed `/usr/bin/osascript` for the page only may be tried in Safari and in allow-listed Chromium derivatives.
+The script checks the front application, window, active tab and two full URLs.
+If AX saw an ambiguity such as two documents or a missing document URL, this decision is not overridden by AppleScript.
+Permissions are not opened automatically. Safari's local SDEF and each derivative's dictionary must be confirmed
+on the device; on a feature/build/permission error there is no address. Arc/Firefox/Zen/Yandex
+are not forced onto the general Chromium AppleScript dictionary. With Accessibility off, the behavior of a native sheet and
+split view tied to the same window must be measured separately in the AppleScript acceptance test.
 
-**Linux X11.** `XDG_SESSION_TYPE=x11`, yerel `DISPLAY=:N[.S]` ve bos `WAYLAND_DISPLAY`
-gerekir. Yeni Python paketi yoktur; sistemde `libX11.so.6`, `libatspi.so.0`, GLib/GObject ve
-erisebilir AT-SPI oturum bus'i bulunmalidir. Eksik kutuphane/izin/agac bos sonuc verir;
-kurulum veya ayar degisikligi kendiliginden yapilmaz. EWMH etkin pencere, gercek X input focus,
-`/proc` PID/exe/baslangic zamani ve AT-SPI uygulama PID'si eslestirilir. `_NET_WM_PID` istemci
-ozelligidir; normal yerel X11 masaustu guveni varsayilir, kotucul ayni kullanici sureclerine
-karsi yeni bir guvenlik siniri ilan edilmez.
+**Linux X11.** `XDG_SESSION_TYPE=x11`, a local `DISPLAY=:N[.S]` and an empty `WAYLAND_DISPLAY` are
+required. There are no new Python packages; the system must have `libX11.so.6`, `libatspi.so.0`, GLib/GObject and
+a reachable AT-SPI session bus. A missing library/permission/tree gives an empty result;
+no installation or setting change is made on its own. The EWMH active window, the real X input focus,
+the `/proc` PID/exe/start time and the AT-SPI application PID are matched. `_NET_WM_PID` is a client
+property; trust in a normal local X11 desktop is assumed, and no new security boundary is declared against malicious
+processes of the same user.
 
-Tek aktif AT-SPI frame'in sinirlari X11 client sinirlariyla tam eslesmelidir. Chromium
-ailesinde Document `URI`, Gecko'da `DocURL` okunur. Iki gorunur dis belge, gecersiz URL'li
-ikinci panel, busy/stale agac veya degisen kimlik reddedilir. Iframe sayfa yerine secilmez.
-Imlec linkinde nokta testi frame'den baslar; secilen belgeye ulasan gercek LINK, tek valid
-Hyperlink anchor'i ve tam URL gerekir. DPI/dekorasyon ofseti tahmin edilmez. Snap, Flatpak,
-AppImage, PID namespace, farkli exe adi veya olcek nedeniyle esleme kurulamiyorsa sonuc yoktur.
-Opera GX Linux 19.03.2026'da cikti; bu kod yalniz exe gercekte `opera` ise ortak yolu
-kullanabilir. GX paketi ve agaci ayri olcum bekler.
+The bounds of the single active AT-SPI frame must match the X11 client bounds exactly. In the Chromium
+family the Document `URI` is read, in Gecko the `DocURL`. Two visible outer documents, a second pane with an invalid URL,
+a busy/stale tree or a changed identity are rejected. An iframe is not chosen in place of the page.
+For the cursor link, the point test starts from the frame; a real LINK that reaches the selected document, a single valid
+Hyperlink anchor and a full URL are required. DPI/decoration offsets are not guessed. If the match cannot be established because of Snap, Flatpak,
+AppImage, a PID namespace, a different exe name or scaling, there is no result.
+Opera GX came out on Linux on 19.03.2026; this code can use the shared path only if the exe is actually `opera`.
+The GX package and tree await separate measurement.
 
-**Wayland.** KDE/GNOME/Hyprland/Sway'de AT-SPI bulunmasi tek basina global foreground ve
-imlec sahipligi kaniti degildir. XWayland etkin penceresi, native Wayland uygulamasi ondeyken
-eski kalabilir. Compositor'a ozel, izin modeli dogrulanmis bir uyarlayici eklenene kadar bu
-surum otomatik sayfa ve imlec URL'si vermez; mevcut pano/dosya/metin yakalama devam eder.
-`DISPLAY` varligi veya oturum degiskenlerini degistirmek bu denetimi asmak icin kullanilmaz.
-Linux'ta ilk pencere/imlec ornegi yardimci surec basladiginda alinir; fiziksel kisayol
-aninin kaydedilmis noktasini temsil etmez.
+**Wayland.** On KDE/GNOME/Hyprland/Sway, the presence of AT-SPI is not by itself proof of global foreground and
+cursor ownership. The XWayland active window can remain stale when a native Wayland application is in front.
+Until a compositor-specific adapter with a verified permission model is added, this
+version gives no automatic page or cursor URL; the existing clipboard/file/text capture continues.
+The presence of `DISPLAY` or changing session variables is not used to bypass this check.
+On Linux the first window/cursor sample is taken when the helper process starts; it does not represent the recorded
+point of the physical shortcut moment.
 
-**Secim ve sure.** macOS/Linux tam Tk penceresinde, dogrulanmis sayfa ve ondan farkli imlec
-linki varsa `Imlecin altindaki baglanti` varsayilan, `Etkin sayfa` alternatif gelir.
-macOS'ta Option+I/Option+S, Linux'ta Alt+I/Alt+S veya satira tiklama kullanilir.
-Pano bağlantısı bu durumda kapalı bir seçenektir. macOS/Linux bu sayfa+imleç yolunda
-pano metninin tazeliğini doğrulamadığından metin kartı sunulmaz; not kutusuna elle
-yazılabilir veya açıkça yapıştırılabilir. Mevcut pano görseli okuyucusu da sayfa varken
-görsel teklif etmez. Linux'ta panodaki yerel dosya listesi tarayıcı bağlamına önceliklidir:
-dosya önizlemesi gösterilir ve yalnız dosyalar kaydedilir; sayfa ve imleç URL'si karta eklenmez.
-Yalnız sayfa akışı mevcut davranışını korur. Tk olmayan `kdialog`/`zenity`/macOS basit soru yedeginde
-imlec ve sayfa secicisi yoktur; dogrulanmis sayfa kullanilir.
+**Choice and duration.** In the macOS/Linux full Tk window, if there is a verified page and a cursor
+link different from it, `Link under the pointer` is the default and `Active page` the alternative.
+On macOS Option+I/Option+S, on Linux Alt+I/Alt+S or clicking the row is used.
+In this case the clipboard link is a disabled option. Because the macOS/Linux page+cursor path does not verify the freshness of
+the clipboard text, a text card is not offered; you can type into the note box by hand or paste explicitly.
+The existing clipboard image reader also does not offer an image while a page is present. On Linux a local file list on the clipboard takes priority over the browser context:
+a file preview is shown and only the files are saved; the page and cursor URL are not added to the card.
+The page-only flow keeps its existing behavior. In the non-Tk `kdialog`/`zenity`/macOS simple-question fallback
+there is no cursor and page chooser; the verified page is used.
 
-Yeni Windows belge okuyucusu 1 saniye; macOS tarayici okuma toplami 2,5 saniye (AX payi en
-fazla 1 saniye); Linux tarayici cocugu 2 saniye nominal butcelidir. Native tarayici saglayici
-cagrilari sonlandirilabilir surectedir. Baslatma/temizleme, macOS pencere sunucusu ve Linux
-pano/popup giderleri bu rakamlara eklenebilir. Bunlar olculmus gecikme veya sert gercek zaman
-garantisi degildir. Yakalama fiziksel olarak atomik degildir; ornekler arasinda fark edilmeyen
-cok hizli degisim olasiligi cihaz testleriyle de tamamen ortadan kaldirilamaz.
+The new Windows document reader has a nominal budget of 1 second; the macOS browser read total is 2.5 seconds (the AX share at most
+1 second); the Linux browser child is 2 seconds. Native browser provider
+calls run in a terminable process. Start-up/cleanup, the macOS window server and Linux
+clipboard/popup overheads may be added to these figures. These are not measured latencies or a hard real-time
+guarantee. Capture is not physically atomic; the possibility of a very fast change that goes unnoticed between samples
+cannot be eliminated entirely even with device tests.
 
-Yeni yollar History/session/cookie/profil dosyasi, debug portu, uzanti, tarayici yeniden
-baslatma bayragi, sentetik tus veya JS kullanmaz. Izin verilen kaynaktan tam HTTP(S) adresi
-gelmezse sema uydurulmaz. Mevcut localhost/ozel IP guvenlik kurallari korunur.
+The new paths do not use History/session/cookie/profile files, a debug port, an extension, a browser restart
+flag, synthetic keys or JS. If a full HTTP(S) address does not come from the allowed source, no schema is made up. The existing
+localhost/private IP security rules are kept.
 
-**Cihaz kabul araci.** Repo kokunde, bilinen genel test sayfasina gecmek icin geri sayimi kullan:
+**Device acceptance tool.** In the repo root, use the countdown to switch to a known public test page:
 
 ```sh
 python3 tests/manual_browser_capture.py --delay 5 --repeat 20 --interval 1
@@ -235,353 +234,350 @@ python3 tests/manual_browser_capture.py --delay 5 --expected-page https://exampl
 python3 tests/manual_browser_capture.py --delay 5 --expect-empty
 ```
 
-Windows'ta `python3` yerine `py -3` kullan. Bilinen gercek link icin `--expected-hover TAM_URL`
-ekle. Arac kart yazmaz; URL'leri varsayilan gizler, p50/p95 ve tam esitlik sonucunu JSON verir.
-`--show-urls` yalniz paylasilabilir test adresleriyle kullanilmali. Beklenen adres verilmediyse
-`checked_samples=0`; cikis kodu 0, dogru URL olculdu demek degildir. Beklenti tutmazsa cikis 1'dir.
-Her tarayicida normal sayfa/link, taslak adres cubugu, iframe, ayni URL'li iki panel, sekme/
-pencere degisimi, ortucu pencere, ikinci monitor/DPI, izin reddi ve soguk saglayiciyi dene.
-Yanlis adresi tek ornekte bile kabul etme; bos sonuc oranini basarili yakalamadan ayri kaydet.
+On Windows use `py -3` instead of `python3`. For a known real link add `--expected-hover FULL_URL`.
+The tool writes no cards; it hides URLs by default and gives p50/p95 and the exact-equality result as JSON.
+`--show-urls` should be used only with shareable test addresses. If no expected address was given,
+`checked_samples=0`; exit code 0 does not mean the correct URL was measured. If the expectation does not hold, the exit code is 1.
+In each browser try a normal page/link, a draft address bar, an iframe, two panes with the same URL, tab/
+window switching, a centered window, a second monitor/DPI, a permission denial and a cold provider.
+Do not accept a wrong address even in a single sample; record the empty-result rate separately from successful capture.
 
-Birincil arayuz kaynaklari (erisim 19.10.2026):
+Primary interface sources (accessed 19.10.2026):
 
-- [Mozilla erisilebilirlik mimarisi](https://firefox-source-docs.mozilla.org/accessible/Architecture.html):
-  Windows'ta MSAA, IA2 ve UIA provider birlikte vardir; Firefox icin UIA yok denmez.
-- [Chromium erisilebilirlik mimarisi](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/accessibility/overview.md)
-  ve [Chromium SDEF](https://chromium.googlesource.com/chromium/src.git/+/lkgr/chrome/browser/ui/cocoa/applescript/scripting.sdef).
-- [Apple Accessibility izni](https://support.apple.com/guide/mac-help/allow-accessibility-apps-to-access-your-mac-mh43185/mac)
-  ve [Automation izni](https://support.apple.com/en-au/guide/mac-help/mchl07817563/mac).
+- [Mozilla accessibility architecture](https://firefox-source-docs.mozilla.org/accessible/Architecture.html):
+  On Windows MSAA, IA2 and the UIA provider exist together; it is not said that Firefox has no UIA.
+- [Chromium accessibility architecture](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/accessibility/overview.md)
+  and [Chromium SDEF](https://chromium.googlesource.com/chromium/src.git/+/lkgr/chrome/browser/ui/cocoa/applescript/scripting.sdef).
+- [Apple Accessibility permission](https://support.apple.com/guide/mac-help/allow-accessibility-apps-to-access-your-mac-mh43185/mac)
+  and [Automation permission](https://support.apple.com/en-au/guide/mac-help/mchl07817563/mac).
 - [AT-SPI Document](https://gnome.pages.gitlab.gnome.org/at-spi2-core/libatspi/method.Document.get_document_attribute_value.html),
   [EWMH](https://specifications.freedesktop.org/wm/latest-single/),
   [Wayland](https://wayland.freedesktop.org/docs/book/Protocol.html),
   [XWayland](https://wayland.freedesktop.org/docs/book/Xwayland.html).
 - [Chromium URI](https://github.com/chromium/chromium/blob/main/ui/accessibility/platform/ax_platform_node_auralinux.cc)
-  ve [Mozilla DocURL](https://github.com/mozilla/gecko-dev/blob/master/accessible/atk/nsMaiInterfaceDocument.cpp):
-  motora ozel Document attribute adlari.
-- [Opera GX Linux duyurusu](https://press.opera.com/2026/03/19/opera-gx-gaming-browser-lands-on-linux/)
-  (19.03.2026), [Opera indirmeleri](https://www.opera.com/download),
-  [Arc platform sinirlari](https://resources.arc.net/hc/en-us/articles/19400148671383-Unsupported-Devices),
-  [Samsung Windows duyurusu](https://news.samsung.com/global/samsung-takes-its-browser-beyond-mobile-extending-agentic-ai-across-devices)
+  and [Mozilla DocURL](https://github.com/mozilla/gecko-dev/blob/master/accessible/atk/nsMaiInterfaceDocument.cpp):
+  engine-specific Document attribute names.
+- [Opera GX Linux announcement](https://press.opera.com/2026/03/19/opera-gx-gaming-browser-lands-on-linux/)
+  (19.03.2026), [Opera downloads](https://www.opera.com/download),
+  [Arc platform limits](https://resources.arc.net/hc/en-us/articles/19400148671383-Unsupported-Devices),
+  [Samsung Windows announcement](https://news.samsung.com/global/samsung-takes-its-browser-beyond-mobile-extending-agentic-ai-across-devices)
   (26.03.2026).
 
-### Tarayıcı: Obsidian Web Clipper
+### Browser: Obsidian Web Clipper
 
-1. [Obsidian Web Clipper](https://obsidian.md/clipper) eklentisini kur (Chrome, Firefox, Safari, Edge, Arc, Brave).
-2. Eklentinin ayarlarında **Şablonlar > İçe aktar** ile kurulumun kart klasörüne yazdığı
-   `beyne-at-web-clipper.json` dosyasını seç (varsayılan `📥 000-Inbox/Yakala/`; tam yolu `kur` söyler).
-3. Bir sayfada eklentiye bas, "Beyne at" şablonunu seç, istersen **Neden** bölümüne bir satır yaz, ekle.
+1. Install the [Obsidian Web Clipper](https://obsidian.md/clipper) extension (Chrome, Firefox, Safari, Edge, Arc, Brave).
+2. In the extension's settings, with **Templates > Import**, choose the `beyne-at-web-clipper.json` file that the
+   installation wrote to the card folder (default `📥 000-Inbox/Yakala/`; `kur` tells you the full path).
+3. On a page, click the extension, choose the "Beyne at" template, optionally write a line in the **Why** section, and add it.
 
-Web Clipper sayfayı tarayıcının içinden okur; giriş isteyen sayfalar (Gmail, ücretli makale) da böylece yakalanır.
-Bu mevcut istege bagli kurulum, yukaridaki yerel kisayol okuyucularinin gereksinimi degildir.
+The Web Clipper reads the page from inside the browser; pages that require login (Gmail, paid articles) are captured this way too.
+This existing optional installation is not a requirement of the local shortcut readers above.
 
-### Windows: kısayol dinleyicisi
+### Windows: shortcut listener
 
-Windows'ta kısayol, tarayıcının (Chrome/Edge/Brave/Vivaldi) adres çubuğunu okur. Adres çubuğu
-odaktaysa (yazılıp Enter'a basılmamış taslak) veya değer iki okumada değişiyorsa URL sayılmaz.
-Chromium semayi gizlerse ayni sure siniri icinde tek gorunur renderer'in acik MSAA belge
-URL'siyle dogrulama yapilir; gorunen metin ve ikinci odaksiz UIA okumasi uyusmalidir.
-`https://` tahmini yapilmaz. Yalniz kok adresin sondaki `/` farki kabul edilir; `www`, IDN
-ve percent-encoding gosterim farki veya soguk renderer bos sonuca yol acabilir.
-Kısayol anında fare bir linkin
-(ör. YouTube ana sayfasındaki bir video kartı) üstündeyse o link varsayılan kaynak olur; açık
-sayfa **Alt+S**, imlecin altındaki link **Alt+I** ile seçilir. Okuma sırasında pencere veya sekme
-değişirse (başlık değişir) iki link de atılır. Link varken de kaynak pencerenin görüntüsü sunulur
-(önce Windows.Graphics.Capture, olmazsa PrintWindow). Görüntü kapalı gelir; **Alt+W** veya satıra
-tıklama ile eklenir, çünkü `isle` görseli ajana olduğu gibi okutur. History/oturum veritabanı okunmaz;
-localhost/özel IP için mevcut ağ güvenliği sınırı korunur.
+On Windows, the shortcut reads the browser's (Chrome/Edge/Brave/Vivaldi) address bar. If the address bar
+has focus (a draft that was typed but Enter was not pressed) or the value changes between two reads, it is not counted as a URL.
+If Chromium hides the schema, verification is done within the same time limit with the single visible renderer's open MSAA document
+URL; the visible text and a second, unfocused UIA read must agree.
+No `https://` guess is made. Only a trailing `/` difference on a root address is accepted; `www`, IDN
+and percent-encoding display differences or a cold renderer may lead to an empty result.
+If at the moment of the shortcut the mouse is over a link
+(e.g. a video card on the YouTube home page), that link becomes the default source; the open
+page is chosen with **Alt+S**, the link under the cursor with **Alt+I**. If the window or tab
+changes during the read (the title changes), both links are discarded. Even when there is a link, the source window's image is offered
+(first Windows.Graphics.Capture, then PrintWindow if that fails). The image comes unselected; it is added with **Alt+W** or by clicking
+the row, because `isle` has the agent read the image as it is. The History/session database is not read;
+the existing network security limit is kept for localhost/private IP.
 
-**Gönderiler (X, Instagram):** Tweet metni veya akıştaki video bir link değildir. Açık sayfa
-X (`x.com`, `twitter.com`) ya da Instagram ise ve imleç bir linkin üstünde değilse, altındaki en
-içteki ARIA `article` öğesi (tek gönderi) alınır ve içindeki ilk gönderi bağlantısı
-(`x.com/<kullanıcı>/status/<id>`, `instagram.com/p|reel/<kod>/`) imleç linki olur. Başka sitelerde
-bu yol çalışmaz: bir haber sayfasının gövdesi de tek bir `article` olabilir ve metnin andığı tweet,
-imlecin üstünde durduğu gönderi değildir; orada kaynak açık sayfa kalır. Sayfa adresi
-okunamazsa da bu yol kapalıdır. Aynı gönderideki ikinci, farklı gönderi bağlantısı alıntılanan
-gönderidir; **Alt+A** ile seçilebilir, varsayılan seçili değildir. X'in fotoğraf/video/analytics
-alt sayfaları gönderi adresine indirgenir; Instagram ses sayfası (`/reels/audio/<id>/`) gönderi
-sayılmaz. Bağlantı sayfanın kendisinden okunur; gönderi adresi görselden veya kullanıcı adından
-üretilmez.
+**Posts (X, Instagram):** A tweet's text or a video in the feed is not a link. If the open page
+is X (`x.com`, `twitter.com`) or Instagram and the cursor is not over a link, the innermost
+ARIA `article` element under it (a single post) is taken and the first post link inside it
+(`x.com/<user>/status/<id>`, `instagram.com/p|reel/<code>/`) becomes the cursor link. On other sites
+this path does not work: the body of a news page may also be a single `article`, and the tweet that the text refers to
+is not the post the cursor is over; there the source stays the open page. If the page address
+cannot be read, this path is also closed. A second, different post link in the same post
+is the quoted post; it can be selected with **Alt+A**, and it is not selected by default. X's photo/video/analytics
+subpages are reduced to the post address; the Instagram audio page (`/reels/audio/<id>/`) is not
+counted as a post. The link is read from the page itself; the post address is not
+generated from an image or a username.
 
-**Opera (Opera Air dahil):** Süreç adı `opera` olan pencerede adres çubuğu okunmaz; sayfanın ayrı
-Chromium alt penceresi okunur. Sayfa URL'si MSAA Document nesnesinin gerçek değerinden, imleç
-bağlantısı aynı alt pencerenin UI Automation bağlantılarından alınır. Adres çubuğundaki taslak
-okunmaz; açık sayfanın yüklenmiş adresi kullanılır. Eklenti, yeniden başlatma veya
-erişilebilirlik başlatma bayrağı gerekmez. Tek görünür renderer, pencere/süreç sahipliği ve
-okuma öncesi/sonrası sayfa URL'si doğrulanır. Birden fazla görünür renderer, görünmeyen belge,
-değişen sayfa veya zaman aşımı varsa URL verilmez. Bağlantı iki okumada değişirse yalnız imleç
-bağlantısı atılır. Sayfa ve imleç okuması tek bir yardımcı süreçte, 1,8 saniyelik bütçe içinde
-yapılır. Chromium web erişilebilirliğini bir süre kullanılmayınca kapatır; o zaman ilk okuma boş
-gelir, renderer'a bir UI Automation isteğiyle erişilebilirlik açılır ve belge en fazla 0,8 saniye
-beklenir. Erişilebilirlik zaten açıksa okuma eskisi gibi kısa sürer.
-Opera Air 136.0.6008.70 üzerinde bayraksız ayrı profilde temel sağlayıcı yolu ölçüldü;
-oturum açılmış YouTube/Instagram akışlarında kullanıcı kabul testi ayrıca yapılmalıdır.
+**Opera (including Opera Air):** In a window whose process name is `opera`, the address bar is not read; the page's separate
+Chromium child window is read. The page URL is taken from the real value of the MSAA Document object, the cursor
+link from the UI Automation links of the same child window. A draft in the address bar is not
+read; the loaded address of the open page is used. No extension, restart or
+accessibility start-up flag is needed. A single visible renderer, window/process ownership, and the page URL before and after
+the read are verified. If there are multiple visible renderers, an invisible document,
+a changing page or a timeout, no URL is given. If the link changes between two reads, only the cursor
+link is discarded. The page and cursor read is done in a single helper process within a 1.8-second budget.
+Chromium turns web accessibility off after a while of non-use; then the first read
+comes back empty, accessibility is turned on by a UI Automation request to the renderer, and the document is waited for at most 0.8 seconds.
+If accessibility is already on, the read is as fast as before.
+The basic provider path was measured on Opera Air 136.0.6008.70 in a separate profile without flags;
+a user acceptance test on logged-in YouTube/Instagram feeds must be done separately.
 
-**Firefox / Zen / Yandex:** Firefox ve Zen icin `MozillaWindowClass`, foreground/PID ve
-gercek exe adi dogrulanir. MSAA agacinda tek gorunur ust Document'in tam degeri okunur;
-iframe icine inilmez. Nokta altindaki gercek Link, fiziksel siniri ve ayni Document'e ulasan
-IUnknown kimligiyle dogrulanir. Iki link okumasinin URL, ad ve nesne kimligi de ayni olmalidir.
-Yandex `browser.exe` adi ancak gercek yol `\\YandexBrowser\\Application\\browser.exe` ile
-bitiyorsa kabul edilir; mevcut Opera renderer/MSAA yolu kullanilir. Ozel portable/beta yolu
-bu kurala uymuyorsa destek verilmez. Arc/Samsung'in Windows okuyucusu henuz etkin degildir.
+**Firefox / Zen / Yandex:** For Firefox and Zen, `MozillaWindowClass`, foreground/PID and
+the real exe name are verified. In the MSAA tree, the exact value of the single visible top Document is read;
+it does not descend into an iframe. The real Link under the point is verified with its physical bounds and the
+IUnknown identity that reaches the same Document. The URL, name and object identity of the two link reads must also be the same.
+The Yandex `browser.exe` name is accepted only if the real path
+ends with `\\YandexBrowser\\Application\\browser.exe`; the existing Opera renderer/MSAA path is used. If a custom portable/beta path
+does not match this rule, no support is given. The Windows reader for Arc/Samsung is not yet active.
 
-Opera Air soguk erisilebilirlik olcumu ve tek UIA uyandirma istegi ayri
-[#399](https://github.com/avenoxai/avenoxbeyin/pull/399) calismasidir; bu ekleme o PR'yi
-icermiyor. Yandex ortak renderer yolunu kullandigi icin soguk/sicak saglayici sonucu ve
-#399 oncesi/sonrasi ayrica olculmelidir. Eski Opera Air sonucu yeni tarayicilar icin kanit degildir.
+The Opera Air cold accessibility measurement and the single UIA wake-up request are a separate
+[#399](https://github.com/avenoxai/avenoxbeyin/pull/399) effort; this addition does not
+include that PR. Because Yandex uses the shared renderer path, the cold/warm provider result and
+before/after #399 must be measured separately. The old Opera Air result is not evidence for the new browsers.
 
-Tarayıcıdan okunan link (imlecin altındaki ya da açık sayfa) varsa varsayılan odur. Pano metni
-yalnız tazeliği doğrulanmışsa görünür; linkin yanında kapalı gelir. Eski pano metni gösterilmez.
-Link yoksa dinleyicinin başlangıcından itibaren gözlenen, başarılı kayıtta kullanılmamış pano
-revision'ı önceliklidir. İlk kullanım/yeniden başlatmada eldeki panonun yaşı bilinmez: metin
-gizlenir; bağlantı ve görüntü kapalı seçenek olarak kalır. Snipping Tool dosya zamanı tek başına
-otomatik tazelik sağlamaz.
-İptal ve yalnız sayfayı kaydetmek panoyu tüketmez. Pano değişimi yakalama tuşundan sonra
-olduysa yeni içerik kendiliğinden kaynak seçilmez. Metin/görüntü aynı pano oturumundan
-kopyalanır; gecikmeli veya tutarsız okuma güvenli biçimde atlanır.
+If there is a link read from the browser (under the cursor or the open page), it is the default. Clipboard text
+is visible only if its freshness is verified; next to a link it comes disabled. Stale clipboard text is not shown.
+If there is no link, the clipboard revision observed since the listener started and not used in a successful save
+takes priority. On first use/restart the age of the existing clipboard is unknown: the text is
+hidden; the link and image remain as disabled options. The Snipping Tool file time alone does not
+provide automatic freshness.
+Cancelling and saving only the page do not consume the clipboard. If the clipboard change happened after the capture key,
+the new content is not selected as a source automatically. Text/image is
+copied from the same clipboard session; a delayed or inconsistent read is safely skipped.
 
-Seçim yolları: **Alt+I** imlecin altındaki bağlantı, **Alt+S** etkin sayfa, **Alt+A** alıntılanan
-gönderi, **Alt+P** pano bağlantısı, **Alt+M** metin, **Alt+G** pano görüntüsü, **Alt+W** pencere
-görüntüsü. Kısayollar not kutusunda da çalışır; büyük harf ve Türkçe I/İ desteklenir.
-Birden çok bağlantı birlikte seçilebilir. Ana `url` önceliği: imleç bağlantısı, etkin sayfa,
-alıntılanan gönderi, pano bağlantısı. Diğer seçilen adresler kartın `Ek bağlantılar` bölümünde
-ve isteğe bağlı `ek_urller` listesinde tutulur; `isle` ana URL'yi işler. Aynı adres ikinci kart
-olarak gösterilmez. Yalnız bir bağlantıyı kaydetmek için diğerlerinin işaretini kaldır.
-Pano metni, dosya veya mail adresi eklenen mevcut URL kartı da `private` olur.
-Mail adresi ana kaynak yerine `ek_urller` içinde seçilmiş olsa da bütün kart özel kalır.
-Ek bağlantılardan biri yerel veya özel ağ adresiyse (`127.0.0.1`, `192.168.x.x`, `intranet`,
-`nas.local`) yakalama iptal olmaz: adres ayrı bir `ek_urller_yerel` listesine ve
-`## Yerel ağ bağlantıları` bölümüne yalnız kayıt olarak yazılır, kart `private` olur. `isle` bu
-adresleri açmaz. Ana `url` yine yalnız herkese açık adres olabilir; seçenek, `file://`, kullanıcı
-bilgisi veya kodlanmış IP yazımı içeren ek bağlantı reddedilir. Elle düzenlenmiş ya da eşitlenmiş
-bir karttaki bozuk `ek_urller` değeri o sayfanın yeni yakalamasını engellemez.
-Aynı popup'ın kayıt kimliği tekrar oynatılsa bile ikinci
-commit yapılmaz.
+Selection paths: **Alt+I** link under the cursor, **Alt+S** active page, **Alt+A** quoted
+post, **Alt+P** clipboard link, **Alt+M** text, **Alt+G** clipboard image, **Alt+W** window
+image. The shortcuts also work in the note box; uppercase and the Turkish I/İ are supported.
+Several links can be selected together. The main `url` priority: cursor link, active page,
+quoted post, clipboard link. The other selected addresses are kept in the card's `Additional links` section
+and in the optional `ek_urller` list; `isle` processes the main URL. The same address is not shown as a second card.
+To save only one link, uncheck the others.
+An existing URL card to which clipboard text, a file or an email address was added also becomes `private`.
+Even if an email address is selected in `ek_urller` instead of as the main source, the whole card stays private.
+If one of the additional links is a local or private network address (`127.0.0.1`, `192.168.x.x`, `intranet`,
+`nas.local`), the capture is not cancelled: the address is written as a record only to a separate `ek_urller_yerel` list and to the
+`## Local network links` section, and the card becomes `private`. `isle` does not open these
+addresses. The main `url` can still only be a public address; an additional link that contains an option, `file://`, user
+info or an encoded IP notation is rejected. A corrupt `ek_urller` value in a hand-edited or synced
+card does not block a new capture of that page.
+Even if the same popup's record ID is replayed, a second
+commit is not made.
 
-Popup sıcak nötr zemin, kiremit vurgu ve küçük kısayol rozetleri kullanır. Seçili kaynaklar
-renkli çerçeve ve onay işaretiyle ayrılır. Pencere kaynak monitörün çalışma alanına sığar;
-uzun kaynak listesi fare tekerleği veya PgUp/PgDn ile kaydırılır. Not kutusu ve kaydetme
-ipuçları yerinde kalır. Pencere görüntüsü kullanıcı seçmeden karta eklenmez; link ve görüntü
-birlikte kaydedilebilir.
+The popup uses a warm neutral background, a terracotta accent and small shortcut badges. Selected sources
+are set apart with a colored frame and a check mark. The window fits the work area of the source monitor;
+a long source list is scrolled with the mouse wheel or PgUp/PgDn. The note box and the save
+hints stay in place. The window image is not added to the card without the user choosing it; the link and image
+can be saved together.
 
-Aynı sayfanın ikinci yakalaması yeni kart açmaz, mevcut karta eklenir. Sayfa kimliği her
-sistemde aynı kuralla hesaplanır (senkronlanan bir vault'u Mac ve Windows birlikte okuyabilir):
-aynı YouTube videosu (`youtu.be`, `watch?v=`, `shorts/`, `live/`, `embed/`, `music.youtube.com`)
-ve aynı X/Twitter gönderisi tek kartta toplanır; alan adı tam eşleşir (`notyoutube.com` YouTube
-sayılmaz). Diğer sayfalarda şema, `www.`/`m.` öneki, sondaki `/` ve bölüm işareti (`#baslik`)
-fark yaratmaz; varsayılan dışı port (`:8443`) ve yönlendirme işaretleri (`#/sayfa`, `#!sayfa`)
-ayrı sayfa sayılır.
+A second capture of the same page does not open a new card; it is added to the existing card. The page identity is computed with the same rule on every
+system (a synced vault can be read by Mac and Windows together):
+the same YouTube video (`youtu.be`, `watch?v=`, `shorts/`, `live/`, `embed/`, `music.youtube.com`)
+and the same X/Twitter post are gathered in a single card; the domain name must match exactly (`notyoutube.com` is not
+counted as YouTube). For other pages, the scheme, the `www.`/`m.` prefix, a trailing `/` and the fragment (`#baslik`)
+make no difference; a non-default port (`:8443`) and routing markers (`#/sayfa`, `#!sayfa`)
+count as a separate page.
 
-**Tek aktif popup:** tekrar kısayol yeni pencere açmaz, mevcut metni ve kaynak seçimini
-koruyarak açık popup'a odak isteği gönderir. Dinleyici ile warm pencere, instance/schema/
-sürüm/HWND doğrulamalı READY → foreground izni → ACTIVATE konuşur. İkinci çağrı FOCUS'tur.
-Eski protokol sessizce kabul edilmez; bu güncellemeden sonra `py -3 beyin.py yakala kur`
-ile dinleyici kopyasını yenilemek gerekir. IPC pipe'ları hotkey thread'ini bloke etmez.
-Dinleyici kapanışı önce STOP gönderir; yanıt vermeyen pencere ve okuyucuları sahip olunan
-Job Object üzerinden sonlandırılır. Başka bir vault'a ait state silinmez.
+**Single active popup:** pressing the shortcut again does not open a new window; it sends a focus request to the open popup,
+preserving the current text and source selection. The listener and the warm window speak a READY with
+instance/schema/version/HWND verification → foreground permission → ACTIVATE. The second call is FOCUS.
+The old protocol is not silently accepted; after this update the listener copy must be refreshed
+with `py -3 beyin.py yakala kur`. IPC pipes do not block the hotkey thread.
+Listener shutdown sends STOP first; windows and readers that do not respond are terminated through an owned
+Job Object. State belonging to another vault is not deleted.
 
-Windows'ta geçici el sıkışma zaman aşımı veya popup'ın beklenmedik kapanması kısayolu bırakmaz.
-Önce eski süreç sonlandırılıp beklenir, ardından 0,5 saniye sonra yeni pencere ısıtılır.
-Sonucu bilinmeyen yakalama otomatik tekrarlanmaz; sonraki basış yeni yakalamadır.
-120 saniye içinde üçüncü geçici hatada dinleyici kapanır ve `yakala kur` ile yenilenmesi istenir.
-Protokol uyumsuzluğu veya eski sürecin sonlandırılamaması doğrudan kapanma nedenidir.
-Hata aşaması ve toparlanma kararı `yakala/dinleyici.log` içine yazılır.
+On Windows a temporary handshake timeout or an unexpected popup closure does not abandon the shortcut.
+The old process is first terminated and waited for, then a new window is warmed up after 0.5 seconds.
+A capture whose result is unknown is not repeated automatically; the next press is a new capture.
+On a third temporary failure within 120 seconds the listener shuts down and a refresh with `yakala kur` is requested.
+A protocol mismatch or the inability to terminate the old process is a direct reason for shutdown.
+The failure stage and the recovery decision are written to `yakala/dinleyici.log`.
 
-Popup kaynak monitörde açılır. Windows tarafında Tk yönetilen pencere kullanır; özel
-palet/canvas görünümü korunmak üzere yerel başlık/çerçeve stili kaldırılır. Düz **Esc** yerel
-odakta hemen iptal eder. Kaynaklar okunurken ve popup açık olduğu sürece, odak nerede olursa
-olsun, düşük seviyeli bir klavye kancası (`WH_KEYBOARD_LL`) Esc'e ve değiştirici tuşlara
-(Shift, Ctrl, Alt, Win) bakar: popup öndeyse Esc'i Tk işler; kaynak pencere öndeyse (odak
-reddedildi ya da sayfaya tıklandı) düz Esc tüketilir ve popup kapanır; başka bir pencere öndeyse
-popup kapanır ve Esc o pencereye de iletilir. Değiştiricili Esc'i kanca hiçbir durumda tüketmez
-ve popup'ı kapatmaz; Ctrl+Shift+Esc gibi sistem kısayolları çalışır. Popup'ın kendi Tk bağlaması
-da yalnız düz Esc'te iptal eder: Caps/Num/Scroll Lock değiştirici sayılmaz, Tk'nin olayda
-bildirmediği Win tuşu GUI iş parçacığında eşzamanlı `GetKeyState` ile okunur. Kanca, kurulduğu
-anda zaten basılı değiştiriciler için `GetAsyncKeyState` değerini yalnız bir kez ve geri çağrının
-dışında okur; sonrasında durumu kendi gördüğü basma/bırakma olaylarıyla (sol ve sağ tuş ayrı)
-izler, Alt için olaydaki `LLKHF_ALTDOWN` bayrağına da bakar. Geri çağrının içinde asenkron tuş
-durumu sorgulanmaz. Kanca popup kapanınca (kayıt, Esc, Kapat, Alt+F4, hata) kaldırılır;
-sonrasında hiçbir uygulamanın Esc'i tutulmaz. Yeniden hotkey kancayı yeni kaynak pencereyle
-yeniden kurar, eski yakalama içeriğini değiştirmez. `AttachThreadInput` kullanılmaz.
-Görünür **Kapat** ve Alt+F4 da iptaldir. Windows güvenli masaüstü/UIPI/hook reddi için
-her durumda global Esc garantisi yoktur. Kartın disk commit'i başladıysa Esc kaydedilmiş
-veriyi geriye dönük iptal etmez; yavaş disk I/O'su sırasında arayüz yanıtı gecikebilir.
+The popup opens on the source monitor. On Windows, Tk uses a managed window; to preserve the custom
+palette/canvas look the native title/frame style is removed. Plain **Esc** cancels immediately at local
+focus. While sources are being read and for as long as the popup is open, wherever focus is,
+a low-level keyboard hook (`WH_KEYBOARD_LL`) looks at Esc and the modifier keys
+(Shift, Ctrl, Alt, Win): if the popup is in front, Tk handles Esc; if the source window is in front (focus
+was denied or the page was clicked), plain Esc is consumed and the popup closes; if another window is in front,
+the popup closes and Esc is also passed to that window. The hook never consumes Esc with a modifier
+and does not close the popup; system shortcuts such as Ctrl+Shift+Esc work. The popup's own Tk binding
+also cancels only on plain Esc: Caps/Num/Scroll Lock do not count as modifiers, and the Win key, which Tk does not
+report in the event, is read in the GUI thread synchronously with `GetKeyState`. For modifiers that are already
+held down at the moment the hook is installed, the hook reads the `GetAsyncKeyState` value only once and outside the callback;
+after that it tracks the state with the press/release events it sees itself (left and right key separate), and for Alt it also looks at the `LLKHF_ALTDOWN`
+flag in the event. The asynchronous key state is not queried inside the callback. The hook is removed when the popup closes (save, Esc, Close, Alt+F4, error);
+after that no application's Esc is held. A re-press of the hotkey re-installs the hook with the new source window and does not change
+the old capture's content. `AttachThreadInput` is not used.
+The visible **Close** and Alt+F4 are also cancellation. For the Windows secure desktop/UIPI/hook denial,
+there is no global Esc guarantee in every case. If the card's disk commit has begun, Esc does not retroactively cancel
+the saved data; during slow disk I/O the interface response may be delayed.
 
-Pencere görüntüsü için link olsa da **WGC → PrintWindow → görüntü yok** sırası izlenir;
-her backend ayrı, sonlandırılabilir süreçtedir. Bu hazırlık popup açılışına süre ekleyebilir.
-Yakalama başarısızsa görüntü seçeneği oluşmaz. Önizleme yöntem
-adını gösterir. Ekran DC'sinden BitBlt yoktur. Kaynak pencere değişirse sonuç atılır.
-WGC, Windows 10 1903+ API yoludur; destek/izin/sürücü başarısızsa PrintWindow denenir.
-Korumalı/GPU/exclusive-fullscreen uygulamaların tamamı için başarı veya HDR renk doğruluğu
-iddia edilmez. Herhangi bir başarısızlık eski panoyu otomatik kaynak yapmaz.
+For the window image, even when there is a link, the order **WGC → PrintWindow → no image** is followed;
+each backend is in a separate, terminable process. This preparation may add time to the popup opening.
+If the capture fails, no image option is created. The preview shows the method
+name. There is no BitBlt from the screen DC. If the source window changes, the result is discarded.
+WGC is the Windows 10 1903+ API path; if support/permission/driver fails, PrintWindow is tried.
+No success or HDR color accuracy is claimed for all protected/GPU/exclusive-fullscreen applications. No failure
+makes the old clipboard an automatic source.
 
-UIA/pano için dış bekleme 1 saniye (Opera okuyucusu 1,8 saniye), WGC için 2,5 saniye, PrintWindow için 1,2 saniyedir;
-süreç başlatma/sonlandırma ek giderleri olabilir. PNG/DIB en fazla **16.777.216 piksel**,
-görüntü payload'ı 64 MiB, metin UTF-8 payload'ı 4 MiB, IPC metadata'sı 64 KiB kabul eder.
-Büyük ilan edilmiş PNG boyutu Tk'ye verilmez. Kart/ham geçici yazım hataları temizlenir;
-hard kill/güç kesintisi veya dosya sisteminin silmeyi reddetmesi için mutlak silinme
-sözü verilmez. Dinleyici normal/zorunlu popup kapanışında kendi TEMP ağacını da temizler.
+The external wait for UIA/clipboard is 1 second (the Opera reader 1.8 seconds), for WGC 2.5 seconds, for PrintWindow 1.2 seconds;
+there may be extra overhead for process start/termination. PNG/DIB accepts at most **16,777,216 pixels**,
+the image payload 64 MiB, the text UTF-8 payload 4 MiB, the IPC metadata 64 KiB.
+A PNG size declared as large is not given to Tk. Card/raw temporary write errors are cleaned up;
+no absolute promise of deletion is made for a hard kill/power loss or the file system refusing to delete.
+On a normal/forced popup closure the listener also cleans up its own TEMP tree.
 
-`kur`, Başlangıç klasörüne (`shell:startup`) `Beyne At Dinleyici` kısayolu yazar ve dinleyiciyi
-başlatır. Bir oturumda tek dinleyici vardır; başka vault'ta `kur` tuşu o vault'a devreder.
-`py -3 beyin.py yakala durum` durumunu, state içindeki `yakala/dinleyici.log` hatayı gösterir.
-Vault taşınmışsa eski yola yeniden yazılmaz; yeni konumda tekrar kurulum yapılır. Kısayol
-geçici dosyada oluşturulup doğrulandıktan sonra değiştirilir; stop zaman aşımı başarı sayılmaz.
+`kur` writes a `Beyne At Dinleyici` shortcut to the Startup folder (`shell:startup`) and starts the listener.
+There is a single listener per session; running `kur` in another vault hands the key to that vault.
+`py -3 beyin.py yakala durum` shows its status, and `yakala/dinleyici.log` in the state shows errors.
+If the vault was moved, it is not rewritten to the old path; installation is done again at the new location. The shortcut
+is created in a temporary file and replaced after verification; a stop timeout is not counted as success.
 
-ABI kaynakları, sınırlamalar ve gerçek masaüstü kabul komutları:
-[Windows yakalama ABI ve test rehberi](WINDOWS-CAPTURE-ABI.md).
+ABI sources, limitations and real-desktop acceptance commands:
+[Windows capture ABI and test guide](WINDOWS-CAPTURE-ABI.md).
 
-## Kullanım
+## Usage
 
-1. **Yakala.** Kısayola bas. Pencere neyin kaydedileceğini gösterir: tarayıcıdaki sayfa
-   (yukarıdaki platform matrisi), Finder'da seçili dosya ya da panodaki metin.
-   İstersen tek satır "neden" yaz, Enter. Esc vazgeçer.
+1. **Capture.** Press the shortcut. The window shows what will be saved: the page in the browser
+   (the platform matrix above), the file selected in Finder, or the text on the clipboard.
+   If you like, write a one-line "why" and press Enter. Esc cancels.
 
-   Windows'ta panoda görüntü varsa pencere onu küçük önizlemesiyle gösterir. Son başarılı kayıttan
-   sonra panoya kopyalanan görüntü (ör. `Win+Shift+S`) eklenmeye hazır gelir: Enter onu kartların
-   yanındaki `dosyalar/` klasörüne PNG olarak kaydeder ve Gönder > Beyne At ile aynı dosya kartını
-   açar. Tazelik saatle değil pano sıra numarasıyla ölçülür; iptal (Esc) panoyu tüketmez.
-   Tazeliği doğrulanamayan görüntü kapalıdır; **Alt+G** veya satıra tıklama ile değiştirilebilir.
-   Pano metni/bağlantısı ve pencere görüntüsü yukarıdaki Windows seçim kurallarını izler.
-2. **İşlet.** Ajanına "yakalananları işle" de. Oturum başında bekleyen kaynak sayısı da görünür.
+   On Windows, if there is an image on the clipboard, the window shows it with a small preview. An image copied to the clipboard after the
+   last successful save (e.g. `Win+Shift+S`) comes ready to be added: Enter saves it as a PNG into the `dosyalar/` folder
+   next to the cards and opens the same file card as Send to > Beyne At. Freshness is measured not by the clock but by the clipboard sequence number; cancelling (Esc) does not consume the clipboard.
+   An image whose freshness cannot be verified is disabled; it can be toggled with **Alt+G** or by clicking the row.
+   Clipboard text/link and the window image follow the Windows selection rules above.
+2. **Process.** Tell your agent "process the captures". The number of waiting sources is also shown at the start of a session.
 
-Her yakalama kart klasöründe (varsayılan `📥 000-Inbox/Yakala/`) bir kart olur. Aynı videoyu ya da
-sayfayı ikinci kez yakalarsan yeni kart açılmaz; yeni notun aynı karta eklenir.
+Each capture becomes a card in the card folder (default `📥 000-Inbox/Yakala/`). If you capture the same video or
+page a second time, no new card is opened; the new note is added to the same card.
 
-### Kartların klasörü
+### The card folder
 
-Gelen kutusu klasörlerinden yalnız birinde `Yakala/` zaten varsa kartlar oraya yazılır; böyle tek
-bir klasör yoksa başlangıç klasörü `📥 000-Inbox` kullanılır, o da yoksa vault'un en üstünde adı gelen
-kutusu olan tek klasör (`000-Inbox`, `00_INBOX`, `Gelen Kutusu`). Karar verilemiyorsa tahmin edilmez
-ve başlangıç yolu açılır. Nokta ile başlayan klasörler, sembolik bağlar, arşiv ve kasa türü adlar
-gelen kutusu sayılmaz.
+If only one of the inbox folders already has a `Yakala/` in it, cards are written there; if there is no such single
+folder, the starting folder `📥 000-Inbox` is used, and if that does not exist either, the single folder at the top of the vault whose name is an inbox
+(`000-Inbox`, `00_INBOX`, `Gelen Kutusu`). If it cannot be decided, no guess is made
+and the starting path is opened. Folders starting with a dot, symbolic links, archive and safe-type names
+are not counted as an inbox.
 
-Başka bir yer istiyorsan kurarken söyle:
+If you want somewhere else, say so at install time:
 
 ```sh
 python3 beyin.py yakala kur --klasor "Notlar/Yakala"
 ```
 
-- Klasör vault'un içinde olmalı. Dışarı çıkan bir yol reddedilir ve hiçbir şey yazılmaz.
-- Web Clipper şablonu, skill, oturum bildirimi ve `durum` aynı klasörü gösterir. Klasörü
-  değiştirdiysen şablonu Web Clipper'a yeniden aktar.
-- Eski klasördeki kartlar taşınmaz. `kur` kaç kartın geride kaldığını söyler; işlenmelerini
-  istiyorsan onları yeni klasöre sen taşı.
-- Seçim bu makinenin durum klasöründe saklanır. Aynı vault'u başka bir makinede de kullanıyorsan
-  orada da aynı komutu çalıştır.
-- Kayıtlı klasör silinir ya da adı değişirse yukarıdaki kurala dönülür; `durum` kullanılan klasörü söyler.
+- The folder must be inside the vault. A path that goes outside is rejected and nothing is written.
+- The Web Clipper template, the skill, the session notice and `durum` show the same folder. If you
+  changed the folder, re-import the template into the Web Clipper.
+- Cards in the old folder are not moved. `kur` tells you how many cards were left behind; if you
+  want them processed, you move them to the new folder.
+- The choice is stored in this machine's state folder. If you use the same vault on another machine,
+  run the same command there too.
+- If the saved folder is deleted or renamed, the rule above applies again; `durum` tells you which folder is used.
 
-## İsteğe bağlı: kaydet ve ajana ver
+## Optional: save and hand to the agent
 
-**Varsayılan kapalıdır.** Açtığında **Enter** yine yalnız kartı kaydeder. **Ctrl+Enter** veya
-penceredeki **Kaydet ve ajana ver** satırı, önce kartı kaydeder, sonra bu kart için ayrı bir
-Claude Code ya da Codex oturumu başlatır. Ajan vault içinde çalışır; sonucu kaynak bağlantılarıyla
-hafızaya kaydeder. Pencere kapanabilir, başka bir ajan oturumunda çalışmaya devam edebilirsin.
+**It is off by default.** When you turn it on, **Enter** still only saves the card. **Ctrl+Enter** or
+the **Save and hand to the agent** row in the window first saves the card, then starts a separate
+Claude Code or Codex session for this card. The agent works inside the vault; it saves the result to
+memory with source links. You can close the window and continue working in another agent session.
 
-Bu yol tam Tk penceresinde vardır. Linux'taki `kdialog`/`zenity` yedek pencereleri yalnız
-yakalama yapar; kaydedilmiş kartı aşağıdaki `ajan-gonder` komutuyla gönderebilirsin.
+This path exists in the full Tk window. The Linux `kdialog`/`zenity` fallback windows only
+capture; you can send the saved card with the `ajan-gonder` command below.
 
-### Aç, kullan, kapat
+### Open, use, close
 
-Vault klasöründe, Windows için:
+In the vault folder, for Windows:
 
 ```sh
 py -3 beyin.py yakala kur --ajan claude
 py -3 beyin.py yakala ajan
 ```
 
-Otomatik seçim için `kur --ajan otomatik` veya `ajan otomatik` kullan. Önce kurulumu yapan
-Claude Code ya da Codex oturumu, oturum işareti yoksa kurulu tek CLI seçilir. İkisi de kuruluysa
-terminalde `1) claude / 2) codex` sorulur; JSON çıktıda veya etkileşimsiz kullanımda açıkça
-`claude` ya da `codex` seçmen gerekir. Hiçbiri bulunamazsa hata verilir. Ayara somut istemci
-yazılır; çıktının `secim` alanı `kurulum-ajani`, `tek-kurulu` veya `kullanici` yolunu gösterir.
-Kurulumu yapan ajan, arka plan ajanını yalnız sen açıkça istersen açar; istemci belirtmediysen
-`--ajan otomatik` kullanır. Skill, ajanın `ajan-gonder`, `ajan-toplu --gonder`, `--ses-isle` ve
-`--tani-servise-gonder` izinlerini senin yerine kendiliğinden vermemesini söyler.
-`--ajan` verilmezse varsayılan kapalı davranışı değişmez.
+For automatic selection use `kur --ajan otomatik` or `ajan otomatik`. First, the Claude Code or Codex
+session that did the installation is chosen; if there is no session marker, the single installed CLI is chosen. If both are installed,
+the terminal asks `1) claude / 2) codex`; in JSON output or non-interactive use you have to choose `claude`
+or `codex` explicitly. If neither is found, an error is given. A concrete client is written to the setting;
+the `secim` field of the output shows the `kurulum-ajani`, `tek-kurulu` or `kullanici` path.
+The agent that does the installation opens the background agent only if you explicitly ask; if you did not specify a client, it uses
+`--ajan otomatik`. The skill tells the agent not to grant, on its own, the permissions for `ajan-gonder`,
+`ajan-toplu --gonder`, `--ses-isle` and `--tani-servise-gonder` in your place.
+If `--ajan` is not given, the default off behavior does not change.
 
-Codex seçmek için `--ajan codex` kullan. Yakala zaten kuruluysa `py -3 beyin.py yakala ajan claude`
-veya `py -3 beyin.py yakala ajan codex` yeterlidir. Mac/Linux'ta `py -3` yerine `python3` yaz.
-Bu Windows sürümüne ilk geçişte `kur` komutunu yeniden çalıştır: state'teki dinleyici kopyası da
-ajan işinin popup'tan ayrılmasını sağlayan yeni süreç ayarını almalıdır. Popup ile dinleyici
-arasındaki mesaj biçimi 3.12.0 ile aynıdır; `kur` yenilenmeden önce de kısayol ve normal kayıt çalışır,
-güncelleme veya geri alma kısayolu kapatmaz. Yalnız ajan işi başlayamaz: kart kaydedilir, `hata`
-durumuna geçer ve `ajan_notu` alanı `yakala kur` ile dinleyiciyi yenileyip kartı yeniden göndermeyi söyler.
+To choose Codex, use `--ajan codex`. If Yakala is already installed, `py -3 beyin.py yakala ajan claude`
+or `py -3 beyin.py yakala ajan codex` is enough. On Mac/Linux write `python3` instead of `py -3`.
+On the first move to this Windows version, run the `kur` command again: the listener copy in the state must also
+receive the new process setting that separates the agent job from the popup. The message format between the popup and the listener
+is the same as 3.12.0; before `kur` is refreshed, the shortcut and normal capture also work,
+and an update or rollback does not close the shortcut. Only the agent job cannot start: the card is saved, moves to the `hata`
+state, and its `ajan_notu` field tells you to refresh the listener with `yakala kur` and send the card again.
 
-**Görünüm: gizli ya da pencere.** Windows'ta Claude ve Codex için ajanın nasıl çalışacağını seçebilirsin:
+**Appearance: hidden or window.** On Windows, for Claude and Codex you can choose how the agent will run:
 
-- `gizli` (varsayılan): iş arka planda başsız bir oturumda çalışır, bitince bildirim gelir.
-- `pencere`: Ctrl+Enter ekranda seçili istemcinin Claude Code veya Codex penceresini açar; ajanın ne yaptığını canlı
-  izlersin, gerekirse aynı pencerede yazarak yön verirsin. Araç sınırı gizli çalışmayla aynıdır
-  (genel kabuk kapalıdır; Codex'in dosya okuma profili ve ağ ayarı aşağıda). İş, ajan `complete` çağırınca
-  teslim edilir; receipt ve kart güncellemesi yine çalışan tarafından doğrulanarak yapılır, pencere
-  açık kalır ve konuşma sürdürülebilir. Pencereyi sonuç bırakmadan kapatırsan iş `onay-bekliyor`
-  olur. Tur ve bütçe sınırları yalnız gizli çalışmada uygulanır; zaman sınırı ikisinde de
-  geçerlidir. Pencere bir yalıtım değildir: aynı konsolda kullanıcının kendi istemci
-  denetimleri (Claude'da ör. `!` ile komut) açıktır ve iş bittikten sonra pencere bir sonraki işle aynı anda
-  açık kalabilir.
+- `gizli` (default): the job runs in a headless session in the background, and a notification arrives when it finishes.
+- `pencere`: Ctrl+Enter opens the Claude Code or Codex window of the client selected on screen; you watch
+  what the agent is doing live, and if needed you steer it by typing in the same window. The tool limit is the same as in the hidden run
+  (the general shell is closed; Codex's file-read profile and network setting are below). The job is
+  delivered when the agent calls `complete`; the receipt and the card update are again done by the worker after verification,
+  the window stays open and the conversation can continue. If you close the window without leaving a result, the job becomes `onay-bekliyor`.
+  The turn and budget limits apply only in the hidden run; the time limit applies
+  to both. The window is not isolation: in the same console the user's own client
+  controls (in Claude, e.g. a command with `!`) are open, and after the job finishes the window may stay
+  open at the same time as the next job.
 
-**Ağ: kısıtlı ya da açık.** Ajan aynı bağlamda hem güvenilmeyen kaynağı hem özel notlarını
-okur; bir kaynağa gizlenmiş talimat, okunan not metnini bir URL'ye ya da arama sorgusuna
-koydurmaya çalışabilir.
+**Network: restricted or open.** In the same context the agent reads both the untrusted source and your private notes;
+an instruction hidden in a source may try to make it put the text of a note it read into a URL or a search query.
 
-- `kisitli` (varsayılan): genel web araması kapalıdır. `fetch_source` ve `download` yalnız
-  yakalanan ana adresi, açıkça seçilen ek adresleri ve izinli bir sayfadan çalışanın kendi ayrıştırdığı bağlantıları açar; modelin
-  ürettiği yeni adresler reddedilir. Bağlantı seçimi ve zamanlama gibi yan kanallar kalır; bu tam
-  bir veri sızıntısı koruması değildir.
-- `acik`: Claude'un web araması (Codex'te hosted arama) ve herkese açık her adres kullanılabilir.
-  Araştırma gerektiren işler (ör. bir videodaki müziği bulmak) için gerekir; özel notlar ile web
-  aynı çıkış kanalını paylaşır. Bu kipte ajana ayrıca talimat verilir: arama ve indirme yalnız
-  herkese açık bilgi içindir; notlardan, kişisel bilgilerden veya özel ya da kullanıcının kendi
-  yüklediği içerikten hiçbir metin arama sorgusuna, adrese ya da dosya adına konmaz, bunu
-  gerektiren iş kullanıcının izni için `onay-bekliyor` olur. Bu bir model talimatıdır, teknik bir
-  engel değildir.
+- `kisitli` (default): general web search is off. `fetch_source` and `download` open only
+  the captured main address, explicitly selected additional addresses, and links the worker itself parsed from an allowed page; new addresses the model
+  produces are rejected. Side channels such as link selection and timing remain; this is not complete
+  data-leak protection.
+- `acik`: Claude's web search (hosted search in Codex) and every public address can be used.
+  It is needed for jobs that require research (e.g. finding the music in a video); private notes and the web
+  share the same exit channel. In this mode the agent is also given a separate instruction: search and download are only
+  for public information; no text from notes, personal information or private or user-uploaded content is put
+  into a search query, an address or a file name, and a job that
+  requires it becomes `onay-bekliyor` for the user's permission. This is a model instruction, not a technical
+  barrier.
 
-Çoklu kaynak kartındaki `ek_urller`, kuyruğa gönderilirken mevcut kart ve kuyruk kilitleri
-altında doğrulanıp işin `extra_urls` listesine sabitlenir. Kart gövdesindeki bağlantılar,
-modelin ürettiği URL'ler ve sonradan yapılan kart değişiklikleri bu işe yeni yetki vermez;
-aynı teslimin tekrarı ilk listeyi korur. Eski işlerde alan yoksa yalnız ana kaynak kullanılır.
-Ek liste en fazla 63 adres, adres başına 8192 karakter ve JSON olarak 64 KiB olabilir.
-İstek, ayarlar ve kaynakların birlikte yazılacak ilk iş kaydı 96 KiB ile sınırlıdır;
-128 KiB okuyucu sınırında sonraki çalışma/sonuç alanlarına yer bırakılır. Sınır aşılırsa
-kart ajan durumuna geçirilmeden hata verilir; kartın kendisi korunur.
+The `ek_urller` on a multi-source card is, when it is sent to the queue, verified under the existing card and queue locks
+and pinned to the job's `extra_urls` list. Links in the card body,
+URLs the model produces and later card changes do not give this job new authority;
+a repeat of the same delivery keeps the first list. If the field is absent in old jobs, only the main source is used.
+The extra list can hold at most 63 addresses, 8192 characters per address and 64 KiB as JSON.
+The first job record, written together with the request, settings and sources, is limited to 96 KiB;
+room is left for later work/result fields within the 128 KiB reader limit. If the limit is exceeded,
+an error is raised without moving the card to the agent state; the card itself is preserved.
 
-İki ağ kipinde de `fetch_source` ve `download` iş başına toplam **8 çağrı** paylaşır. Başarısız
-izinli denemeler de bu bütçeden düşer. Sayaç dış isteğe çıkmadan önce diske kaydedilir;
-köprüye yeniden bağlanmak veya aynı işi yeniden yüklemek bütçeyi sıfırlamaz. İzin verilmeyen
-adres, ağa çıkmadan reddedilir. Sayaç bozuksa veya yazılamazsa ağ çağrısı yapılmaz. İş başına
-izinli adres listesi en fazla 64 adrestir. Bu sınır MCP çağrısınadır; HTTP yönlendirmeleri,
-istemcinin hosted web araması ve model hizmetinin normal trafiği için paket sayacı değildir.
-Çağrı sırası, adres seçimi ve zamanlama yan kanalları devam eder. Bütçe bittiğinde mevcut
-notları okumak, sonuç yazmak ve `complete` ile somut engeli bildirmek mümkündür.
+In both network modes `fetch_source` and `download` share a total of **8 calls** per job. Failed
+allowed attempts are also deducted from this budget. The counter is saved to disk before going out to an external request;
+reconnecting to the bridge or reloading the same job does not reset the budget. An address that is not allowed
+is rejected without going to the network. If the counter is corrupt or cannot be written, no network call is made. The allowed address
+list per job is at most 64 addresses. This limit is for MCP calls; it is not a packet counter for HTTP redirects,
+the client's hosted web search and the model service's normal traffic.
+The call order, address choice and timing side channels continue. When the budget runs out, it is still possible to read existing
+notes, write a result and report a concrete blocker with `complete`.
 
 ```sh
 py -3 beyin.py yakala ajan claude --ag acik
 ```
 
-**Aylık ajan günlüğü.** Çalışan, işin kartının bulunduğu Yakala klasöründe
-`Ajan/Gunluk-YYYY-MM.md` notuna kısa bir girdi ekler; `Last-Session.md` dosyasına yazmaz.
-Yakala'nın mevcut klasör seçimi kullanılır; iş sıraya alındıktan sonra ayar değişirse girdi
-o işin kartıyla aynı klasörde kalır. Dosya yoksa `visibility: internal` frontmatter ve
-`# Yakala ajan gunlugu - YYYY-MM` başlığıyla oluşturulur. En yeni girdi başlığın altındadır.
-Girdi tarih-saat, istemci, gerçek oturum kimliğinin ilk sekiz karakteri, durum ve kart/sonuç/receipt
-bağlantılarını taşır. Bağlantılar günlüğe göre göreli Markdown yollarıdır; özel karakterler URL
-kodlamasıyla korunur. Normal yollarla işaret dahil yaklaşık 300 karakterdir; uzun dosya
-yollarında bağlantılar kesilmediği için daha uzun olabilir.
+**Monthly agent log.** The worker adds a short entry to the `Ajan/Gunluk-YYYY-MM.md` note
+in the Yakala folder where the job's card is located; it does not write to `Last-Session.md`.
+Yakala's existing folder choice is used; if the setting changes after the job is queued, the entry
+stays in the same folder as that job's card. If the file does not exist it is created with `visibility: internal` frontmatter and the
+`# Yakala agent log - YYYY-MM` heading. The newest entry is under the heading.
+The entry carries the date-time, the client, the first eight characters of the real session ID, the status and the card/result/receipt
+links. The links are relative Markdown paths from the log; special characters are preserved with URL
+encoding. With normal paths it is about 300 characters including the marker; with long file
+paths the links are not truncated, so it may be longer.
 
-Günlük aramada bulunabilir; özet, kullanıcı isteği ve kaynak metni taşımaz. `private` kartlar
-gibi `internal` kartların sonuçları da özel istek, ek veya sonuç notlarından bilgi içerebilir.
-Güvenilir bir herkese açık özet ayrımı olmadığından hiçbir işin sonuç özeti bu günlüğe kopyalanmaz.
-Tam özet `visibility: private` sonuç notunda kalır. Bağlantı hedeflerinin görünürlük kuralları
-değişmez; günlükteki bağlantı özel notu aramaya veya hook bağlamına açmaz.
+The log can be found in search; it carries no summary, user request or source text. Like `private` cards,
+the results of `internal` cards may also contain information from private requests, attachments or result notes.
+Since there is no reliable public-summary distinction, no job's result summary is copied into this log.
+The full summary stays in the `visibility: private` result note. The visibility rules of the link targets
+do not change; a link in the log does not open a private note to search or hook context.
 
-Her iş `<!-- yakala-ajan:<iş-UUID> -->` işaretiyle yalnız bir kez eklenir. Günlük zamanı iş
-kaydına yazılmadan dosyaya dokunulmaz; ay değişimindeki tekrar deneme aynı aylık notu kullanır.
-Yazma `memory.lock` kilidi altında yapılır. Okuma ile
-yazma arasında dosya değişirse girdi eklenmez; sonuç ve receipt korunur. Yeni dosya mevcut
-hedefin üzerine yazmadan atomik yayımlanır; mevcut dosya atomik değiştirilir. Yazılan baytların
-tamamı geri okunarak doğrulanır. Bu kontrol ile atomik
-değiştirme arasındaki çok kısa aralıkta kilide katılmayan bir editörün yazısı kaybolabilir;
-taşınabilir bir karşılaştır-ve-değiştir yolu olmadığından bu risk bilerek kabul edilmiştir.
+Each job is added only once, with the `<!-- yakala-ajan:<job-UUID> -->` marker. The file is not touched until the log time
+is written to the job record; a retry at a month change uses the same monthly note.
+The write is done under the `memory.lock` lock. If the file changes between read and
+write, the entry is not added; the result and the receipt are preserved. A new file is published atomically without overwriting an existing
+target; an existing file is replaced atomically. All the written bytes
+are verified by reading them back. In the very short interval between this check and the atomic
+replace, the write of an editor that does not take part in the lock may be lost;
+since there is no portable compare-and-swap path, this risk is knowingly accepted.
 
 ```sh
 py -3 beyin.py yakala kur --ajan claude --ajan-gorunum pencere
@@ -589,106 +585,106 @@ py -3 beyin.py yakala ajan codex --gorunum pencere
 py -3 beyin.py yakala ajan claude --gorunum gizli
 ```
 
-`kur --ajan claude`, `kur --ajan codex` veya `kur --ajan otomatik` bir terminalde `--ajan-gorunum` olmadan
-çalıştırılırsa hangisini istediğini sorar. Kurulumu bir ajana yaptırıyorsan ajan bu seçimi sana sormalıdır.
+If `kur --ajan claude`, `kur --ajan codex` or `kur --ajan otomatik` is run in a terminal without `--ajan-gorunum`,
+it asks which one you want. If you are having an agent do the installation, the agent must ask you this choice.
 
-1. Kısayola bas, kaynağı seç ve **Neden** alanına yapılacak işi yaz. Özellik açıkken altta
-   `Ctrl+Enter · Kaydet ve ajana ver (claude)` veya `(codex)` görünür. Kapalıyken bu satır
-   görünmez; Ctrl+Enter bir ajan işi başlatmaz ve yanlışlıkla düz Enter kaydına dönüşmez.
-   Pencere bunun yerine `Ajan kapalı · kaydetmek için Enter` der.
-2. **Ctrl+Enter**'a bas. Boş istek gönderilmez; pencere `Ajana vereceğin isteği yaz` der.
-   Başarılı kayıt ve kuyruğa ekleme sonrasında `Kaydedildi · Ajan sırasında` görünür, pencere kapanır.
-   Kuyruk doluysa veya bağımsız süreç açılamazsa kart korunur, pencerede kayıt ile ajan hatası
-   ayrı belirtilir. Aynı URL'nin yeni isteği, karta daha önce eklenmiş eski isteklerle karıştırılmaz.
-3. İş gerçekten başladığında **Beyin ajanı başladı** bildirimi gelir. Kuyrukta bekleme, modelin
-   çalışmaya başladığı anlamına gelmez. Bir makinedeki bu vault kuyruğu aynı anda **bir iş** çalıştırır.
-4. Doğrulanmış sonuç, receipt ve aylık ajan günlüğü kaydı tamamlanınca **Beyin ajanı bitirdi** görünür.
-   Bir engel varsa **Beyin ajanı onay bekliyor**, çalışma hatasında **Beyin ajanı tamamlayamadı**
-   görünür. Kartın `ajan_notu` alanı gerekçeyi, aylık günlük durum ve bağlantıları gösterir.
+1. Press the shortcut, choose the source and write the task to be done in the **Why** field. When the feature is on,
+   `Ctrl+Enter · Save and hand to the agent (claude)` or `(codex)` appears at the bottom. When it is off, this row does not
+   appear; Ctrl+Enter does not start an agent job and does not accidentally turn into a plain Enter save.
+   Instead the window says `Agent is off · Enter to save`.
+2. Press **Ctrl+Enter**. An empty request is not sent; the window says `Write the request for the agent`.
+   After a successful save and adding to the queue, `✓  Saved · Queued for the agent` appears and the window closes.
+   If the queue is full or the independent process cannot be opened, the card is preserved, and the window states the save and the agent error
+   separately. A new request for the same URL is not mixed with old requests added to the card earlier.
+3. When the job actually starts, the **Beyin agent started** notification arrives. Waiting in the queue does not mean the model
+   has started working. The queue of this vault on a machine runs **one job** at a time.
+4. When the verified result, the receipt and the monthly agent log entry are complete, **Beyin agent finished** appears.
+   If there is a blocker, **Beyin agent awaiting approval** appears; on a run error **Beyin agent could not complete**
+   appears. The card's `ajan_notu` field shows the reason, the monthly log shows the status and links.
 
-Yeni işleri kapatmak için:
+To turn off new jobs:
 
 ```sh
 py -3 beyin.py yakala ajan kapali
 ```
 
-Çalışan iş ayarı yeniden okuduğunda durdurulur; oluşmuş dosyalar geri alınmaz. Bekleyen işler
-yeniden uyandırıldığında otomatik çalıştırılmaz. Kapalıyken yakalama ve düz Enter çalışmayı sürdürür.
-İstemciyi değiştirmek daha önce kuyruğa alınmış işlerin kayıtlı istemcisini veya sınırlarını değiştirmez.
-Yeni seçilen istemci için eski `extra_args` ve `executable` sıfırlanır; aynı komutta verilen
-`--ayar` değerleri bundan sonra uygulanır. Böylece Claude'un `--model haiku`, `--effort` veya
-özel binary yolu Codex'e taşınmaz. Aynı istemcinin diğer ayarlarını değiştirmek bu seçenekleri
-korur. `kapali` durumundan yeniden açarken eski seçeneklerin hangi istemciye ait olduğu
-bilinmediğinden model/binary varsayılanına dönülür; isteniyorsa yeniden açıkça belirtilir.
+A running job is stopped when it re-reads the setting; files that were already created are not rolled back. Waiting jobs
+are not run automatically when they are woken up again. While it is off, capture and plain Enter keep working.
+Changing the client does not change the saved client or limits of jobs queued earlier.
+For the newly selected client the old `extra_args` and `executable` are reset; the
+`--ayar` values given in the same command are applied after that. This way Claude's `--model haiku`, `--effort` or
+custom binary path is not carried over to Codex. Changing the other settings of the same client keeps these options.
+When re-enabling from the `kapali` state, since it is not known which client the old options belonged to, it returns to the
+model/binary default; if you want, specify them again explicitly.
 
-Kaydedilmiş tek bir kart için açık bir istek de verebilirsin:
+You can also give an explicit request for a single saved card:
 
 ```sh
-py -3 beyin.py yakala ajan-gonder KART_ID --istek "Bu kaynağı incele, üç önemli bulguyu kaynaklarıyla not et"
+py -3 beyin.py yakala ajan-gonder KART_ID --istek "Review this source, note three key findings with their sources"
 py -3 beyin.py yakala ajan-devam
 py -3 beyin.py yakala ajan-serbest KART_ID
 ```
 
-`ajan-devam` kalıcı kuyruğu uyandırır; kesilmiş bir işi tekrar çalıştırma izni vermez.
-`ajan-serbest`, incelediğin `hata` veya `onay-bekliyor` kartını `bekliyor` yaparak normal
-`isle`/`bitti` akışına bırakır. Çalışan kartı serbest bırakamazsın. Bu komut yeni bir ajan işi
-başlatmaz ve geniş araç izni vermez. Yeniden otomatik deneme istersen önce kısmi sonuçları incele,
-sonra `ajan-gonder` ile yeni, açık bir istek ver.
+`ajan-devam` wakes up the persistent queue; it does not give permission to re-run an interrupted job.
+`ajan-serbest` turns a `hata` or `onay-bekliyor` card that you reviewed into `bekliyor` and leaves it to the normal
+`isle`/`bitti` flow. You cannot release a running card. This command does not start a new agent job
+and does not give broad tool permission. If you want an automatic retry, first review the partial results,
+then give a new, explicit request with `ajan-gonder`.
 
-### Kart, oturum ve hafıza
+### Card, session and memory
 
-| Kartın `durum` değeri | Anlamı |
+| The card's `durum` value | Meaning |
 |---|---|
-| `bekliyor` | Normal yakalama; ajan işi verilmedi veya kullanıcı normal işleme bıraktı |
-| `ajanda` | Bu karta ait iş sırada ya da çalışıyor; `ajan_asama` ayrıntıyı verir |
-| `islendi` | Sonuç ve hafıza kapanışı doğrulandı |
-| `hata` | Çalışma tamamlanamadı; kart ve mevcut sonuçlar korunur |
-| `onay-bekliyor` | İzin, kurulum, belirsiz kesilme veya hafıza doğrulaması insan incelemesi gerektiriyor |
+| `bekliyor` | Normal capture; no agent job was given, or the user left it to normal processing |
+| `ajanda` | A job for this card is queued or running; `ajan_asama` gives the detail |
+| `islendi` | The result and memory closure were verified |
+| `hata` | The run could not be completed; the card and existing results are preserved |
+| `onay-bekliyor` | Permission, setup, an uncertain interruption or memory verification requires human review |
 
-Normal bekleyen listesi `ajanda` kartlarını tekrar işleme almaz. `isle` ve `bitti` bu kartı
-başka oturumdan kapatmaz; oturum bildirimi ayrılmış ve onay bekleyen kartları ayrıca bildirir.
-Aynı kartın yakalanması yeni notu korur; devam eden iş ikinci kez başlatılmaz.
+The normal waiting list does not take `ajanda` cards into processing again. `isle` and `bitti` do not close this card
+from another session; the session notice separately reports reserved and approval-waiting cards.
+Capturing the same card again preserves the new note; a job in progress is not started a second time.
 
-Karttaki `ajan_isi` iş UUID'sidir; `ajan_oturum` istemcinin oturum UUID'sidir. Claude için UUID
-başlamadan üretilir ve `--session-id` ile verilir; başarı için CLI çıktısında aynı gerçek oturumun
-görülmesi gerekir. Başlamamış bir Claude işinde ayrılmış UUID'nin yazması, oturumun oluştuğunu
-kanıtlamaz. Codex UUID'si gizli kipte ilk `thread.started` olayının `thread_id` alanından alınır;
-pencere kipinde `CODEX_HOME/sessions` (varsayılan `~/.codex/sessions`) altındaki yeni oturumların
-yalnız ilk satır meta verisi okunur. Başlangıç zamanı ve vault yolu eşleşen tek bir oturum
-bulunmalıdır. Kimlik bulunamazsa veya birden fazla aday varsa sonuç korunur, iş `onay-bekliyor`
-olur; hafıza kapanışı yapılmaz. Aynı vault'ta eşzamanlı açılan Codex oturumları bu eşleştirmeyi
-belirsizleştirebilir. İş UUID'si Codex oturumu yerine kullanılmaz.
-[belge: aşağıdaki CLI ve başsız çalışma kaynakları]
+`ajan_isi` on the card is the job UUID; `ajan_oturum` is the client's session UUID. For Claude the UUID
+is generated before the start and given with `--session-id`; for success, the same real session must be
+seen in the CLI output. In a Claude job that has not started, a reserved UUID being written does not
+prove the session was created. The Codex UUID is taken in hidden mode from the `thread_id` field of the first `thread.started` event;
+in window mode only the first-line metadata of new sessions under `CODEX_HOME/sessions` (default `~/.codex/sessions`) is read.
+A single session whose start time and vault path match must be
+found. If the identity is not found or there is more than one candidate, the result is preserved and the job becomes `onay-bekliyor`;
+the memory closure is not done. Codex sessions opened concurrently in the same vault may make this matching
+ambiguous. The job UUID is not used in place of the Codex session.
+[doc: CLI and headless run sources below]
 
-Vault klasöründeki terminalden aynı oturumu açmak için:
+To open the same session from a terminal in the vault folder:
 
 ```sh
-claude --resume OTURUM_UUID
-codex resume OTURUM_UUID
+claude --resume SESSION_UUID
+codex resume SESSION_UUID
 ```
 
-Sonuç notları kart klasörünün `Ajan/<iş-UUID>/` altına yeni dosyalar olarak yazılır. Kart, sonuç,
-kaynak ve varsa indirilen dosyanın yolu birlikte kaydedilir. `ajan_sonuc` ile `ajan_receipt`
-kapanış kayıtlarını gösterir. Aylık ajan günlüğüne bunların bağlantıları eklenir. Sonraki oturumda
-"o indirdiğin müzik" gibi bir isteği bu kaynak kayıtları üzerinden bulmak mümkündür; bunun için
-normal vault hafıza kurallarının ve hook'larının kurulmuş olması gerekir.
+Result notes are written as new files under the card folder's `Ajan/<job-UUID>/`. The card, result,
+source and, if any, the path of the downloaded file are recorded together. `ajan_sonuc` and `ajan_receipt`
+show the closure records. Links to these are added to the monthly agent log. In a later session
+it is possible to find a request like "that music you downloaded" through these source records; for that,
+the normal vault memory rules and hooks must be installed.
 
-**Receipt entegrasyonu, varsayım:** Bu modül `beyin.py receipt` uygulamasını içermez. Adaptör,
-yerel `receipt --help` çıktısında `--file` ve `--harness` desteğini arar; oturum kimliği dosyadaki `session` alanıyla gider; `--json`
-ile makinece okunur yanıt bekler. Dosya girdisinin `event_id`, `summary`, `refs`, `session`
-alanlarını kabul etmesi; yanıtın aynı `event_id`, başarı durumu ve vault içindeki gerçek `source`
-yolunu vermesi beklenen entegrasyon sözleşmesidir. Kod yalnız `status: succeeded` kabul eder;
-başka bir değer, bilinmeyen durum veya boş durum başarılı kapanış sayılmaz.
-Kaynak dosyası geri okunarak olay kimliği
-kontrol edilir. Bu JSON şemasının ve yerel başarı durumunun upstream runtime ile kabul testinde
-eşleşmesi gerekir; yardım çıktısı tek başına veri şemasını kanıtlamaz. Sözleşme, receipt veya
-ajan günlüğü doğrulanamazsa indirilmiş dosya ve notlar korunur, kart tamamlandı sayılmaz.
+**Receipt integration, assumption:** This module does not include the `beyin.py receipt` implementation. The adapter looks in the
+local `receipt --help` output for `--file` and `--harness` support; the session ID goes with the `session` field in the file; it expects a machine-readable response with `--json`.
+The integration contract is that the file input accepts the `event_id`, `summary`, `refs`, `session`
+fields, and that the response gives the same `event_id`, a success status and the real `source`
+path inside the vault. The code accepts only `status: succeeded`;
+any other value, an unknown status or an empty status is not counted as a successful closure.
+The source file is read back and the event ID
+is checked. This JSON schema and the local success status must match the upstream runtime in an acceptance test;
+the help output alone does not prove the data schema. The contract, receipt or
+agent log cannot be verified, the downloaded file and notes are preserved, and the card is not counted as completed.
 
-### Gelişmiş JSON ayarı
+### Advanced JSON setting
 
-Ayarlar makinedeki `<state>/yakala/ajan/config.json` içinde saklanır. Vault'a ve kullanıcıya ait
-CLI oturumuna bağlıdır; başka makinede kendiliğinden etkinleşmez. Ayar dosyasında değiştirmek
-istediğin alanları ver, ardından istemciyi açıkça seç:
+The settings are stored on the machine in `<state>/yakala/ajan/config.json`. They are tied to the vault and to the user's
+CLI session; they do not become active on another machine on their own. In the settings file give the fields you want
+to change, then choose the client explicitly:
 
 ```json
 {
@@ -703,436 +699,431 @@ istediğin alanları ver, ardından istemciyi açıkça seç:
 py -3 beyin.py yakala ajan claude --ayar yakala-ajan.json
 ```
 
-| Alan | Varsayılan ve sınır |
+| Field | Default and limit |
 |---|---|
-| `client` | `kapali`; CLI üzerinden `claude`, `codex` veya `kapali` seçilir |
-| `timeout_seconds` | 900 saniye; 30 ile 3600 arası. CLI çalışma süresidir; hazırlık ve hafıza kapanışı ayrıca sürebilir |
-| `max_queue` | 32; çalışan dahil 1 ile 32 arası aktif iş. Eşzamanlı çalışma sınırı sabit 1'dir |
-| `max_budget_usd` | 1.0; 0.05 ile 20 arası. Claude'un tahmini harcama sınırıdır; Codex'e uygulanmaz, kesin fatura tavanı değildir |
-| `extra_args` | `[]`; yalnız `--model DEĞER` ve Claude için `--effort DEĞER`, her biri en fazla bir kez |
-| `executable` | `null`; PATH'ten bulunur. Özelleştirilecekse tek bir mutlak executable veya tanınan npm shim yolu |
-| `downloads_dir` | İlk kurulumda işletim sisteminin İndirilenler klasörü, bulunamazsa `~/Downloads`; mutlak yerel klasör |
-| `last_session_path` | Eski ayarlarla uyumluluk için okunur ve yok sayılır; yeni ayarlara yazılmaz |
-| `schema`, `vault` | Modülün sürüm ve vault sahipliği alanları; başka vault'a taşımak için değiştirme |
+| `client` | `kapali`; `claude`, `codex` or `kapali` is chosen through the CLI |
+| `timeout_seconds` | 900 seconds; between 30 and 3600. This is the CLI run time; preparation and memory closure may take extra time |
+| `max_queue` | 32; between 1 and 32 active jobs including the running one. The concurrent-run limit is fixed at 1 |
+| `max_budget_usd` | 1.0; between 0.05 and 20. It is Claude's estimated spending limit; it does not apply to Codex and is not a hard billing ceiling |
+| `extra_args` | `[]`; only `--model VALUE` and, for Claude, `--effort VALUE`, each at most once |
+| `executable` | `null`; found from PATH. If customized, a single absolute executable or a recognized npm shim path |
+| `downloads_dir` | At first install the operating system's Downloads folder, `~/Downloads` if not found; an absolute local folder |
+| `last_session_path` | Read for compatibility with old settings and ignored; not written to new settings |
+| `schema`, `vault` | The module's version and vault ownership fields; do not change them to move it to another vault |
 
-JSON en fazla 16 KiB olabilir; bilinmeyen anahtarlar, serbest komut şablonları ve izin bayrakları
-reddedilir. Windows'ta `\` karakterini JSON içinde `\\` yaz. CLI kullanıcı notunu UTF-8 stdin'den
-alır; istek en fazla 16.000 karakterdir. Kullanıcı metni kabuk komutuna gömülmez. Npm `.cmd`/`.bat`
-dosyası çalıştırılmaz; yalnız bilinen Claude/Codex paket girişleri doğrudan Node ile açılır.
-Tanımsız shim için komut yorumlayıcıya geri düşülmez.
+The JSON can be at most 16 KiB; unknown keys, free command templates and permission flags
+are rejected. On Windows write the `\` character as `\\` inside JSON. The CLI takes the user note from UTF-8 stdin;
+the request is at most 16,000 characters. User text is not embedded into a shell command. An npm `.cmd`/`.bat`
+file is not run; only known Claude/Codex package entry points are opened directly with Node.
+For an undefined shim there is no fallback to the command interpreter.
 
-Companion klasörü veya Last-Session araması yapılmaz. Eski `last_session_path` hedefi artık
-bulunmasa da ayar ve iş kaydı okunabilir. Yeni `job.json` kayıtlarında `last_session` yerine
-vault-göreli `journal` yolu ve tekrar koruması için `journal_time` bulunur. Eski `last_session`
-alanını taşıyan kayıtlar yüklenebilir; eski Last-Session kartları taşınmaz veya silinmez.
+No Companion folder or Last-Session search is made. Even if the old `last_session_path` target no longer
+exists, the setting and the job record can be read. New `job.json` records have a vault-relative `journal` path instead of `last_session`,
+and a `journal_time` for repeat protection. Records that carry the old `last_session`
+field can be loaded; old Last-Session cards are not moved or deleted.
 
-### Ajan neleri yapabilir?
+### What can the agent do?
 
-Bu oturum normal vault klasöründe, mevcut istemci ayarlarıyla açılır. Claude'da `--bare`,
-`--safe-mode` ve `--no-session-persistence` kullanılmaz; hafıza yüklemesini veya oturum saklamayı
-kapatan bilinen ortam ayarları sessizce aşılmaz. Codex'in proje/hook güveni önceden normal bir
-oturumda verilmiş olmalıdır. Yeni bir giriş, UAC veya onay penceresi açılması bu akışın parçası değildir.
+This session is opened in the normal vault folder, with the existing client settings. In Claude `--bare`,
+`--safe-mode` and `--no-session-persistence` are not used; known environment settings that turn off memory loading
+or session persistence are not silently bypassed. Codex's project/hook trust must have been granted beforehand in a normal
+session. Opening a new login, UAC or approval window is not part of this flow.
 
-Gorevin yerel okuma, yazma ve izinli muzik islemleri icin ayni Python modulu
-stdin/stdout uzerinden sekiz yetenek sunar. Muzik araclarinin ek izinleri
-asagidaki "Istege bagli: videodaki muzigi tanima" bolumunde aciklanir:
+For the task's local read, write and permitted music operations, the same Python module
+offers eight capabilities over stdin/stdout. The extra permissions of the music tools are
+explained in the "Optional: recognizing music in a video" section below:
 
-| Araç | Yetki |
+| Tool | Authority |
 |---|---|
-| `read_note` | Sınırlar içinde mevcut Markdown/metin notunu ve bu kartın bağlı metnini okur |
-| `search_notes` | Görünür notlarda sınırlı arama yapar; en fazla 30 sonuç verir |
-| `fetch_source` | Herkese açık HTTP(S) kaynağından sınırlı metin okur; `kisitli` ağda yalnız yakalanan adres ve izinli sayfanın bağlantıları; `download` ile toplam 8 çağrı |
-| `download` | Doğrudan medya/metin/PDF dosyasını en fazla 50 MiB olarak hazırlar; `fetch_source` ile toplam 8 çağrı; manifestteki ek 10 dosya tavanı korunur; adres kuralı `fetch_source` ile aynı |
-| `music_info` | Yalniz bu kartin video sayfasindaki muzik meta verisini okur; kaynak iddiasi ses eslesmesi degildir |
-| `music_identify` | Host CLI'nin is basina ses izniyle kisa yerel ornek; ayri yukleme izni ve anahtarla en fazla bir AudD istegi |
-| `write_note` | Yalnız bu işin klasöründe en fazla 30 yeni sonuç notu oluşturur; mevcut notu değiştirmez |
-| `complete` | Doğrulanacak sonuç bildirir; kartı, receipt'i ve aylık ajan günlüğünü güvenilen çalışan günceller |
+| `read_note` | Reads an existing Markdown/text note within limits and this card's linked text |
+| `search_notes` | Does a limited search over visible notes; gives at most 30 results |
+| `fetch_source` | Reads limited text from a public HTTP(S) source; on a `kisitli` network only the captured address and the links of an allowed page; 8 calls in total with `download` |
+| `download` | Prepares a direct media/text/PDF file at up to 50 MiB; 8 calls in total with `fetch_source`; the extra 10-file ceiling in the manifest is kept; the address rule is the same as `fetch_source` |
+| `music_info` | Reads only the music metadata on this card's video page; a source claim is not an audio match |
+| `music_identify` | A short local sample with the host CLI's per-job audio permission; at most one AudD request with a separate upload permission and key |
+| `write_note` | Creates at most 30 new result notes only in this job's folder; does not change an existing note |
+| `complete` | Reports a result to be verified; the trusted worker updates the card, the receipt and the monthly agent log |
 
-İndirme için dosya türü ve hash denetlenir; çalıştırılabilir dosya türleri verilmez. Başarılı
-dosya, İndirilenler'e iş kimliği eklenmiş yeni adla yazılır; var olan kullanıcı dosyasının üzerine
-yazılmaz. Önce `.part` dosyası oluşturulur; tamamlanan kopya SHA-256 ile doğrulanıp aynı dosya
-sisteminde son adına yayımlanır. Önce hard link denenir; desteklenmiyorsa Linux'ta
-`renameat2(RENAME_NOREPLACE)`, macOS'ta `renamex_np(RENAME_EXCL)`, Windows'ta mevcut hedefi
-reddeden `os.rename` kullanılır. Sonuç notu ve tamamlama dosyaları da aynı yardımcıdan geçer.
-Var olan hedefin üzerine yazılmaz, son ad altında yarım kopya oluşturulmaz. Dosya sistemi hem
-hard link hem özel yeniden adlandırmayı reddederse, disk dolarsa veya hedef çakışırsa indirme
-`.part` dosyası korunur ve kart inceleme bekler. Her ağ dosya sistemi için destek garantisi
-yoktur. Birden fazla dosyada önceki
-başarılar kaybolmaz: her yayın niyeti ve tamamlanan dosya ayrı kaydedilir, kısmi sonuç da
-receipt ve ajan günlüğü kapanışına dahil edilir.
-Bridge gizli/hassas yolları, sembolik bağları ve Windows junction'larını reddeder.
-Ajan kendisine verilen karti adi ne olursa olsun okur; diger hassas notlara erisim degismez.
-`remote_allowed: false`, hassas `sensitivity` veya engellenmiş `kaynak_guveni` metadata'sı olan
-notları okumaz. `visibility: private` notlar hook bağlamına girmediği gibi bu işe de açılmaz;
-yalnız işin kendi kartı, ham metni, ekleri ve kendi sonuç notları okunur.
-`Dosyalar` adı tek başına engelleme nedeni değildir. Güncel yakalama klasörünün ve kart ya da
-Yakala'nın `*` içeren `.gitignore` iziyle tanınan eski yakalama klasörlerinin ek depoları
-korunur; ilgisiz `knowledge/Dosyalar` notları diğer notlarla aynı politikadan geçer. Kartları
-taşınmış eski bir ek deposu, bu iz duruyorsa aramaya açılmaz. Kart/ham metin/izinli eklerin
-`read_note` cevabı `source_trust: untrusted` taşır; sıradan hafıza notları `vault-data` kalır.
-Bu mahremiyet kontrolü canonical JSON frontmatter ve düz skaler YAML alanlarını okur;
-tekrarlanan anahtar, bozuk/kapanmamış metadata veya desteklenmeyen biçim sessizce atlanmaz.
+For a download, the file type and hash are checked; executable file types are not allowed. A successful
+file is written to Downloads with a new name that includes the job ID; an existing user file is not
+overwritten. A `.part` file is created first; the completed copy is verified with SHA-256 and published under its final name on the same file
+system. A hard link is tried first; if it is not supported, on Linux
+`renameat2(RENAME_NOREPLACE)`, on macOS `renamex_np(RENAME_EXCL)`, and on Windows `os.rename`, which
+rejects an existing target, is used. Result notes and completion files also go through the same helper.
+An existing target is not overwritten, and no half copy is created under the final name. If the file system rejects both
+the hard link and the special rename, if the disk fills up or the target collides, the download's
+`.part` file is preserved and the card awaits review. There is no support guarantee for every network file system. With more than one file, earlier
+successes are not lost: each publish intent and each completed file is recorded separately, and a partial result is also
+included in the receipt and agent log closure.
+The bridge rejects hidden/sensitive paths, symbolic links and Windows junctions.
+The agent reads the card given to it whatever its name is; access to other sensitive notes does not change.
+Notes with `remote_allowed: false`, a sensitive `sensitivity`, or blocked `kaynak_guveni` metadata
+are not read. `visibility: private` notes do not enter the hook context and are also not opened to this job;
+only the job's own card, raw text, attachments and its own result notes are read.
+The name `Dosyalar` alone is not a reason for blocking. The attachment stores of the current capture folder and of old capture folders recognized by a
+card or a Yakala `.gitignore` trace containing `*`
+are protected; unrelated `knowledge/Dosyalar` notes go through the same policy as other notes. An old attachment store whose cards
+have been moved is not opened to search if this trace remains. The `read_note` response for the card/raw text/permitted attachments
+carries `source_trust: untrusted`; ordinary memory notes stay `vault-data`.
+This privacy check reads canonical JSON frontmatter and plain scalar YAML fields;
+a repeated key, corrupt/unclosed metadata or an unsupported format is not silently skipped.
 
-Claude profili `dontAsk`, `--permission-prompts none`, sınırlı built-in araçlar ve yalnız bu
-MCP yapılandırmasıyla çalışır; `--permission-prompts` için en az 2.1.259 gerekir. Codex için
-desteklenen en eski kararlı sürüm **0.155.1**'dir. Codex profili `-a never`, `--strict-config`
-ve `-c agents.enabled=false` kullanır. Linux/macOS'ta her çalıştırmaya rastgele adlı bir
-izin profili verilir. Tek dosya sistemi girdisi `":root"="deny"` olduğu için yerel
-araçlara okuma/yazma kökü verilmez. Bu profil `-c default_permissions=...` ile seçilir;
-POSIX'te `-s read-only` eklenmez: eski seçici adlı profili devre dışı bırakır.
-**Windows'ta `-s read-only` uyumluluk yolu kullanılır; içerik tahmini kanalı açık kalır.**
-Windows `elevated` sandbox kök okuma izni istediği için root-deny başlangıcı durdurmuştur;
-Windows komutuna named profile eklenmez. Kullanıcının sandbox türü/config'i değiştirilmez.
-Gizli çalışmada `--ignore-rules` da kullanılır. Ön kontrol önce bayraksız
-`codex features list` düz tablosunu okur; bu komuta `--json` verilmez. Ardından işin kapatma
-bayraklarıyla etkin durumları doğrular. Eksik, kaldırılmış, yinelenen veya ayrıştırılamayan
-gerekli özellik; eski/ön sürüm; başarısız ya da aşırı büyük envanter çıktısı işi durdurur.
+The Claude profile runs with `dontAsk`, `--permission-prompts none`, limited built-in tools and only this
+MCP configuration; `--permission-prompts` requires at least 2.1.259. For Codex the
+oldest supported stable version is **0.155.1**. The Codex profile uses `-a never`, `--strict-config`
+and `-c agents.enabled=false`. On Linux/macOS every run is given a randomly named
+permission profile. Since the single file system entry is `":root"="deny"`, no read/write root is given
+to local tools. This profile is selected with `-c default_permissions=...`;
+on POSIX `-s read-only` is not added: the old selector disables the named profile.
+**On Windows the `-s read-only` compatibility path is used; the content-guessing channel remains open.**
+Since the Windows `elevated` sandbox asks for root read permission, the root-deny start-up stopped;
+no named profile is added to the Windows command. The user's sandbox type/config is not changed.
+In hidden runs `--ignore-rules` is also used. The pre-check first reads the plain table of
+`codex features list` without flags; `--json` is not given to this command. Then it verifies the enabled states against the job's disable
+flags. A missing, removed, duplicated or unparseable
+required feature; an old/pre-release version; a failed or oversized inventory output stops the job.
 
-Her iş için şu 14 özellik kapatılır: `shell_tool`, `unified_exec`, `view_image`, `apps`,
+For every job these 14 features are turned off: `shell_tool`, `unified_exec`, `view_image`, `apps`,
 `multi_agent`, `multi_agent_v2`, `plugins`, `remote_plugin`, `computer_use`, `browser_use`,
-`browser_use_external`, `in_app_browser`, `image_generation`, `goals`. Her iki alt ajan kapısı
-ve `agents.enabled=false` birlikte gereklidir; model metadatasından V2 seçimi de engellenir.
-Ölçülen 0.155.1, `--disable unified_exec` verilse de bu özelliği `true` gösterir. Yalnız
-`shell_tool=false` doğrulanmışsa bu durum kabul edilir: resmî kaynakta kabuk araçlarının
-tamamı bu ana kapının arkasındadır. Diğer gerekli etkin özellikler için böyle bir istisna yoktur.
+`browser_use_external`, `in_app_browser`, `image_generation`, `goals`. Both sub-agent gates
+and `agents.enabled=false` are required together; V2 selection from model metadata is also blocked.
+The measured 0.155.1 shows `unified_exec` as `true` even when `--disable unified_exec` is given. This case is accepted only if
+`shell_tool=false` is verified: in the official source all shell tools
+are behind this main gate. There is no such exception for the other required enabled features.
 
-Mevcut MCP sunucuları adlarıyla yalnız o işte kapatılır ve sonuç yeniden denetlenir; kullanıcının
-config dosyası değiştirilmez. Eklenti/app kapıları da iş bazında kapanır. Envanter veya etkin
-durum doğrulanamazsa iş durur; etkin MCP'si bulunan her makine topluca reddedilmez.
-Codex'in MCP araçlarını çağıran kod modu korunur. Genel kabuk veya yerel dosya sistemi aracı
-olarak açılmaz. Web araması yalnız `ag: acik` iken
-açıktır (Claude `WebSearch`, Codex `web_search="live"`). `bypassPermissions` ve tam dosya sistemi yazma izni verilmez. [belge: CLI, config ve izin kaynakları]
+Existing MCP servers are turned off by name only in that job and the result is re-checked; the user's
+config file is not changed. Plugin/app gates are also closed per job. If the inventory or the enabled
+state cannot be verified, the job stops; not every machine that has an enabled MCP is rejected wholesale.
+Codex's code mode that calls MCP tools is preserved. It is not opened as a general shell or local file system tool.
+Web search is open only when `ag: acik` (Claude `WebSearch`, Codex `web_search="live"`). `bypassPermissions` and full file system write permission are not given. [doc: CLI, config and permission sources]
 
-Önceki dalın bakımcı ölçümü (18.10.2026; Claude Code 2.1.302, Codex 0.160.0, macOS): `kisitli` ağda Claude oturumunun araç listesi
-yalnız altı `mcp__yakala__*` aracıdır, `acik` ağda buna `WebSearch` eklenir; Bash ve dosya araçları
-yoktur. `kisitli` ağda model URL'ye not metni ekleyince köprü adresi reddetti. Bu kayıt güncel
-dalın Windows üzerinde ölçümü değildir. [#384 bakımcı yorumu](https://github.com/avenoxai/avenoxbeyin/pull/384#issuecomment-6243678257)
+The previous branch's maintainer measurement (18.10.2026; Claude Code 2.1.302, Codex 0.160.0, macOS): on a `kisitli` network the Claude session's tool list
+is only six `mcp__yakala__*` tools; on an `acik` network `WebSearch` is added to this; there are no Bash and file tools.
+On a `kisitli` network, when the model added note text to a URL, the bridge rejected the address. This record
+is not a measurement of the current branch on Windows. [#384 maintainer comment](https://github.com/avenoxai/avenoxbeyin/pull/384#issuecomment-6243678257)
 
-Önceki `read-only` profilinin ölçümü (19.10.2026 Türkiye saati; 18.10.2026 23:12-23:14 UTC): resmî Linux Codex 0.155.1,
-boş/geçici `CODEX_HOME`, zararsız test dosyaları ve yerel sahte Responses API kullanıldı.
-Gerçek hesaba/model hizmetine istek gönderilmedi. Zorlanan `view_image`, `exec_command` ve
-`spawn_agent` çağrıları desteklenmeyen araç olarak reddedildi. Vault içinde/dışında mevcut
-dosyayı değiştirme ve yeni dosya oluşturma olmak üzere dört `apply_patch` yazması reddedildi;
-test dosyaları değişmedi. Etkin `local_mcp` bulunan ayrı ön kontrol onu iş için kapattı,
-config dosyasının hash'i aynı kaldı. Bu deneme gerçek modelin altı MCP aracıyla bir işi
-bitirdiğini veya Windows sandbox davranışını ölçmez.
+Measurement of the previous `read-only` profile (19.10.2026 Turkey time; 18.10.2026 23:12-23:14 UTC): official Linux Codex 0.155.1,
+an empty/temporary `CODEX_HOME`, harmless test files and a local fake Responses API were used.
+No request was sent to a real account/model service. Forced `view_image`, `exec_command` and
+`spawn_agent` calls were rejected as unsupported tools. Four `apply_patch` writes, modifying an existing
+file and creating a new file inside/outside the vault, were rejected;
+the test files did not change. A separate pre-check with an enabled `local_mcp` turned it off for the job,
+and the hash of the config file stayed the same. This experiment does not measure a real model finishing a job with the six MCP tools
+or the Windows sandbox behavior.
 
-**Codex `apply_patch`, #384 bulgu 2 için yeni düzeltme (19.10.2026 UTC):** Araç yüzeyinde
-`apply_patch` kalabilir; `apply_patch_freeform` 0.155.1 ve güncel kararlı 0.163.0'da
-kaldırılmıştır ve güvenlik anahtarı değildir. Eski `read-only` profili 0.163.0'da da doğru
-ve yanlış satır tahminine farklı hatalar verdi. Bu dal Linux/macOS'ta resmî belgelerdeki
-**adlı dosya sistemi izin profilini** kullanır. `":root"="deny"`, yama doğrulamasının
-dosya okumasına da uygulanır. Kullanıcının aynı ad altındaki daha dar izinleri birleşerek
-yeniden açılmasın diye her komut için yeni 128 bit rastgele profil adı üretilir; config
-dosyası düzenlenmez. `:minimal`, vault, geçici dizin veya Python köküne ek okuma izni verilmez.
+**Codex `apply_patch`, new fix for #384 finding 2 (19.10.2026 UTC):** `apply_patch` may remain
+on the tool surface; `apply_patch_freeform` was removed in 0.155.1 and in the current stable 0.163.0
+and is not a security switch. The old `read-only` profile also gave different errors in 0.163.0 to a correct
+and a wrong line guess. On Linux/macOS this branch uses the **named file system permission profile**
+from the official documentation. `":root"="deny"` also applies to the file read of the patch
+verification. A new 128-bit random profile name is generated for each command so that the user's narrower permissions under the same name
+are not merged and reopened; the config
+file is not edited. No additional read permission is given to `:minimal`, the vault, the temp directory or the Python root.
 
-Resmî **Linux 0.155.1, 0.160.0 ve 0.163.0** ikilileriyle, her sürümde iki testin her birinde
-28 zorlanmış `apply_patch` çağrısı sınandı: göreli/mutlak, vault içi/dışı yollar; Update/Move için doğru
-ve yanlış bağlam; Delete; mevcut/yeni dosyaya Add. Doğru/yanlış çiftleri aynı okuma hatasıyla
-reddedildi, içerik açığa çıkmadı ve mevcut dosya hash'leri değişmedi. Her sürümde ayrıca gerçek
-Yakala MCP köprüsü izinli notu ve `AGENTS.md`'yi okudu, private notu reddetti, sonuç notunu
-yazdı ve `complete` teslimini kabul etti. Normal hash güveni verilmiş sentetik `SessionStart`
-hook'u ilk isteğe hafıza bağlamı ekledi. Yerel sahte Responses API kullanıldı; gerçek hesap
-ve model hizmeti kullanılmadı. Bu, `complete` teslim kanıtıdır; canlı masaüstünde receipt,
-ajan günlüğü ve bildirimin tamamlandığı ölçümü değildir. Testler mevcut kullanıcı
-config'inde `workspace-write` ile ayrıca seçilmiş config profilinde `read-only` bulunan
-durumları kapsar; yeni izin seçiminin bu legacy ayarlar altında da etkinliği ölçüldü.
+With the official **Linux 0.155.1, 0.160.0 and 0.163.0** binaries, in each of two tests in each version,
+28 forced `apply_patch` calls were tested: relative/absolute, inside/outside-vault paths; correct
+and wrong context for Update/Move; Delete; Add to an existing/new file. The correct/wrong pairs were
+rejected with the same read error, no content was exposed and existing file hashes did not change. In each version, additionally, the real
+Yakala MCP bridge read the allowed note and `AGENTS.md`, rejected the private note, wrote a result note
+and accepted the `complete` delivery. A synthetic `SessionStart` hook given normal hash trust
+added memory context to the first request. A local fake Responses API was used; no real account
+or model service was used. This is evidence of the `complete` delivery; it is not a measurement that the receipt,
+agent log and notification were completed on a live desktop. The tests cover the cases where the user's existing
+config has `workspace-write` and a separately selected config profile has `read-only`;
+the effectiveness of the new permission choice under these legacy settings was also measured.
 
-İzin profilleri resmî belgede **beta** durumundadır. `--strict-config`, bilinmeyen üst düzey
-ayarların sessizce yok sayılmasını önler; gelecekteki bütün davranış değişikliklerini
-saptayan bir güvenlik kanıtı değildir. En yeni görülen ön sürüm **0.164.0-alpha.3** yalnız
-kaynakta incelendi; mevcut kararlı sürüm kapısı bunu kabul etmez. Linux'ta bu tahmin kanalı
-kapatıldı; macOS native sonucu henüz ölçülmedi. **Windows bulgu 2 kısmen açıktır:**
-kullanıcı 19.10.2026'da gerçek Windows 11 / Codex 0.155.1 üzerinde `dc2a1bc2` root-deny
-profilinin `AGENTS.md` başlangıcını durdurduğunu, eski `69ac79c` salt okuma yolunun iki
-görünümde de tamamlandığını bildirdi. Bu dal Windows'a salt okuma seçicisini geri getirir;
-yazma ve diğer araç kısıtları korunur, `apply_patch` tahmin doğrulaması kapanmış sayılmaz.
-Düzeltilmiş dalın native Windows başlangıcı ve receipt/ajan günlüğü zinciri henüz
-ölçülmedi. POSIX root-deny native testleri Windows'ta gerekçeli olarak atlanır; bu atlama
-Windows başarısı değildir. Kaynak, seçenek değerlendirmesi ve tekrar komutları:
-[Codex dosya okuma sınırı incelemesi](CODEX-APPLY-PATCH.md).
+Permission profiles are in **beta** status in the official documentation. `--strict-config` prevents unknown top-level
+settings from being silently ignored; it is not security proof that detects all future behavior
+changes. The newest pre-release seen, **0.164.0-alpha.3**, was examined only in
+source; the current stable version gate does not accept it. On Linux this guessing channel
+was closed; the macOS native result has not been measured yet. **Windows finding 2 is partially open:**
+on 19.10.2026 the user reported, on real Windows 11 / Codex 0.155.1, that the `dc2a1bc2` root-deny
+profile stopped the start-up at `AGENTS.md`, and the old `69ac79c` read-only path completed in both
+views. This branch brings the read-only selector back to Windows;
+the write and other tool restrictions are kept, and the `apply_patch` guess verification is not counted as closed.
+The native Windows start-up and the receipt/agent log chain of the corrected branch have not yet been
+measured. The POSIX root-deny native tests are skipped on Windows with justification; this skip
+is not a Windows success. Source, option evaluation and repeat commands:
+[Codex file read limit review](CODEX-APPLY-PATCH.md).
 
-Muzik araclari (`music_info`, `music_identify`) bu olcumlerden sonra eklendi; sekiz aracli
-envanter ve muzik akisi henuz canli olculmedi.
+The music tools (`music_info`, `music_identify`) were added after these measurements; the eight-tool
+inventory and the music flow have not yet been measured live.
 
-**Güven sınırı:** Normal vault hook'ları, istemci ve `beyin.py receipt` güvenilen yerel koddur;
-onların kendi davranışları bu araç köprüsü tarafından sandbox içine alınmaz. Ajanın kullandığı
-model hizmeti, CLI'nin normal veri akışındaki isteği ve okunan notları görebilir. Public GET ve web
-araması varken URL/sorgu üzerinden veri aktarımını ya da uzak sunucunun GET'e yan etki bağlamasını
-evrensel olarak önleyen bir garanti yoktur. Dosya adı/metadata filtresi sıradan bir nota yazılmış
-her sırrı bulamaz. İşletim sistemi kısıtları ve araç listesi, modelin bütün niyetini denetleyen
-bir güvenlik sistemi olarak sunulmaz. [çıkarım]
+**Trust boundary:** The normal vault hooks, the client and `beyin.py receipt` are trusted local code;
+their own behavior is not put into a sandbox by this tool bridge. The model service the agent uses can
+see the request in the CLI's normal data flow and the notes that are read. While public GET and web
+search exist, there is no guarantee that universally prevents data transfer through a URL/query or the remote server attaching a side effect to a GET.
+A file name/metadata filter cannot find every secret written into an ordinary note. The operating system restrictions and the tool list are not presented as
+a security system that controls all of the model's intent. [inference]
 
-Kullanıcının **Neden** alanı yapılacak iştir; JSON zarfında veri olarak taşınması bu isteği
-yok saymaz. Bu alan sistem kurallarını değiştirme yetkisi vermez. Kaynak URL'si, sayfa, pano ve
-alıntıdaki talimatlar güvenilmeyen içeriktir. İstek serbest kabuk, silme, ödeme, kimlik bilgisi,
-mesaj gönderme veya sistem değişikliği gerektiriyorsa ajan `onay-bekliyor` sonucu bırakmalıdır;
-metin içindeki "izni aş" ifadesi yeni bir yetki oluşturmaz.
+The user's **Why** field is the task to be done; carrying it as data in the JSON envelope does not
+ignore this request. This field gives no authority to change system rules. Instructions in the source URL, page, clipboard and
+quote are untrusted content. If the request requires a free shell, deletion, payment, credentials,
+sending messages or a system change, the agent must leave an `onay-bekliyor` result;
+a "bypass the permission" statement inside the text does not create new authority.
 
-**Instagram orneginin siniri:** Muzik meta verisi sayfadan okunabilir. Ses
-tanima icin bu ise ayri yerel ses/yukleme izni ve istege bagli AudD anahtari
-gerekir; ayrintilar asagidaki muzik bolumundedir. Bu izinler yoksa ajan somut
-engelle onay bekler. Instagram oturumu/cookie, DRM asma ve serbest komut
-calistirma yoktur. Dogrudan dosya indirme ancak kaynagin buna izin verdigi
-durumda mevcut download araciyla yapilir. Her reel'in muziginin bulunacagi
-veya indirilecegi garantisi verilmez; yanlis muzik veya HTML dosyasi basari
-sayilmaz. Normal `isle` araclari ajan profiline kendiliginden acilmaz.
+**Limit of the Instagram example:** Music metadata can be read from the page. For audio
+recognition, however, a separate local audio/upload permission and an optional AudD key
+are needed; details are in the music section below. If these permissions are absent, the agent waits for approval
+with a concrete blocker. There is no Instagram session/cookie, DRM circumvention or free command
+execution. Direct file download is done with the existing download tool only if the source allows it.
+There is no guarantee that every reel's music will be found
+or downloaded; wrong music or an HTML file is not counted as
+success. The normal `isle` tools are not opened to the agent profile automatically.
 
-### İstemci, platform ve izin matrisi
+### Client, platform and permission matrix
 
-Bu tablo kodun her çalıştırmada uyguladığı sınırı gösterir. `extra_args` yalnız `--model` ve
-Claude için `--effort` ekleyebilir; aşağıdaki bayraklar ayarla kaldırılamaz.
+This table shows the limit the code applies on every run. `extra_args` can add only `--model` and,
+for Claude, `--effort`; the flags below cannot be removed through settings.
 
-| İstemci ve görünüm | Platform | Araç ve izin sınırı (kod) | Yerel dosya sistemi | Web |
+| Client and appearance | Platform | Tool and permission limit (code) | Local file system | Web |
 |---|---|---|---|---|
-| Claude, `gizli` | Windows, macOS, Linux | `-p`, `--permission-mode dontAsk`, `--permission-prompts none`, `--allowedTools mcp__yakala__*`, `--strict-mcp-config`, `--no-chrome`, `--max-turns 24`, `--max-budget-usd` | `--tools ""`: yerleşik dosya ve kabuk aracı yok; okuma/yazma yalnız Yakala köprüsünden | `kisitli`: yok; `acik`: yalnız `WebSearch` |
-| Claude, `pencere` | Yalnız Windows | Aynı araç seti, `dontAsk` ve strict MCP; `--permission-prompts`, tur ve bütçe sınırı yok; konsol kullanıcınındır (`!` komutları açık) | Aynı | Aynı |
-| Codex, `gizli` | Linux, macOS | `exec`, `-a never`, `--strict-config`, `agents.enabled=false`, 14 özellik kapalı, kullanıcı MCP sunucuları iş için kapalı, `--ignore-rules` | Rastgele adlı `":root"="deny"` izin profili | `kisitli`: `web_search="disabled"`; `acik`: `live` |
-| Codex, `gizli` | Windows | Aynı | `-s read-only`: yazma yok, `apply_patch` içerik tahmini kapalı değil | Aynı |
-| Codex, `pencere` | Yalnız Windows | Aynı özellik kapıları, etkileşimli TUI; `--ignore-rules` yok | `-s read-only` | Aynı |
+| Claude, `gizli` | Windows, macOS, Linux | `-p`, `--permission-mode dontAsk`, `--permission-prompts none`, `--allowedTools mcp__yakala__*`, `--strict-mcp-config`, `--no-chrome`, `--max-turns 24`, `--max-budget-usd` | `--tools ""`: no built-in file or shell tool; read/write only through the Yakala bridge | `kisitli`: none; `acik`: only `WebSearch` |
+| Claude, `pencere` | Windows only | The same tool set, `dontAsk` and strict MCP; no `--permission-prompts`, turn or budget limit; the console belongs to the user (`!` commands are open) | Same | Same |
+| Codex, `gizli` | Linux, macOS | `exec`, `-a never`, `--strict-config`, `agents.enabled=false`, 14 features off, user MCP servers off for the job, `--ignore-rules` | A randomly named `":root"="deny"` permission profile | `kisitli`: `web_search="disabled"`; `acik`: `live` |
+| Codex, `gizli` | Windows | Same | `-s read-only`: no write, the `apply_patch` content-guessing channel is not closed | Same |
+| Codex, `pencere` | Windows only | The same feature gates, interactive TUI; no `--ignore-rules` | `-s read-only` | Same |
 
-Bütün kombinasyonlarda ajan varsayılan kapalıdır. Açmak (`kur --ajan`, `ajan claude|codex`)
-ve her iş (`Ctrl+Enter`, `ajan-gonder`, önizlemeden sonra `ajan-toplu --gonder --plan`) kullanıcının
-açık eylemidir; ayar `.beyin-preferences.json` içinde değil, `<state>/yakala/ajan/config.json`
-içindedir. Ses işleme ve AudD yüklemesi yalnız `ajan-gonder` üzerinde iş başına iki ayrı bayrakla
-verilir; `Ctrl+Enter` ve toplu gönderim bu izinleri vermez.
+In all combinations the agent is off by default. Turning it on (`kur --ajan`, `ajan claude|codex`)
+and every job (`Ctrl+Enter`, `ajan-gonder`, `ajan-toplu --gonder --plan` after the preview) are the user's
+explicit action; the setting is in `<state>/yakala/ajan/config.json`, not in `.beyin-preferences.json`.
+Audio processing and the AudD upload are given only on `ajan-gonder`, per job, with two separate flags;
+`Ctrl+Enter` and batch sending do not give these permissions.
 
-Canlı model ile yapılan ölçümler (birim testleri dışında):
+Measurements made with a live model (apart from unit tests):
 
-| Kombinasyon | Kim, ne zaman, sürüm | Ölçülen | Kayıtlı ölçümde olmayan |
+| Combination | Who, when, version | Measured | Not in the recorded measurement |
 |---|---|---|---|
-| Claude `gizli`, Windows 11 | Katkı sahibi, 17-19.10.2026, Claude Code 2.1.296 | Gerçek vault işi `completed`: sonuç notu, receipt `succeeded`, kart `islendi` | Müzik araçları, toplu gönderim, aylık ajan günlüğü |
-| Claude `pencere`, Windows 11 | Katkı sahibi, 17-19.10.2026, Claude Code 2.1.296 | `completed`; pencere açık kaldı, kapatılan pencere `onay-bekliyor` oldu | Aynı |
-| Claude `gizli`, macOS | Bakımcı, 18.10.2026, Claude Code 2.1.302 | Araç listesi altı Yakala aracı (açık ağda ek olarak `WebSearch`); URL'ye eklenen not metni reddedildi | Tam iş zinciri (receipt, günlük), müzik araçları |
-| Claude, Linux | Ölçülmedi | Yalnız birim testleri | Hepsi |
-| Codex `gizli` ve `pencere`, Windows 11 | Katkı sahibi, 18-19.10.2026, Codex 0.155.1 | İki görünümde `completed`; pencere oturum kimliği rollout meta verisinden bulundu | `apply_patch` tahmin kanalı kapatılmadı; aylık ajan günlüğü |
-| Codex `gizli`, Linux | Katkı sahibi, 19.10.2026, resmî Codex 0.155.1, 0.160.0 ve 0.163.0, sahte Responses API | Zorlanan `apply_patch` yazmaları aynı içeriksiz hatayla reddedildi; MCP teslimi ve hook çalıştı | Gerçek model hizmeti |
-| Codex `gizli`, macOS | Bakımcı, 18.10.2026, Codex 0.160.0 (önceki dal) | `kisitli` kipte web arama aracı görünmedi | Root-deny izin profilinin native sonucu |
-| Müzik (`music_info`, `music_identify`) | Ölçülmedi | Sahte ağ ve yerel ffmpeg ile birim testleri | Gerçek AudD, platform ve DPAPI çağrısı |
-| Toplu kuyruk | Katkı sahibi, Windows 11 | Yalnız önizleme | Gerçek `--gonder`, iptal yarışı |
+| Claude `gizli`, Windows 11 | Contributor, 17-19.10.2026, Claude Code 2.1.296 | A real vault job `completed`: result note, receipt `succeeded`, card `islendi` | Music tools, batch sending, monthly agent log |
+| Claude `pencere`, Windows 11 | Contributor, 17-19.10.2026, Claude Code 2.1.296 | `completed`; the window stayed open, a closed window became `onay-bekliyor` | Same |
+| Claude `gizli`, macOS | Maintainer, 18.10.2026, Claude Code 2.1.302 | Tool list of six Yakala tools (plus `WebSearch` on an open network); note text added to a URL was rejected | The full job chain (receipt, log), music tools |
+| Claude, Linux | Not measured | Unit tests only | All of it |
+| Codex `gizli` and `pencere`, Windows 11 | Contributor, 18-19.10.2026, Codex 0.155.1 | `completed` in both views; the window session ID was found from the rollout metadata | The `apply_patch` guessing channel was not closed; monthly agent log |
+| Codex `gizli`, Linux | Contributor, 19.10.2026, official Codex 0.155.1, 0.160.0 and 0.163.0, fake Responses API | Forced `apply_patch` writes were rejected with the same contentless error; MCP delivery and hook worked | A real model service |
+| Codex `gizli`, macOS | Maintainer, 18.10.2026, Codex 0.160.0 (previous branch) | The web search tool did not appear in `kisitli` mode | The native result of the root-deny permission profile |
+| Music (`music_info`, `music_identify`) | Not measured | Unit tests with a fake network and local ffmpeg | A real AudD, platform and DPAPI call |
+| Batch queue | Contributor, Windows 11 | Preview only | A real `--gonder`, a cancellation race |
 
-07.11.2026 bakım turunda canlı model, AudD veya platform çağrısı yapılmadı; değişiklikler macOS
-üzerinde Python 3.11 ve 3.14 birim testleri ve 3.12.0 paketinden güncelleme/geri alma provasıyla
-denetlendi. Kayıtlı ölçümü olmayan bir kombinasyonu ilk kullanımda aşağıdaki Windows kabul testi
-adımlarıyla doğrula.
+In the 07.11.2026 maintenance round no live model, AudD or platform call was made; the changes were checked on macOS
+with Python 3.11 and 3.14 unit tests and an update/rollback rehearsal from the 3.12.0 package.
+On first use of a combination that has no recorded measurement, verify it with the Windows acceptance test
+steps below.
 
-### Bildirim, kesilme ve kaldırma
+### Notification, interruption and removal
 
-Windows'ta özellik açılırken Başlat menüsüne `Beyin Yakala Ajan.lnk` ve
-`AvenoxBeyin.Yakala.Agent` bildirim kimliği kaydedilir. Toast bu kimlikle gönderilir; kısayolun
-sahipliği doğrulanamıyorsa başka bir kısayolun üzerine yazılmaz.
-Windows'ta bildirime tıklayınca sonuç notu varsayılan uygulamayla açılır; başlangıç, onay ve hata
-bildirimleri kartı açar. Sonuç yolu kaydedilmemişse tamamlanma bildirimi de kartı açar.
-Mac'te `osascript display notification`, Linux'ta varsa `notify-send` kullanılır.
-Sabit bildirim metninde kullanıcı isteği, URL veya not
-başlığı yoktur. İşletim sistemi bildirim ayarı, odak modu veya eksik araç bildirimi gizleyebilir;
-bildirim başarısızlığı kartın sonucunu değiştirmez, yalnız günlüğe yazılır. [belge: bildirim kaynakları]
+On Windows, when the feature is turned on, a `Beyin Yakala Ajan.lnk` Start menu shortcut and the
+`AvenoxBeyin.Yakala.Agent` notification identity are registered. The toast is sent with this identity; if the ownership
+of the shortcut cannot be verified, another shortcut is not overwritten.
+On Windows, clicking a notification opens the result note with the default application; the start, approval and error
+notifications open the card. If the result path was not recorded, the completion notification also opens the card.
+On Mac `osascript display notification` is used, on Linux `notify-send` if present.
+The fixed notification text has no user request, URL or note
+title. The operating system's notification setting, focus mode or a missing tool may hide the notification;
+a notification failure does not change the card's result, it is only written to the log. [doc: notification sources]
 
-Windows çalışanı popup Job Object'inden `CREATE_BREAKAWAY_FROM_JOB | CREATE_NO_WINDOW` ile
-ayrılır; izin verilmezse gizlice daha geniş bir süreç yoluna geçilmez. Ajanın kendi süreç ağacı
-ayrı sonlandırılabilir Job Object'inde tutulur. Mac/Linux'ta bağımsız bir gözetmen süreç kendi
-oturum ve süreç grubunu açar; CLI bu grupta çalışır. Yalnız worker'ın yazma ucunu tuttuğu
-pipe kapanınca, CLI çıkınca veya monoton zaman bütçesi dolunca gözetmen kendi grubunu
-sonlandırır. Worker SIGKILL ile ölse de bu sınır worker'ın finally bloğuna bağlı değildir.
-Kalıcı kayıttan alınan eski PID'ye sinyal gönderilmez. CLI bütçesi ön kontrol/hazırlık bittikten
-sonra başlar; CLI'yi başlatmadan tükenmiş bütçe kabul edilmez. Popup veya dinleyicinin kapanması
-normal işi iptal etmez; timeout veya `ajan kapali` çalışan işi sonlandırır.
-Bu masaüstü özelliği yeni bir ağ sunucusu ya da sürekli çalışan bulut görevi kurmaz.
+The Windows worker breaks away from the popup's Job Object with `CREATE_BREAKAWAY_FROM_JOB | CREATE_NO_WINDOW`;
+if this is not permitted, it does not silently fall back to a broader process path. The agent's own process tree
+is kept in a separate, terminable Job Object. On Mac/Linux an independent supervisor process opens its own
+session and process group; the CLI runs in this group. When only the pipe whose write end the worker holds
+closes, when the CLI exits or when the monotonic time budget runs out, the supervisor
+terminates its own group. Even if the worker dies with SIGKILL, this limit does not depend on the worker's finally block.
+No signal is sent to an old PID taken from the persistent record. The CLI budget starts after the pre-check/preparation is finished;
+a budget exhausted without starting the CLI is not accepted. Closing the popup or the listener does not
+cancel a normal job; a timeout or `ajan kapali` terminates a running job.
+This desktop feature does not set up a new network server or an always-running cloud task.
 
-İş ve köprü yetkisi yalnız PID sayısına değil süreç oluşturulma kimliğine bağlıdır: Linux'ta
-boot kimliği ve `/proc` başlangıç sayacı, macOS'ta `proc_pidinfo` başlangıç zamanı, Windows'ta
-aynı handle üzerinden canlılık ve `GetProcessTimes` kullanılır. Her MCP isteğinde, araç
-kilidi alındıktan sonra ve veri döndürmeden önce worker kimliği/zaman sınırı doğrulanır.
-`complete` yalnız teslim alınan anlık sonucu `submitted` diye onaylar; başarılı kapanışı
-çalışan yapar. Worker'ı ölen görünür Windows konsolu açık kalabilir, ancak eski işin köprü
-araçları kapalıdır. Eski şemalı, yeniden kullanılmış veya sorgulanamayan PID içeren kesilmiş
-işler yeniden çalıştırılmaz; belirsiz iş incelemeye alınır ve sıradaki işe geçilir.
+Job and bridge authority are tied not just to the PID number but to the process creation identity: on Linux the
+boot ID and the `/proc` start counter, on macOS the `proc_pidinfo` start time, on Windows
+liveness over the same handle and `GetProcessTimes` are used. On every MCP request, after the tool
+lock is acquired and before data is returned, the worker identity/time limit is verified.
+`complete` only acknowledges the instantaneous received result as `submitted`; the worker does the successful
+closure. A visible Windows console whose worker has died may stay open, but the bridge
+tools of the old job are closed. Interrupted jobs with an old schema, a reused or an unqueryable PID
+are not re-run; an uncertain job is put under review and the next job is moved to.
 
-Tanı için `<state>/yakala/ajan/<kart-id>.log` ve `ajan` durumunu kullan. İş dosyaları
-`<state>/yakala/ajan/jobs/<iş-UUID>/` altındadır. Günlüklerde istek, kaynak ve araç çıktıları
-bulunabilir; bunları herkese açık issue'ya kontrol etmeden ekleme. Ağ/giriş/limit hatasında kart
-korunur. Süreç veya bilgisayar beklenmedik şekilde kapanırsa kısmi etkiler bilinmeyebilir;
-`ajan-devam` aynı işi kendiliğinden tekrar etmez, inceleme gerektirir.
+For diagnosis use `<state>/yakala/ajan/<card-id>.log` and the `ajan` status. The job files
+are under `<state>/yakala/ajan/jobs/<job-UUID>/`. The logs may contain requests, sources and tool outputs;
+do not attach them to a public issue without checking. On a network/login/limit error the card
+is preserved. If the process or the computer shuts down unexpectedly, partial effects may be unknown;
+`ajan-devam` does not repeat the same job on its own, it requires review.
 
-Yakala işlerinin kendi yazıları kilitlenir; normal başka bir ajan veya editör aynı kilidi
-kullanmıyorsa aylık ajan günlüğünü sonradan bütünüyle değiştirip eklenen satırı kaybedebilir. Bağımsız
-sonuç notu ve receipt bağlantısı bu nedenle korunur. Ortak vault'u iki makinede açmak tek bir
-dağıtık kuyruk veya bütün ajanlar arasında ortak dosya kilidi sağlamaz.
+Yakala jobs' own writes are locked; if another normal agent or editor does not use the same lock, it may
+later replace the monthly agent log as a whole and lose the added line. The independent
+result note and the receipt link are therefore preserved. Opening a shared vault on two machines does not provide a single
+distributed queue or a common file lock between all agents.
 
-POSIX kart kilidi artık vault köküne `.beyin-yakala-card.lock` yazmaz; kullanıcının yerel
-state alanındaki ortak kilit dizinindedir. Kilit mevcut vault'un dosya sistemi kimliğine
-bağlanır; aynı dizine ait yol takma adları ve farklı özel state seçimleri tek kilitte buluşur.
-Ajan kapalıyken normal yakalama da bu kilidi kullanır. Windows named mutex yolu korunur.
-Güncellemede bütün eski Yakala dinleyici/worker süreçlerini kapatıp `yakala kur` ile yenile;
-eski ve yeni kilit düzenini kullanan sürümleri aynı vault'ta birlikte çalıştırma.
+The POSIX card lock no longer writes `.beyin-yakala-card.lock` to the vault root; it is in the
+shared lock directory in the user's local state area. The lock is tied to the current vault's file system identity;
+path aliases of the same directory and different custom state choices meet at a single lock.
+When the agent is off, normal capture also uses this lock. The Windows named mutex path is kept.
+On update, close all old Yakala listener/worker processes and refresh with `yakala kur`;
+do not run versions using the old and new lock layout together in the same vault.
 
-`yakala kaldir`, ajan ayarını önce `kapali` yapar ve mevcut Yakala kısayol/skill kaldırmasını
-uygular. Kartlar, ajan sonuçları, receipt'ler, indirilmiş dosyalar ve tanı kayıtları silinmez.
-Bu sürüm yeni `Beyin Yakala Ajan.lnk` toast kısayolunu ve kayıt işaretini de korur; istersen
-Başlat menüsündeki bu adlı kısayolu ayrıca kaldırabilirsin. Kaldırma, önceden yapılmış dosya
-etkilerini geri alma işlemi değildir. Bu bölümdeki ağ davranışı yalnız açıkça gönderilen ajan
-işleri içindir; aşağıdaki normal yakalama akışı kart yazarken ağa çıkmaz.
+`yakala kaldir` first sets the agent setting to `kapali` and applies the existing Yakala shortcut/skill removal.
+Cards, agent results, receipts, downloaded files and diagnostic records are not deleted.
+This version also preserves the new `Beyin Yakala Ajan.lnk` toast shortcut and the registration marker; if you want,
+you can remove the shortcut with this name from the Start menu separately. Removal is not an operation that rolls back file
+effects already made. The network behavior in this section is only for agent jobs sent explicitly;
+the normal capture flow below does not go out to the network when it writes a card.
 
-### Windows kabul testi
+### Windows acceptance test
 
-Birim testleri gerçek model hizmeti çalıştırmaz. POSIX yaşam döngüsü testleri gerçek geçici
-Python süreçleri açıp sonlandırır; Windows/macOS API modelleri yerel ölçüm yerine geçmez.
-Depo kökünde bütün Yakala paketini çalıştır:
+Unit tests do not run a real model service. The POSIX lifecycle tests open and terminate real temporary
+Python processes; the Windows/macOS API models do not replace a local measurement.
+Run the whole Yakala package in the repo root:
 
 ```sh
 py -3 -m unittest discover -s tests -p "v3_yakala*_test.py"
 ```
 
-Windows 11 üzerinde aşağıdakileri ayrıca dene. Her kayda tarih, Windows/Python/CLI sürümü,
-istemci, `gizli`/`pencere`, `kisitli`/`acik`, dosya sistemi ve beklenen/gerçek sonucu ekle.
-Gerçek kullanıcı sırları yerine ayırt edilebilir zararsız test notları kullan.
+Additionally try the following on Windows 11. For each record add the date, Windows/Python/CLI version,
+client, `gizli`/`pencere`, `kisitli`/`acik`, file system and the expected/actual result.
+Use distinguishable harmless test notes instead of real user secrets.
 
-1. `kur --ajan kapali` ile düz Enter'ın eski kaydı yaptığını ve Ctrl+Enter satırının görünmediğini doğrula.
-2. Normal terminalde seçilen CLI'ye giriş yap, vault/hook güvenini ve `beyin.py receipt --help`
-   sözleşmesini kontrol et; `kur --ajan claude` veya `codex` çalıştır.
-3. Zararsız bir not araştırmasını Ctrl+Enter ile gönder. Popup'ı ve dinleyiciyi kapat; konsol
-   penceresi açılmadan işin ilerlediğini, karttaki gerçek oturum kimliğini ve bildirimi doğrula.
-4. Bilinen herkese açık küçük bir dosyayı indir. Yeni hedef adı, hash, sonuç notu, receipt ve
-   ajan günlüğü bağlantıları birlikte doğrulandıktan sonra `islendi` olmasını kontrol et.
-5. Silme/giriş isteyen bir iş, özel IP URL'si, eksik CLI, ağ hatası ve kısa timeout dene.
-   Kartların korunduğunu, gerekçenin yazıldığını ve başarı bildirimi verilmediğini doğrula.
-6. Art arda iki istek gönder; tek CLI çalıştığını kontrol et. Aynı kartta normal `isle`/`bitti`
-   çağrılarını, kesilme sonrası `ajan-devam` davranışını ve açık `ajan-serbest` devrini dene.
-7. Bildirimleri kapatıp işi tekrarla; sonuç ve günlük oluşmalıdır. Yeni normal oturumdan önceki
-   kartı ve indirme yolunu bulmayı, son olarak `ajan kapali` ve `kaldir` davranışını doğrula.
-8. Claude ve Codex'i hem `gizli` hem `pencere` kipinde çalıştır. Codex 0.155.1 ve kullanılacak
-   yeni sürümde `codex --version`, bayraksız `codex features list` ve işin kapatma bayraklı
-   tablosunu kaydet. `view_image`/kabuk/alt ajan çağrılarının reddini, `kisitli` kipte web
-   aramasının yokluğunu doğrula. Kod moduyla Yakala MCP çağrısı ve gerçek oturum UUID'si
-   eşleşmelidir. Claude pencere argv'sindeki `--` ve `--tools ""` davranışını ayrıca gözle.
-9. Önceden etkin MCP ve eklenti bulunan geçici CLI profilinde işi çalıştır; başka sunucunun
-   aracı açılmamalı, kullanıcı config hash'i değişmemeli. Claude `--model haiku` ve özel
-   executable seçildikten sonra Codex'e geç; yeni iş varsayılan Codex seçeneğiyle başlamalı.
-10. Windows Codex salt okuma uyumluluk yolunu hem gizli hem pencere kipinde doğrula:
-    `AGENTS.md` ve normal hafıza başlangıcı, izinli MCP okuması, private reddi, sonuç,
-    receipt ve ajan günlüğü zinciri çalışmalı. Sandbox türünü ve CLI sürümünü kaydet.
-    Zararsız notlarla vault içinde/dışında Update/Move/Delete ve mevcut/yeni Add yazmaları
-    reddedilmeli; hiçbir mevcut dosyanın hash'i değişmemeli. Doğru/yanlış bağlam hataları
-    farklı olabilir: Windows `-s read-only` yolunu kapalı içerik tahmin sınırı olarak sunma.
-11. İzinli `fetch_source`/`download` çağrılarını karışık ve başarısız denemelerle toplam 8'e
-    getir. Dokuzuncu çağrı ağdan önce reddedilmeli. Aynı işe yeni MCP bağlantısı açmak hakkı
-    yenilememeli; `complete` yine çalışmalı. `acik` araç açıklaması yeni public URL'yi
-    yasakladığını söylememeli; hosted web araması bu sayaçta değildir.
-12. Gizli işin yalnız worker sürecini beklenmedik biçimde kapat; CLI/alt süreç Job Object
-    kapanışıyla sonlanmalı. Görünür konsol açık kalsa da ölen worker'ın MCP'si not
-    döndürmemeli. Kısa timeout, `ajan kapali`, `ajan-devam` ve `ajan-serbest` sonuçlarını
-    incele. PID nesli uyuşmazlığı ve AccessDenied regresyonlarını otomatik testte çalıştır;
-    rastgele sistem sürecini sonlandırarak PID yeniden kullanımını üretmeye çalışma.
-13. NTFS, gerçek exFAT/FAT USB ve kullanılacak ağ paylaşımında yeni not ve indirme yayımla.
-    Var olan hedefin hash'i değişmemeli; yarışta tek yayın kazanmalı; yazma ortasında hata
-    son ad altında yarım dosya bırakmamalı. Hem hard link hem exclusive rename desteklenmiyorsa
-    açık hata ve korunmuş `.part` beklenir. Junction/symlink reddi devam etmelidir.
-14. İlgisiz `knowledge/Dosyalar` notu okunmalı; başka kartın ekleri, eski kartları taşınmış
-    ek deposu, private/hassas notlar açılmamalı. Kendi kart/ham metin/bağlı metin ekinin
-    güven etiketi `untrusted` olmalı. Büyük/küçük harf yol takma adlarını da dene.
-15. Ajan kapalı normal yakalama vault köküne yeni kilit yazmamalı. Farklı `--state` seçimleri
-    aynı kartı eşzamanlı güncellerken kayıt kaybolmamalı. Birden fazla companion veya arşivde
-    Last-Session bulunması işi etkilememeli; Last-Session baytları değişmemeli. Aylık günlükte
-    tek girdi, tekrar çağrıda aynı baytlar ve `private` kartta özetsiz durum/bağlantılar beklenir.
+1. With `kur --ajan kapali`, verify that plain Enter does the old save and that the Ctrl+Enter row does not appear.
+2. In a normal terminal log in to the chosen CLI, check the vault/hook trust and the `beyin.py receipt --help`
+   contract; run `kur --ajan claude` or `codex`.
+3. Send a harmless note research with Ctrl+Enter. Close the popup and the listener; verify that the job progresses without a console
+   window opening, the real session ID on the card and the notification.
+4. Download a known small public file. After the new target name, the hash, the result note, the receipt and the
+   agent log links are verified together, check that it becomes `islendi`.
+5. Try a job that asks for deletion/login, a private IP URL, a missing CLI, a network error and a short timeout.
+   Verify that the cards are preserved, the reason is written and no success notification is given.
+6. Send two requests back to back; check that a single CLI runs. On the same card try the normal `isle`/`bitti`
+   calls, the `ajan-devam` behavior after an interruption and an explicit `ajan-serbest` handover.
+7. Turn off notifications and repeat the job; the result and the log must be created. From a new normal session find the earlier
+   card and the download path, and finally verify the `ajan kapali` and `kaldir` behavior.
+8. Run Claude and Codex in both `gizli` and `pencere` modes. For Codex 0.155.1 and the new version to be used, record
+   `codex --version`, `codex features list` without flags and the table with the job's disable flags. Verify the rejection of `view_image`/shell/sub-agent
+   calls and the absence of web search in `kisitli` mode. The Yakala MCP call through code mode and the real session UUID
+   must match. Watch the `--` and `--tools ""` behavior in the Claude window argv separately.
+9. Run the job in a temporary CLI profile that has a pre-enabled MCP and plugin; another server's
+   tool must not be opened, the user config hash must not change. After selecting Claude `--model haiku` and a custom
+   executable, switch to Codex; the new job must start with the default Codex options.
+10. Verify the Windows Codex read-only compatibility path in both hidden and window modes:
+    `AGENTS.md` and the normal memory start-up, the allowed MCP read, the private rejection, the result,
+    the receipt and agent log chain must work. Record the sandbox type and the CLI version.
+    With harmless notes, Update/Move/Delete and existing/new Add writes inside/outside the vault
+    must be rejected; no existing file's hash may change. The correct/wrong context errors
+    may differ: do not present the Windows `-s read-only` path as a closed content-guessing limit.
+11. Bring the allowed `fetch_source`/`download` calls to a total of 8 with mixed and failed attempts.
+    The ninth call must be rejected before the network. Opening a new MCP connection to the same job must not
+    renew the allowance; `complete` must still work. The `acik` tool description must not say that it
+    forbids a new public URL; hosted web search is not in this counter.
+12. Unexpectedly close only the worker process of a hidden job; the CLI/child processes must end with the Job Object
+    closure. Even if the visible console stays open, the dead worker's MCP must not return
+    a note. Review the results of a short timeout, `ajan kapali`, `ajan-devam` and `ajan-serbest`. Run the PID generation mismatch
+    and AccessDenied regressions in an automated test;
+    do not try to produce PID reuse by terminating a random system process.
+13. On NTFS, a real exFAT/FAT USB and the network share to be used, publish a new note and download.
+    The hash of an existing target must not change; in a race a single publish must win; an error in the middle of a write must not
+    leave a half file under the final name. If neither hard link nor exclusive rename is supported,
+    an explicit error and a preserved `.part` are expected. Junction/symlink rejection must continue.
+14. An unrelated `knowledge/Dosyalar` note must be readable; another card's attachments, an attachment store whose old cards
+    were moved, and private/sensitive notes must not be opened. The trust label of its own card/raw text/linked text attachment
+    must be `untrusted`. Also try upper/lower-case path aliases.
+15. Normal capture with the agent off must not write a new lock to the vault root. When different `--state` choices
+    update the same card concurrently, no record may be lost. Having more than one companion or a Last-Session
+    in the archive must not affect the job; the Last-Session bytes must not change. In the monthly log a
+    single entry, the same bytes on a repeat call, and, for a `private` card, a summary-free status/links are expected.
 
-**Linux/macOS için ayrı Codex okuma sınırı ölçümü:**
-[isteğe bağlı gerçek CLI regresyonunu](CODEX-APPLY-PATCH.md) çalıştır. Root-deny altında
-göreli/mutlak, vault içi/dışı Update/Move/Delete ve Add denemelerinde dosyalar korunmalı;
-aynı yol/işlemde doğru ve yanlış bağlam aynı içeriksiz hataya dönmeli. Aynı oturumdaki
-normal hook ve izinli MCP teslimi de geçmeli. Başlangıç/politika hatasını başarı sayma;
-bu POSIX profilini salt okuma seçicisi veya ek okuma köküyle otomatik genişletme. Linux
-ölçümü macOS native ölçümü değildir; platform, CLI ve gerçek sonucu ayrı kaydet.
+**Separate Codex read-limit measurement for Linux/macOS:**
+run [the optional real CLI regression](CODEX-APPLY-PATCH.md). Under root-deny, in the
+relative/absolute, inside/outside-vault Update/Move/Delete and Add attempts the files must be preserved;
+for the same path/operation the correct and wrong context must produce the same contentless error. The normal hook
+and the allowed MCP delivery in the same session must also pass. Do not count a start-up/policy error as success;
+do not automatically broaden this POSIX profile with the read-only selector or an extra read root. The Linux
+measurement is not a macOS native measurement; record the platform, CLI and actual result separately.
 
-**Esc ve Opera One/GX, #383 için ek masaüstü ölçümü:**
+**Esc and Opera One/GX, additional desktop measurement for #383:**
 
-- Kaynak pencere, popup ve başka pencere öndeyken yalın Esc davranışını dene. Ctrl+Shift+Esc,
-  Ctrl+Esc, Alt+Esc, Shift+Esc ve Win+Esc kancadan geçmeli. Değiştiriciyi popup açılmadan
-  önce basılı tutmayı, sol/sağ Ctrl birlikteyken yalnız birini bırakmayı ve sonrasında yalın
-  Esc'i dene. Windows'un ayırdığı kısayolun gerçekten çalıştığını ekran üzerinden kaydet.
-- Opera Air, One ve GX için tam sürüm/build ve profil/eklenti durumunu kaydet. Normal
-  makale, X tek gönderi, giriş yapılmış ağır X akışı ve Instagram'da adres/metin/bağlantı
-  seçimini ölç. `abc2h` gibi kullanıcı adı ile `2h` zaman etiketinin başlığı bozmadığını dene.
-- Her senaryoda en az 20 tekrar için okuma süresini ms, doğru URL oranını, URL'siz dönüşü ve
-  bir saniyelik bütçe aşımını kaydet; medyan, p95 ve en büyük süreyi raporla. Bunlar ölçüm
-  hedefidir, bu dal için yapılmış performans ölçümü değildir.
-- İki görünür renderer, yabancı renderer, iki okuma arasında belge/foreground değişimi ve
-  yoğun UIA ağacında belirsiz sonuç URL'siz kalmalı. Main/base ile aynı koşulları karşılaştır;
-  omnibox kaldırılmasının One/GX üzerindeki etkisini doğru URL ve süreyle birlikte ölç.
-  Belirsizliği gizlemek için eski omnibox yolunu kendiliğinden açma.
+- Try plain Esc behavior with the source window, the popup and another window in front. Ctrl+Shift+Esc,
+  Ctrl+Esc, Alt+Esc, Shift+Esc and Win+Esc must pass through the hook. Try holding a modifier down before the popup
+  opens, releasing only one while left/right Ctrl are both held, and then plain
+  Esc. Record on screen that the shortcut Windows reserves really works.
+- For Opera Air, One and GX record the exact version/build and the profile/extension state. Measure the
+  address/text/link selection on a normal article, a single X post, a logged-in heavy X feed and Instagram. Check that a username like `abc2h` with a
+  `2h` time label does not corrupt the title.
+- In each scenario record, for at least 20 repeats, the read time in ms, the correct-URL rate, returns without a URL and
+  one-second budget overruns; report the median, p95 and maximum time. These are measurement
+  targets; they are not performance measurements made for this branch.
+- Two visible renderers, a foreign renderer, a document/foreground change between two reads and an ambiguous result in a
+  dense UIA tree must stay without a URL. Compare under the same conditions as main/base;
+  measure the effect of removing the omnibox on One/GX together with the correct URL and time.
+  Do not automatically turn the old omnibox path back on to hide ambiguity.
 
-### Teknik kaynaklar
+### Technical sources
 
-İlk CLI/bildirim bağlantılarının erişim tarihi **17.10.2026**; aşağıdaki sürüm sabitli Codex,
-süreç, atomik yayın ve klavye kaynakları ilk düzeltmede **19.10.2026 Türkiye saati** ile
-incelenmiştir (UTC kayıtları 18.10.2026). Adlı Codex izin profili araştırması ve üç resmî
-ikiliyle regresyon **19.10.2026 UTC** tarihinde yapıldı. CLI seçenekleri değişebilir;
-belge desteği bu bilgisayarda canlı çalıştırma kanıtı değildir.
+The access date of the first CLI/notification links is **17.10.2026**; the version-pinned Codex,
+process, atomic publish and keyboard sources below were reviewed in the first fix on **19.10.2026 Turkey time**
+(UTC records 18.10.2026). The named Codex permission profile research and the regression with three official
+binaries were done on **19.10.2026 UTC**. CLI options may change;
+documentation support is not evidence of a live run on this computer.
 
-- İnceleme: [#384 ana yorum](https://github.com/avenoxai/avenoxbeyin/pull/384#issuecomment-6243678257),
-  [özellik tablosu ek notu](https://github.com/avenoxai/avenoxbeyin/pull/384#issuecomment-6243771486),
-  [#383 merge yorumu](https://github.com/avenoxai/avenoxbeyin/pull/383#issuecomment-6243513321),
-  tümü 18.10.2026 UTC.
-- Codex 0.155.1: [resmî binary](https://github.com/openai/codex/releases/tag/rust-v0.155.1),
-  [özellik adları](https://github.com/openai/codex/blob/rust-v0.155.1/codex-rs/features/src/lib.rs),
-  [kabuk/view_image/apply_patch kayıtları](https://github.com/openai/codex/blob/rust-v0.155.1/codex-rs/core/src/tools/spec_plan.rs),
-  [alt ajan seçimi](https://github.com/openai/codex/blob/rust-v0.155.1/codex-rs/core/src/config/mod.rs),
-  [apply_patch doğrulama sırası](https://github.com/openai/codex/blob/rust-v0.155.1/codex-rs/core/src/tools/handlers/apply_patch.rs).
+- Review: [#384 main comment](https://github.com/avenoxai/avenoxbeyin/pull/384#issuecomment-6243678257),
+  [feature table additional note](https://github.com/avenoxai/avenoxbeyin/pull/384#issuecomment-6243771486),
+  [#383 merge comment](https://github.com/avenoxai/avenoxbeyin/pull/383#issuecomment-6243513321),
+  all 18.10.2026 UTC.
+- Codex 0.155.1: [official binary](https://github.com/openai/codex/releases/tag/rust-v0.155.1),
+  [feature names](https://github.com/openai/codex/blob/rust-v0.155.1/codex-rs/features/src/lib.rs),
+  [shell/view_image/apply_patch registrations](https://github.com/openai/codex/blob/rust-v0.155.1/codex-rs/core/src/tools/spec_plan.rs),
+  [sub-agent selection](https://github.com/openai/codex/blob/rust-v0.155.1/codex-rs/core/src/config/mod.rs),
+  [apply_patch verification order](https://github.com/openai/codex/blob/rust-v0.155.1/codex-rs/core/src/tools/handlers/apply_patch.rs).
   Linux musl binary SHA-256: `a0ef8b2debc3bf747e07b1a039354de31300ac0dcc2276498ba281470b5d9115`.
-  [0.160.0 özellik tablosu](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/features/src/lib.rs)
-  kaynakta karşılaştırıldı; bu düzeltmede 0.160.0 ikilisiyle de sentetik CLI/MCP testi yapıldı.
-- Codex izin sınırı: [resmî beta profiller ve kapsam](https://learn.chatgpt.com/docs/permissions),
-  [0.163.0 sürümü](https://github.com/openai/codex/releases/tag/rust-v0.163.0),
-  [0.164.0-alpha.3 ön sürümü](https://github.com/openai/codex/releases/tag/rust-v0.164.0-alpha.3),
-  [0.163.0 yama doğrulaması](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/core/src/tools/handlers/apply_patch.rs),
-  [izin profilinin derlenmesi](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/core/src/config/permissions.rs),
-  [CLI profil seçimi](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/core/src/config/mod.rs),
-  [normal hook güven sözleşmesi](https://learn.chatgpt.com/docs/hooks).
-  Ayrıntı ve SHA-256 listesi [araştırma notunda](CODEX-APPLY-PATCH.md).
-- Süreç: [Linux /proc](https://docs.kernel.org/filesystems/proc.html),
+  The [0.160.0 feature table](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/features/src/lib.rs)
+  was compared in the source; in this fix a synthetic CLI/MCP test was also run with the 0.160.0 binary.
+- Codex permission limit: [official beta profiles and scope](https://learn.chatgpt.com/docs/permissions),
+  [0.163.0 release](https://github.com/openai/codex/releases/tag/rust-v0.163.0),
+  [0.164.0-alpha.3 pre-release](https://github.com/openai/codex/releases/tag/rust-v0.164.0-alpha.3),
+  [0.163.0 patch verification](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/core/src/tools/handlers/apply_patch.rs),
+  [compilation of the permission profile](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/core/src/config/permissions.rs),
+  [CLI profile selection](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/core/src/config/mod.rs),
+  [normal hook trust contract](https://learn.chatgpt.com/docs/hooks).
+  For detail and the SHA-256 list see the [research note](CODEX-APPLY-PATCH.md).
+- Process: [Linux /proc](https://docs.kernel.org/filesystems/proc.html),
   [Windows GetProcessTimes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes),
   [WaitForSingleObject](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitforsingleobject),
   [Apple proc_info.h](https://github.com/apple/darwin-xnu/blob/main/bsd/sys/proc_info.h).
-- Atomik yayın: [Python 3.12 os.rename](https://docs.python.org/3.12/library/os.html#os.rename),
+- Atomic publish: [Python 3.12 os.rename](https://docs.python.org/3.12/library/os.html#os.rename),
   [Linux rename(2)](https://man7.org/linux/man-pages/man2/rename.2.html),
   [Apple RENAME_EXCL](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/stdio.h).
-- Klavye: [LowLevelKeyboardProc](https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelkeyboardproc),
+- Keyboard: [LowLevelKeyboardProc](https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelkeyboardproc),
   [KBDLLHOOKSTRUCT](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-kbdllhookstruct),
   [GetAsyncKeyState](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getasynckeystate).
 
-- Claude Code: [CLI referansı](https://code.claude.com/docs/en/cli-reference),
-  [başsız çalışma](https://code.claude.com/docs/en/headless),
-  [izin modları](https://code.claude.com/docs/en/permission-modes),
-  [sandbox sınırları](https://code.claude.com/docs/en/sandboxing),
-  [yönetilen MCP](https://code.claude.com/docs/en/managed-mcp).
-- Codex: [CLI komutları](https://learn.chatgpt.com/docs/developer-commands?surface=cli),
-  [başsız çalışma ve thread kimliği](https://learn.chatgpt.com/docs/non-interactive-mode),
-  [config referansı](https://learn.chatgpt.com/docs/config-file/config-reference),
-  [onay ve güvenlik](https://learn.chatgpt.com/docs/agent-approvals-security),
+- Claude Code: [CLI reference](https://code.claude.com/docs/en/cli-reference),
+  [headless run](https://code.claude.com/docs/en/headless),
+  [permission modes](https://code.claude.com/docs/en/permission-modes),
+  [sandbox limits](https://code.claude.com/docs/en/sandboxing),
+  [managed MCP](https://code.claude.com/docs/en/managed-mcp).
+- Codex: [CLI commands](https://learn.chatgpt.com/docs/developer-commands?surface=cli),
+  [headless run and thread ID](https://learn.chatgpt.com/docs/non-interactive-mode),
+  [config reference](https://learn.chatgpt.com/docs/config-file/config-reference),
+  [approvals and security](https://learn.chatgpt.com/docs/agent-approvals-security),
   [rules](https://learn.chatgpt.com/docs/agent-configuration/rules),
-  [hook güveni](https://learn.chatgpt.com/docs/hooks),
+  [hook trust](https://learn.chatgpt.com/docs/hooks),
   [Windows sandbox](https://learn.chatgpt.com/docs/windows/windows-sandbox).
-- Microsoft: [süreç oluşturma bayrakları](https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags)
-  ve [Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)
-  (güncelleme 14.07.2025),
-  [AUMID ile masaüstü toast kaydı](https://learn.microsoft.com/en-us/windows/win32/shell/enable-desktop-toast-with-appusermodelid)
+- Microsoft: [process creation flags](https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags)
+  and [Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)
+  (updated 14.07.2025),
+  [desktop toast registration with AUMID](https://learn.microsoft.com/en-us/windows/win32/shell/enable-desktop-toast-with-appusermodelid)
   (07.01.2021),
-  [masaüstü toast gönderme](https://learn.microsoft.com/en-us/windows/win32/shell/quickstart-sending-desktop-toast)
+  [sending a desktop toast](https://learn.microsoft.com/en-us/windows/win32/shell/quickstart-sending-desktop-toast)
   (20.06.2022).
 - Apple: [Display Notifications](https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/DisplayNotifications.html)
-  (güncelleme 13.06.2016).
+  (updated 13.06.2016).
 - Freedesktop: [Desktop Notifications 1.3](https://specifications.freedesktop.org/notification/latest-single/)
   (18.08.2024); GNOME: [libnotify](https://gnome.pages.gitlab.gnome.org/libnotify/).
 
-## Bekleyen kartlari toplu ajana verme
+## Handing pending cards to the agent in bulk
 
-Bu ozellik yalniz acik CLI talimatiyla calisir. Duz Enter, SessionStart bildirimi,
-`liste`, `ajan-devam` veya gelen kutusuna yeni kart eklenmesi toplu gonderim yapmaz.
-`ajan-toplu` varsayilan olarak onizlemedir; is kaydi olusturmaz, ayar degistirmez,
-ag kullanmaz ve bir ajan sureci acmaz. Gonderim icin ajan ayarinin `claude` veya
-`codex` olmasi, ayni komutta `--gonder` bulunmasi ve onizlemenin `plan` degerinin
-`--plan` ile verilmesi gerekir. Onizleme gorulmeden toplu gonderim yapilmaz. Yeni
-surumu kurduktan sonra eski dinleyici kopyasini da guncellemek icin normal
-`yakala kur` akisini kullan.
+This feature works only with an explicit CLI instruction. Plain Enter, the SessionStart notification,
+`liste`, `ajan-devam` or a new card being added to the inbox does not do a bulk send.
+`ajan-toplu` is a preview by default; it creates no job record, changes no settings,
+uses no network and does not open an agent process. For sending, the agent setting must be `claude` or
+`codex`, `--gonder` must be present in the same command, and the preview's `plan` value must be given with
+`--plan`. A bulk send is not done without the preview being seen. After installing the new
+version, use the normal `yakala kur` flow to also update the old listener copy.
 
 ```text
 py -3 beyin.py yakala ajan claude
@@ -1140,489 +1131,474 @@ py -3 beyin.py yakala ajan-toplu --neden --limit 5
 py -3 beyin.py yakala ajan-toplu --neden --limit 5 --gonder --plan PLAN
 ```
 
-Ilk komut mevcut ajan ayarini acar. Ikinci komut kart kimliklerini, her karta
-verilecek TAM istegi, ag modunu, bos kuyruk kapasitesini ve `plan` degerini gosterir.
-Ucuncu komut, onizlemede gorulen kartlara ve isteklere acik gonderim izni verir.
-`--plan` olmadan `--gonder` hata verir ve hicbir is olusturmaz. Onizlemeden sonra
-kart, istek, filtre sonucu veya ajan ayari degistiyse plan tutmaz ve gonderim
-reddedilir; yeni onizleme gerekir. Sonradan gelen kartlar bu toplu isin parcasi olmaz. Basarili gonderim bir `batch_id` dondurur;
-bu yalniz kuyruga kabul anlamina gelir, islerin tamamlandigi anlamina gelmez.
+The first command turns on the existing agent setting. The second command shows the card IDs, the FULL request to be
+given to each card, the network mode, the free queue capacity and the `plan` value.
+The third command gives an explicit send permission to the cards and requests seen in the preview.
+`--gonder` without `--plan` gives an error and creates no job. If the
+card, request, filter result or agent setting changed after the preview, the plan does not hold and the send is
+rejected; a new preview is needed. Cards that arrive later do not become part of this bulk job. A successful send returns a `batch_id`;
+this means only acceptance into the queue, not that the jobs are complete.
 
-### Secim ve istek kaynagi
+### Selection and request source
 
-Yalniz secili Yakala gelen kutusundaki `tur: yakala`, `durum: bekliyor` kartlari
-adaydir. Alt klasorler, arsivler ve baska vault'lar taranmaz. `ajanda`,
-`onay-bekliyor`, `islendi`, `cikarildi` ve `hata` kartlari toplu gonderime alinmaz.
-Kullanici kart durumunu elle `bekliyor` yapsa bile mevcut aktif is sahipligi
-ikinci bir is olusturulmasini engeller. Tekli `ajan-gonder` da ayni kuyruk kilidini
-kullanir; `KART_ID` ve `KART_ID.md` ayni kart olarak denetlenir. Yerel/ozel ag adresi
-veya gecersiz URL tasiyan bir kart (ornegin Web Clipper ile kaydedilmis yerel bir sayfa)
-secilmez; onizlemenin `atlanan` listesinde gerekcesiyle gorunur ve diger kartlari engellemez.
+Only `tur: yakala`, `durum: bekliyor` cards in the selected Yakala inbox
+are candidates. Subfolders, archives and other vaults are not scanned. Cards that are `ajanda`,
+`onay-bekliyor`, `islendi`, `cikarildi` and `hata` are not taken into a bulk send.
+Even if the user manually sets a card's status to `bekliyor`, the existing active job ownership
+prevents a second job from being created. The single `ajan-gonder` also uses the same queue lock;
+`KART_ID` and `KART_ID.md` are checked as the same card. A card carrying a local/private network address
+or an invalid URL (for example a local page saved with the Web Clipper) is not
+selected; it appears with its reason in the preview's `atlanan` ("skipped") list and does not block the other cards.
 
-| Secenek | Davranis |
+| Option | Behavior |
 |---|---|
-| `--neden` | Her kartin ilk `## Neden` bolumunu o kartin istegi olarak kullanir |
-| `--istek "..."` | Secilen her karta ayni acik istegi verir; Neden ile birlestirmez |
-| `KART_ID ...` | Adaylari bu kimliklere daraltir; `.md` dosya adi da kabul edilir |
-| `--tur youtube` | `kaynak_turu` alanina gore filtreler; birden cok kez verilebilir |
-| `--alan instagram.com` | URL'nin tam sunucu adina gore filtreler; `www.` ve `m.` normalizasyonu vardir |
-| `--limit 5` | En eski bes adayi secer; varsayilan 10, izin verilen aralik 1 ile 32 |
-| `--gonder` | Onizlenen kartlari kalici kuyruga gonderir; `--plan` zorunludur |
-| `--plan OZET` | Onizlemedeki 64 karakterli plan ozeti; secim, kart veya ayar degismisse gonderimi reddeder |
-| `--json` | Onizleme, toplu kimlik ve durumlari makine tarafindan okunabilir JSON olarak dondurur |
+| `--neden` | Uses each card's first `## Why` section as that card's request |
+| `--istek "..."` | Gives the same explicit request to every selected card; does not combine it with Why |
+| `KART_ID ...` | Narrows the candidates to these IDs; a `.md` file name is also accepted |
+| `--tur youtube` | Filters by the `kaynak_turu` field; can be given more than once |
+| `--alan instagram.com` | Filters by the URL's exact host name; `www.` and `m.` are normalized |
+| `--limit 5` | Selects the oldest five candidates; default 10, allowed range 1 to 32 |
+| `--gonder` | Sends the previewed cards to the persistent queue; `--plan` is required |
+| `--plan OZET` | The 64-character plan summary from the preview; rejects the send if the selection, a card or the setting changed |
+| `--json` | Returns the preview, the batch ID and statuses as machine-readable JSON |
 
-`--neden` ve `--istek` birbirini dislar; birini acikca secmek zorunludur.
-Bos Neden, `_(not yok)_` yer tutucusu, NUL veya 16000 karakterden uzun bir istek
-gonderimi engeller. Secilen kartlardan birinin istegi gecersizse digerleri de
-gonderilmez. Yeniden yakalama ile eklenen `Yeniden yakalandi` metni ve kaynak
-secimi, ilk Neden yerine otomatik talimata cevrilmez. Son istegi kullanmak
-istiyorsan `--istek` ver veya kartin Neden bolumunu duzenle.
+`--neden` and `--istek` exclude each other; choosing one explicitly is mandatory.
+An empty Why, the `_(no note)_` placeholder, a NUL or a request longer than 16000 characters
+blocks the send. If the request of one of the selected cards is invalid, the others are also
+not sent. The `Recaptured` section and source selection added by a re-capture are not
+turned into an automatic instruction in place of the first Why. If you want to use the latest request, give
+`--istek` or edit the card's Why section.
 
 ```text
-py -3 beyin.py yakala ajan-toplu --alan instagram.com --istek "Bu kaynagi incele ve kaynakli bir not yaz" --limit 3
+py -3 beyin.py yakala ajan-toplu --alan instagram.com --istek "Review this source and write a note with sources" --limit 3
 py -3 beyin.py yakala ajan-toplu KART_ID_1 KART_ID_2 --neden
 py -3 beyin.py yakala ajan-toplu KART_ID_1 KART_ID_2 --neden --gonder --plan PLAN
-py -3 beyin.py yakala ajan-toplu --tur youtube --tur makale --istek "Ana bulgulari ozetle" --limit 4 --gonder --plan PLAN --json
+py -3 beyin.py yakala ajan-toplu --tur youtube --tur makale --istek "Summarize the main findings" --limit 4 --gonder --plan PLAN --json
 ```
 
-Filtreler kesisir; alan adi eslesmesi alt dize veya rastgele alt alan eslesmesi
-degildir. Mevcut kart turu siniflandirmasinda Instagram ve TikTok linkleri
-`makale` olabilir; bu kaynaklar icin `--alan` kullan. Gonderimde onizlemenin
-`plan` degerini kopyalayip ayni seceneklere `--gonder --plan DEGER` ekle. Bu ozet
-yetkilendirme anahtari degildir; onizlemenin gorulmesini ve kart/istek/ayar
-degisikliginin fark edilmesini saglayan bir tutarlilik denetimidir.
+Filters intersect; domain name matching is not a substring or arbitrary subdomain match.
+In the existing card type classification, Instagram and TikTok links
+can be `makale`; use `--alan` for these sources. When sending, copy the preview's
+`plan` value and add `--gonder --plan VALUE` to the same options. This summary is
+not an authorization key; it is a consistency check that ensures the preview was seen and that a change to the card/request/setting
+is noticed.
 
-Gecerli saat dilimli `yakalandi` degeri olan kartlar gercek yakalanma zamanina,
-esitlikte kart kimligine gore siralanir. Eksik veya gecersiz zaman damgalari sona
-alinir ve kart kimligiyle siralanir. Mevcut kuyruktaki isler once gelir. Toplu
-isin uyeleri bu secim sirasiyla eklenir; sistem saati geri alinsa veya ayni
-zaman damgasini uretse de monoton is sirasi korunur.
+Cards with a valid time-zoned `yakalandi` value are ordered by their real capture time,
+and on a tie by card ID. Missing or invalid timestamps go
+to the end and are ordered by card ID. Jobs already in the queue come first. The members of a bulk
+job are added in this selection order; even if the system clock is set back or produces the same
+timestamp, the monotonic job order is preserved.
 
-### Kapasite, kalicilik ve sonuc ozeti
+### Capacity, persistence and result summary
 
-Her kart ayri bir is ve ayri bir ajan oturumudur. Mevcut tek worker, tekli ve
-toplu isleri sirayla calistirir. `max_queue` siniri, `preparing`, `queued` ve
-`running` islerin TAM toplamina uygulanir; varsayilan ve ust sinir 32'dir.
-Secim bos kapasiteye sigmazsa hicbir kart kuyruga eklenmez; limiti dusur veya
-mevcut islerin bitmesini bekle. Zaman/butce sinirlari her is icin mevcut ayarlardan
-kopyalanir; yeni bir toplu toplam harcama siniri eklenmez.
+Each card is a separate job and a separate agent session. The existing single worker runs single and
+bulk jobs in order. The `max_queue` limit applies to the FULL total of `preparing`, `queued` and
+`running` jobs; the default and upper limit are 32.
+If the selection does not fit into the free capacity, no card is added to the queue; lower the limit or
+wait for existing jobs to finish. The time/budget limits are copied from the current settings for each job;
+no new total spending limit is added for a bulk.
 
-Gonderim, ayni kuyruk ve kart kilitleri altinda guncel ayar, tum secili kartlar,
-istekler, acikca secilmis ek kaynaklar, sahiplik ve kapasiteyi denetler. Her uyenin
-birlesik UTF-8 is girdisi tekli ajanla ayni 96 KiB sinirina tabidir; sonraki calisma
-ve sonuc alanlari icin yer ayrilir. Gecersiz ek kaynak veya buyuk is girdisi
-onizlemede ilgili kartin `hata` alaninda gorunur ve `gonderilebilir` yanlis olur.
-Gonderimde tum uyeler ilk manifest, is veya kart yazimindan once dogrulanir;
-bu girdi hatalarinda secimin hicbir uyesi gonderilmez. Ardindan
-`<state>/yakala/ajan/batches/<toplu-UUID>.json` dosyasina tum uye kimliklerini
-ve acik isteklerini yazar; her uyenin isi mevcut `jobs/<is-UUID>/job.json`
-duzeninde kalir. Son asamada tek worker uyandirma cagrisi yapilir. Manifest,
-kartlar ve isler yerel dosyalardir; istekler vault disindaki mevcut makine
-durumunda saklanir. Manifest okuma siniri 4 MiB, tek kart okuma siniri 200 KiB'dir.
-Bu siniri asan veya UTF-8 olmayan bir not secilmez; onizlemenin `atlanan` listesinde
-gorunur ve diger kartlarin gonderimini engellemez. Kimligiyle acikca secilirse hata verir.
-Sembolik baglar ve Windows junction/reparse yollarina izin verilmez. Okunamayan
-bir is kaydi varsa kapasite bilinmiyor sayilir ve yeni toplu gonderim reddedilir;
-once ilgili kaydi ve kartin konumunu incele. Eski bir kartin tasinmasi da bu
-denetimi gerektirebilir.
+Under the same queue and card locks, the send checks the current setting, all selected cards,
+the requests, explicitly chosen extra sources, ownership and capacity. Each member's
+combined UTF-8 job input is subject to the same 96 KiB limit as the single agent; room is reserved for later run
+and result fields. An invalid extra source or an oversized job input
+appears in the relevant card's `hata` field in the preview and `gonderilebilir` ("sendable") is false.
+At send, all members are verified before the first manifest, job or card write;
+on these input errors no member of the selection is sent. Then
+it writes all member IDs and explicit requests to the file
+`<state>/yakala/ajan/batches/<batch-UUID>.json`; each member's job stays in the existing `jobs/<job-UUID>/job.json`
+layout. In the last stage a single worker wake-up call is made. The manifest,
+cards and jobs are local files; the requests are stored in the existing machine
+state outside the vault. The manifest read limit is 4 MiB, the single card read limit is 200 KiB.
+A note that exceeds this limit or is not UTF-8 is not selected; it appears in the preview's `atlanan` list
+and does not block the send of the other cards. If it is explicitly selected by ID, it gives an error.
+Symbolic links and Windows junction/reparse paths are not allowed. If there is an unreadable
+job record, the capacity is considered unknown and a new bulk send is rejected;
+first review the relevant record and the card's location. Moving an old card may also require this
+check.
 
 ```text
-py -3 beyin.py yakala ajan-toplu-durum TOPLU_ID
-py -3 beyin.py yakala ajan-toplu-durum TOPLU_ID --json
+py -3 beyin.py yakala ajan-toplu-durum BATCH_ID
+py -3 beyin.py yakala ajan-toplu-durum BATCH_ID --json
 ```
 
-Ozet her sorguda gercek is kayitlarindan hesaplanir: hazirlanan, siradaki,
-calisan, tamamlanan, hata, onay bekleyen ve iptal edilmis uyeler ayri sayilir.
-Her uyenin sonuc ozeti, olusan not yolu ve receipt yolu varsa gosterilir.
-Modelin `complete` demesi veya kuyruga kabul edilmesi tek basina tamamlanma
-degildir; mevcut worker'in hafiza/receipt/Last-Session dogrulamasi sonrasi terminal
-sonucu kullanilir. `bitti`, tum uyelerin terminal durumda ve kart uzlastirmalarinin
-tamamlanmis oldugunu; `hepsi_basarili`, hepsinin `completed` oldugunu belirtir.
-Iptal veya hata ile biten bir toplu is basarili sayilmaz.
+The summary is computed from the real job records on every query: preparing, queued,
+running, completed, error, approval-waiting and cancelled members are counted separately.
+Each member's result summary, the created note path and the receipt path are shown if present.
+The model saying `complete` or being accepted into the queue is not by itself completion;
+the terminal result after the existing worker's memory/receipt/Last-Session verification is used. `bitti` ("done") indicates that all members are in a terminal state and the card reconciliations
+are complete; `hepsi_basarili` ("all succeeded") indicates that all are `completed`.
+A bulk job that ends with a cancellation or an error is not counted as successful.
 
-Dosya yazimi ortada kesilirse onceden kalici yazilan uye kimlikleri korunur;
-kismen gonderim `toplu_kismi` olarak raporlanir. Zorla surec sonlandirmada ilk
-manifest `preparing` kalabilir. Sonraki cagrida tum secim kendiliginden yeniden
-gonderilmez. Mevcut worker gecerliligi tamamlanmis siradaki uyeleri calistirabilir;
-belirsiz hazirlik isleri mevcut kurtarma kuraliyla insan incelemesine birakilir.
-Manifest veya is kayitlarini incele, gerekirse `ajan-devam` kullan. Kaydi eksik
-veya bozulan uye `kayit_yok` / `kayit_gecersiz` sayilir; sonuc varsayilmaz ve
-bu belirsizlik cozulmeden `bitti` dogru olmaz. Worker uyandirmasi basarisizsa
-siradaki isler korunur, hata/onay durumuna otomatik cevrilmez.
+If the file write is interrupted in the middle, member IDs that were previously persisted are preserved;
+a partial send is reported as `toplu_kismi`. On a forced process termination the first
+manifest may stay `preparing`. On the next call the whole selection is not resent on its own.
+The existing worker may run the next members whose validity is complete;
+uncertain preparation jobs are left to human review under the existing recovery rule.
+Review the manifest or the job records, and if needed use `ajan-devam`. A member whose record is missing
+or corrupt is counted as `kayit_yok` / `kayit_gecersiz`; no result is assumed, and
+`bitti` would not be correct until this uncertainty is resolved. If the worker wake-up fails,
+the queued jobs are preserved and are not automatically turned into an error/approval state.
 
-### Baslamamis uyeleri geri alma
+### Taking back members that have not started
 
 ```text
-py -3 beyin.py yakala ajan-toplu-iptal TOPLU_ID
+py -3 beyin.py yakala ajan-toplu-iptal BATCH_ID
 ```
 
-Bu komut yalniz halen baslamamis, sahipligi dogrulanan toplu uyeleri iptal eder
-ve kartlarini `bekliyor` yapar. Kuyrugu sahiplenmis bir worker ile ayni kilidi
-kullanir: worker once `running` durumuna gectiyse o uye korunur; iptal once
-kalici yazildiysa worker o uyeyi calistirmaz. Calisan, tamamlanmis, hata veya onay
-durumundaki isler degistirilmez. Calisma izi, sahiplik uyusmazligi veya bozuk
-kayit varsa guvenli iptal varsayilmaz; o uye atlanir ve raporlanir.
+This command cancels only bulk members that have not yet started and whose ownership is verified,
+and sets their cards to `bekliyor`. It uses the same lock as a worker that has claimed the queue:
+if the worker moved to `running` first, that member is preserved; if the cancellation was
+persisted first, the worker does not run that member. Jobs in the running, completed, error or approval
+state are not changed. If there is a run trace, an ownership mismatch or a corrupt
+record, a safe cancellation is not assumed; that member is skipped and reported.
 
-Iptal durumu once is kaydina `cancelled` ve kart uzlastirma istegi olarak yazilir,
-sonra kart guncellenir. Arada kesilirse `ajan-devam` karti uzlastirabilir; yeni
-bir model isi acmaz. Kullanici icerigi, sonradan eklenen alanlar, sonuc notlari,
-receipt'ler ve indirmeler silinmez. Ayni iptal komutu tekrar calistirilabilir.
-Eksik manifest uyeleri iptal sirasinda yeniden olusturulmaz; durumlari belirsiz
-kalmaya devam eder. Bu, calisan ajanin etkilerini geri alma veya biten isleri
-silme komutu degildir. Daha sonra karti tekrar ajana vermek yeni, acik bir
-`--gonder` veya `ajan-gonder` talimati gerektirir.
+The cancellation state is first written to the job record as `cancelled` plus a card reconciliation request,
+then the card is updated. If it is interrupted in between, `ajan-devam` can reconcile the card; it does not open
+a new model job. User content, fields added later, result notes,
+receipts and downloads are not deleted. The same cancel command can be run again.
+Missing manifest members are not recreated during cancellation; their state
+stays uncertain. This is not a command to undo the effects of a running agent or to
+delete finished jobs. Giving the card to the agent again later requires a new, explicit
+`--gonder` or `ajan-gonder` instruction.
 
-Toplu is ayni ag ve arac sinirlarini korur. `ag: kisitli` her uyenin kendi
-yakalanan URL'si, gonderim aninda kartin `ek_urller` alaninda acikca secilmis
-adresleri ve izinli sayfalardan donen baglantilarla sinirlidir. Ek adresler o
-uyenin kalici is kaydina kopyalanir; kart govdesindeki bir URL, farkli bir sorgu
-veya kartin sonradan duzenlenmesi mevcut isin kaynak iznini genisletmez.
-Ek kaynaklar tekli ajanla ayni en fazla 63 adres, adres basina 8192 karakter ve
-toplam 64 KiB kayit sinirini kullanir;
-`ag: acik` mevcut gizlilik talimatini korur.
-Neden veya ortak istekte "sesi indir" yazmasi dis servise ses yukleme ya da ek
-arac izni vermez. Toplu is bu tur izinleri otomatik uretmez.
+A bulk job keeps the same network and tool limits. `ag: kisitli` is limited to each member's own
+captured URL, the addresses explicitly selected in the card's `ek_urller` field at send time
+and links returned from allowed pages. The extra addresses are copied into that
+member's persistent job record; a URL in the card body, a different query
+or a later edit of the card does not widen the existing job's source permission.
+The extra sources use the same limits as the single agent: at most 63 addresses, 8192 characters per address and a
+total 64 KiB record limit;
+`ag: acik` keeps the existing privacy instruction.
+Writing "download the audio" in Why or in the shared request does not give an upload of audio to an external service or extra
+tool permission. A bulk job does not generate such permissions automatically.
 
-Testler, gercek yerel kart/is/manifest dosyalari ve kuyruk kilitleriyle; ag,
-model, masaustu bildirimi ve gercek istemci acmadan calisir:
+The tests run with real local card/job/manifest files and queue locks; they run
+without network, a model, a desktop notification and a real client:
 
 ```text
 py -3 -m unittest discover -s tests -p v3_yakala_toplu_ajan_test.py -v
 py -3 -m unittest discover -s tests -p "v3_yakala*_test.py"
 ```
 
-Windows 11 canli kontrolunde: iki ayri terminalden tekli ve toplu gonderimi
-yaristir; kuyruk limitinin asilmayisini ve kopya is cikmayisini kontrol et.
-Ilk uye calisirken toplu iptali dene; yalniz baslamayan kartlarin geri geldigini
-ve gorunur/gizli istemci seciminin mevcut ayara uydugunu dogrula. UTF-8 dosyalari,
-Turkce karakterli vault/state yollarini ve terminaldeki JSON ciktilarini kontrol et.
+In the Windows 11 live check: race single and bulk sends from two separate terminals;
+check that the queue limit is not exceeded and no duplicate job appears.
+Try a bulk cancel while the first member is running; verify that only the cards that did not start come back
+and that the visible/hidden client choice follows the current setting. Check UTF-8 files,
+vault/state paths with Turkish characters and the JSON outputs in the terminal.
 
-## Istege bagli: videodaki muzigi tanima
+## Optional: recognizing music in a video
 
-Bu ozellik sarkiyi tanitir ve mesru dinleme baglantisi verir. Tam sarki indirme,
-hesap/cookie okuma, DRM asma, tarayici oturumu kullanma veya modelin komut
-yazmasi bu yetenege dahil degildir. Python tarafi yalniz stdlib ve Windows'ta
-ctypes kullanir; AudD SDK veya yeni Python paketi gerekmez.
+This feature identifies the song and gives a legitimate listening link. Full song download,
+reading accounts/cookies, circumventing DRM, using a browser session or the model
+writing commands is not part of this capability. The Python side uses only the stdlib and, on Windows,
+ctypes; no AudD SDK or new Python package is needed.
 
-### Acik izin ve ornek kullanim
+### Explicit permission and example usage
 
-Yeni iki MCP araci parametre almaz. `music_info`, yalniz bu kartin yakalanmis
-Instagram reel/video, TikTok veya YouTube/Shorts sayfasinin muzik meta verisini
-okur. `music_identify`, asagidaki ayri izinlerle yerel ses ornegi cikarir ve
-istenmisse AudD'ye gonderir. Kaynak URL, dosya yolu, arama sorgusu, komut,
-anahtar veya onay model tarafindan arac argumani olarak verilemez.
+The two new MCP tools take no parameters. `music_info` reads only the music metadata of this card's captured
+Instagram reel/video, TikTok or YouTube/Shorts page. `music_identify` extracts a local audio sample with the separate permissions below
+and, if requested, sends it to AudD. The source URL, file path, search query, command,
+key or approval cannot be given by the model as a tool argument.
 
 ```sh
-# Kullandigin istemciyi sec; ag acik tek basina ses yukleme izni vermez.
+# Choose the client you use; an open network alone does not grant audio upload permission.
 python beyin.py yakala ajan claude --ag acik
 
-# Bir defa: anahtari terminalde gizli gir. Bu komut servis istegi yapmaz.
+# Once: enter the key secretly in the terminal. This command makes no service request.
 python beyin.py yakala ajan-muzik audd
 
-# Kaynagi normal yakala, ardindan gercek kart kimligini kullan.
-python beyin.py yakala ekle "https://www.instagram.com/reel/VIDEO_ID/" --neden "Sarkiyi tani"
-python beyin.py yakala ajan-gonder KART_ID --istek "Sarkiyi tani ve mesru dinleme baglantisi ver" --ses-isle --tani-servise-gonder
+# Capture the source normally, then use the real card ID.
+python beyin.py yakala ekle "https://www.instagram.com/reel/VIDEO_ID/" --neden "Identify the song"
+python beyin.py yakala ajan-gonder KART_ID --istek "Identify the song and give a legitimate listening link" --ses-isle --tani-servise-gonder
 
-# Yalniz yerel inceleme: ornek hicbir tani servisine gonderilmez.
-python beyin.py yakala ajan-gonder KART_ID --istek "Video meta verisini incele" --ses-isle
+# Local review only: the sample is not sent to any recognition service.
+python beyin.py yakala ajan-gonder KART_ID --istek "Review the video metadata" --ses-isle
 
-# Servis durumu ve kapatma.
+# Service status and turning it off.
 python beyin.py yakala ajan-muzik
 python beyin.py yakala ajan-muzik kapali
 ```
 
-`--ses-isle`, kullanicinin isleme izni bulunan videodan bu is icin en fazla
-12 saniyelik ornek cikarmaya verdigi acik izindir. `--tani-servise-gonder`,
-o ornegin AudD'ye yuklenmesine ayri izindir; `--ses-isle` olmadan reddedilir.
-Her iki izin de is kaydina, worker uyandirilmasindan once host tarafindan
-yazilir. Neden/istek metnindeki "indir", "tani" veya "izin veriyorum"
-sozcukleri, popup Ctrl+Enter, genel `ag: acik` ayari veya toplu gonderim bu
-izinleri kendiliginden vermez. Eksik izinde ajan `approval_required` sonucu
-ve gereken CLI seceneklerini sunar. Ayni karttaki onceki is bitmeden ikinci
-is kuyruga alinamaz; onay-bekliyor sonucu incelendikten sonra yeni komut
-verilir. Eski is kendiliginden yeniden baslamaz.
+`--ses-isle` is the explicit permission the user gives for extracting a sample of up to
+12 seconds for this job from a video they are permitted to process. `--tani-servise-gonder` is the
+separate permission to upload that sample to AudD; it is rejected without `--ses-isle`.
+Both permissions are written to the job record by the host, before the worker is woken up.
+The words "download", "identify" or "I give permission" in the Why/request text,
+popup Ctrl+Enter, the general `ag: acik` setting or a bulk send do not grant these
+permissions on their own. When permissions are missing, the agent presents an `approval_required` result
+and the CLI options needed. A second job cannot be queued before the earlier job on the same card finishes;
+after the approval-waiting result is reviewed, a new command
+is given. The old job does not restart on its own.
 
-Etkilesimsiz anahtar girisi icin `ajan-muzik audd --anahtar-dosyasi DOSYA`
-kullanilabilir. Dosya vault disinda, yerel diskte UTF-8 olmali; symlink/junction
-kabul edilmez. Anahtari CLI metnine, JSON ajan ayarina, ortam degiskenine,
-vault notuna veya prompta koyma. Giris dosyasi otomatik silinmez; kullanici
-kendi guvenli anahtar kaynagini yonetir. Kalici servis anahtari state altindaki
-`yakala/ajan/credentials/audd.json` icindedir. Cozulmus state yolu vault icinde
-kalirsa servis ayari reddedilir. Windows'ta CurrentUser DPAPI kullanilir.
-POSIX'te dosya sahibi ve `0600` izinleri dogrulanir; bu yol sifreleme iddiasi
-tasimaz. Anahtar ayni isletim sistemi hesabi disindaki bir sistem/hesaba
-tasindiginda yeniden girilmelidir. Model/alt arac ortamindan AudD degiskenleri
-cikarilir; bridge anahtari yalniz sabit AudD POST govdesine ekler.
+For non-interactive key entry, `ajan-muzik audd --anahtar-dosyasi FILE` can be
+used. The file must be UTF-8 on a local disk outside the vault; a symlink/junction is
+not accepted. Do not put the key in CLI text, the JSON agent setting, an environment variable,
+a vault note or a prompt. The input file is not deleted automatically; the user
+manages their own secure key source. The persistent service key is in `yakala/ajan/credentials/audd.json`
+under state. If the resolved state path
+stays inside the vault, the service setting is rejected. On Windows CurrentUser DPAPI is used.
+On POSIX the file owner and `0600` permissions are verified; this path
+makes no encryption claim. If the key is moved to a system/account other than the same operating system account,
+it must be re-entered. The AudD variables are removed from the model/sub-tool environment; the bridge adds the key only to the fixed AudD POST body.
 
-`ajan-muzik kapali`, anahtar kaydini kaldirir. Video islenirken servis
-kapatilirsa bridge yeni yuklemeden hemen once anahtari ve isin durumunu
-yeniden kontrol eder; eski anahtarla yeni istek baslatmaz. Zaten baslamis bir
-istegi geri almak veya servis tarafindaki veriyi silmek bu komutun isi degildir.
-Kapatma/anahtar degistirme ile son izin kontrolu ve POST, ayni yerel OS kilidi
-altinda siralanir. Kapatma komutu donmeden once siradaki yeni yukleme durur;
-devam eden POST varsa komut onun en fazla 7 sn ag asamasini bekleyebilir.
+`ajan-muzik kapali` removes the key record. If the service is turned off while a video is being processed,
+the bridge re-checks the key and the job state right before a new upload; it does not start a new
+request with the old key. Taking back a request that has already started or deleting data on the service side is not this command's job.
+Turning off/changing the key and the last permission check and POST are ordered under the same local OS lock.
+Before the off command returns, the next new upload stops;
+if there is a POST in progress, the command may wait for its network stage of at most 7 seconds.
 
-### Ag, kanit ve sonuc
+### Network, evidence and result
 
-| Durum | Sayfa meta verisi | yt-dlp / yerel ornek | AudD yukleme |
+| State | Page metadata | yt-dlp / local sample | AudD upload |
 | --- | --- | --- | --- |
-| `ag: kisitli` | Yalniz yakalanan destekli URL ve izinli platform yonlendirmeleri | Kapali | Kapali |
-| `ag: acik`, ek izin yok | Ayni dar arac | Kapali | Kapali |
-| `ag: acik` ve `--ses-isle` | Acik | Bu is icin acik | Kapali |
-| Onceki satir ve `--tani-servise-gonder` | Acik | Acik | Yalniz AudD anahtari varsa, en fazla bir deneme |
+| `ag: kisitli` | Only the captured supported URL and allowed platform redirects | Off | Off |
+| `ag: acik`, no extra permission | The same narrow tool | Off | Off |
+| `ag: acik` and `--ses-isle` | On | On for this job | Off |
+| The previous row and `--tani-servise-gonder` | On | On | Only if there is an AudD key, at most one attempt |
 
-Genel acik agin mevcut gizlilik talimati degismez: not/kisisel/ozel icerik
-arama sorgusuna veya URL'ye konmaz. Buradaki AudD izni yalniz sabit kisa ses
-orneginin gonderilmesini kapsar; notlar, istek metni, kart kimligi, vault yolu
-ve kaynak URL servise gonderilmez. Ornekte insan sesi/konusma bulunabilir;
-ornek gonderme karari bunu da kapsar. Model bu izni baska servise genisletemez.
+The existing privacy instruction of the general open network does not change: note/personal/private content is not put
+into a search query or a URL. The AudD permission here covers only sending the fixed short audio
+sample; notes, request text, card ID, vault path
+and source URL are not sent to the service. Human voice/speech may be found in the sample;
+the decision to send the sample covers this too. The model cannot extend this permission to another service.
 
-Meta veri kaynaklari: HTML `og:title`/`og:description`, YouTube
-`ytInitialPlayerResponse` aciklamasi, Instagram muzik/orijinal ses alanlari,
-TikTok `music`, JSON-LD `MusicRecording`, ayrica izinli yt-dlp ciktisindaki
-`track`/`artist`. Sayfanin "Orijinal ses" etiketi bir sarki kimligi kaniti
-degildir. Bu sonuclar `verification: source_metadata_only` ve
-`recognized: false` tasir. Gercek AudD eslesmesi
-`verification: provider_acoustic_match` tasir; saglayicinin vermedigi bir
-guven yuzdesi uydurulmaz (`confidence: null`). Servis sonucunda eslesme yoksa
-`unmatched`, servis/arac yoksa veya guvenli isleme mumkun degilse `unavailable`
-doner. Kaynak/meta veri iddiasi, model tahmini ve ses eslesmesi birbirine
-karistirilmaz.
+Metadata sources: HTML `og:title`/`og:description`, the YouTube
+`ytInitialPlayerResponse` description, Instagram music/original audio fields,
+TikTok `music`, JSON-LD `MusicRecording`, and also `track`/`artist` in the permitted yt-dlp output.
+A page's "Original audio" label is not evidence of a song identity. These results carry `verification: source_metadata_only` and
+`recognized: false`. A real AudD match
+carries `verification: provider_acoustic_match`; a confidence percentage the provider did not give is not
+made up (`confidence: null`). If there is no match in the service result,
+`unmatched` returns; if the service/tool is absent or safe processing is not possible, `unavailable`
+returns. A source/metadata claim, a model guess and an audio match are not
+mixed up.
 
-Donen dinleme baglantilari yalniz `music.apple.com`, `open.spotify.com` ve
-`lis.tn` HTTPS adreslerinden kabul edilir. Apple'in sarki secen sayisal `i`
-parametresi korunur; diger sorgu/takip ve fragment alanlari atilir. Bu
-baglantilar otomatik acilmaz, indirilmez veya kisitli agin indirme izin
-listesine eklenmez. Spotify/Apple preview adresi ve AudD eslesmesi indirme
-lisansi sayilmaz. Kullanici izni ve kaynagin acik izni bulunan dogrudan bir
-dosya icin mevcut `download` yetenegi kullanilabilir; bu ozellik yeni bir
-tam sarki indirme yolu acmaz.
+Returned listening links are accepted only from `music.apple.com`, `open.spotify.com` and
+`lis.tn` HTTPS addresses. Apple's numeric `i` parameter that selects the song is kept; other query/tracking and fragment fields are dropped. These
+links are not opened automatically, not downloaded and not added to the restricted network's download allow
+list. A Spotify/Apple preview address and an AudD match are not counted as a download
+license. For a direct file for which the user's permission and the source's open permission exist, the existing `download` capability can be used;
+this feature does not open a new full-song download path.
 
-### Sabit araclar ve butceler
+### Fixed tools and budgets
 
-- Her is icin sayfa okuma ve ses isleme en fazla birer kalici denemedir.
-  Sonuclar state icinde onbelleklenir. Kesinti/zaman asimi sonrasi otomatik
-  tekrar yoktur; yeniden denemek acik yeni is gerektirir. Bu tercih gecici
-  bir ag hatasinda yeniden komut gerektirebilir, fakat belirsiz bir ucretli
-  istegin otomatik tekrarini onler.
-- AudD deneme kaydi POST'tan once yazilir. `music-provider-attempt.json`
-  varsa ayni is yeniden ucretli istek gondermez. Sonuc kaydi yazilamadan
-  surec kesilse de onceki sonuc "bilinmiyor" sayilir; basarili diye sunulmaz.
-- Sayfa en fazla 512 KiB; yt-dlp JSON stdout en fazla 4 MiB; alinacak tek
-  dogrudan medya dosyasi en fazla 32 MiB'dir. Ses ilk en fazla 12 saniyedir:
-  mono, 16 kHz, 16-bit PCM WAV. Tam 12 saniyede 384044 bayt uretilir.
-  Ses secme/ofset/model filtre argumani veya mikrofon kaydi yoktur.
-- yt-dlp yalniz metadata cikarir. Sabit argv; `shell=False`,
+- For each job, page reading and audio processing are at most one persistent attempt each.
+  The results are cached in state. There is no automatic retry after an interruption/timeout; retrying requires an explicit new job. This choice
+  may require a new command on a temporary network error, but it prevents an automatic repeat of an uncertain paid
+  request.
+- The AudD attempt record is written before the POST. If `music-provider-attempt.json`
+  exists, the same job does not send a paid request again. Even if the process is interrupted before the result record could be written,
+  the earlier result is counted as "unknown"; it is not presented as successful.
+- The page is at most 512 KiB; the yt-dlp JSON stdout at most 4 MiB; a single direct media file to be fetched
+  at most 32 MiB. The audio is at most the first 12 seconds:
+  mono, 16 kHz, 16-bit PCM WAV. At exactly 12 seconds 384044 bytes are produced.
+  There is no audio selection/offset/model filter argument or microphone recording.
+- yt-dlp extracts only metadata. A fixed argv; `shell=False`,
   `--ignore-config`, `--no-plugin-dirs`, `--no-js-runtimes`,
   `--no-remote-components`, `--no-exec`, `--no-playlist`, `--simulate`,
-  cookie/cache kapatma ve sifir yeniden deneme kullanilir. Playlist,
-  genel extractor ve model tarafindan verilen URL/komut kullanilmaz.
-- yt-dlp HTTPS erisimi rastgele kimlik bilgili, yalniz loopback'te yasayan
-  bir CONNECT vekilinden gecer. Vekil yalniz ilgili platformun sabit
-  platform/CDN alanadi son eklerini, port 443'u ve dogrulanmis genel IP'leri
-  kabul eder. IP sabitleme DNS yeniden baglama ve ozel IP yonlendirmesini
-  engeller. DNS sonuclari kamu/ozel IP karisiksa reddedilir. Bu bir isletim
-  sistemi sandbox'i degildir; kurulu yt-dlp/ffmpeg ikilileri guvenilen yerel
-  bagimliliklardir. Cookie/giris veya guvenlik bayragi kaldirma fall back'i yoktur.
-- Vekil siniri 24 CONNECT tuneli ve iki yonde toplam 12 MiB sifreli aktarimdir.
-  TLS icindeki HTTP istek sayisi gorulmez; 24 siniri HTTP istek sayisi iddiasi
-  degildir. TLS sertifika kontrolunu yt-dlp yapar; vekil hedefin sayisal IP'sini
-  dogrular ve sabitler. Vekil kapaninca tum tuneller kapatilir.
-- Tek arac cagrisinin asama sureleri: sayfa 7 sn, yt-dlp 18 sn, medya 10 sn,
-  ffmpeg 5 sn, AudD 7 sn; ortak son tarih 50 sn veya calisan isinin kalan
-  suresinden kisa olanidir. Yeni bir ag/yerel islem asamasindan once ve AudD
-  deneme kaydi kalici yazildiktan sonra calisanin PID + baslangic kimligi ile
-  is suresi yeniden dogrulanir. Calisan sona erdiyse yeni medya istegi veya
-  ses yuklemesi baslatilmaz. Baslamis bir HTTP istegi geri alinamaz. DNS son tarihi ve
-  soketi son tarihte kapatan bekci, yavas DNS/baslik akisini da durdurur.
-  OS DNS cagrisi iptal edilemezse surec basina en fazla dort daemon cozumleyici
-  kalabilir; bunlar baglanti acamaz ve tamamlanana kadar yeni DNS kapasitesini
-  tutar. Bu sureler uygulama tavanlaridir, servis gecikmesi olcumu degildir.
-- Medya URL'sini yt-dlp'nin dondugu veri belirler; bridge ayri IP sabitlemeli,
-  sinirli HTTPS GET yapar. HLS/DASH manifesti, canli yayin, DRM, cookie veya
-  izin listesi disi CDN guvenli hata verir. Bir sayfayi mp3 diye kaydetmez.
-- ffmpeg yalniz stdin'den alinan baytlari acar. Medya sihirli basligi kontrol
-  edilir, demuxer sabitlenir, `-protocol_whitelist pipe` kullanilir. Dosya,
-  HTTP, concat veya baska bir protokolle ek girdi okuyamaz. PCM stdout ayri
-  boyut siniriyla okunur ve WAV basligini stdlib yazar. Ham medya ve ses
-  ornegi RAM'de kalir; Downloads'a veya vault'a dosya cikmaz.
-- Normal MP4 dosyalarinin sonda duran `moov` kutusu, yalniz tek `moov` ve
-  tek `mdat` iceren destekli progressive duzende RAM icinde one tasinir;
-  `stco`/`co64` adresleri dogrulanip duzeltilir. Kutu/derinlik/tablo boyut
-  sinirlari, gercek `mdat` payload adresleri ve sayi tasmalari kontrol edilir.
-  Sifir uzunluklu sona-acik `moov`, bu duzendeki fragment/index kutulari veya
-  desteklenmeyen konum bilgisi reddedilir. Bu genel bir MP4 onarma araci
-  degildir. `moov` zaten bastaysa dosya degismez.
+  cookie/cache disabling and zero retries are used. Playlists,
+  the generic extractor and URLs/commands given by the model are not used.
+- yt-dlp HTTPS access passes through a CONNECT proxy with random credentials that lives only on
+  loopback. The proxy accepts only the fixed platform/CDN domain-name suffixes of the relevant platform,
+  port 443 and verified public IPs. IP pinning prevents DNS rebinding and a redirect to a private IP.
+  If the DNS results are a mix of public/private IPs, it is rejected. This is not an operating
+  system sandbox; the installed yt-dlp/ffmpeg binaries are trusted local
+  dependencies. There is no fallback for cookies/login or removing a security flag.
+- The proxy limit is 24 CONNECT tunnels and a total of 12 MiB of encrypted transfer in both directions.
+  The number of HTTP requests inside TLS is not seen; the 24 limit is not a claim about the number of HTTP requests.
+  yt-dlp does the TLS certificate check; the proxy verifies and pins the target's numeric IP.
+  When the proxy closes, all tunnels are closed.
+- The stage times of a single tool call: page 7 s, yt-dlp 18 s, media 10 s,
+  ffmpeg 5 s, AudD 7 s; the shared deadline is 50 s or the remaining
+  time of the running job, whichever is shorter. Before a new network/local process stage and after the AudD
+  attempt record is persisted, the job time is re-verified with the worker's PID + start identity.
+  If the worker has ended, no new media request or audio upload is started. An HTTP request that has begun cannot be taken back. A watchdog that closes the DNS deadline and
+  the socket at the deadline also stops a slow DNS/header flow.
+  If the OS DNS call cannot be cancelled, at most four daemon resolvers per process
+  may remain; these cannot open connections and hold new DNS capacity until they complete.
+  These times are application ceilings, not a measurement of service latency.
+- The media URL is determined by the data yt-dlp returns; the bridge makes a separate IP-pinned,
+  limited HTTPS GET. An HLS/DASH manifest, a live stream, DRM, a cookie or
+  a CDN outside the allow list gives a safe error. It does not save a page as mp3.
+- ffmpeg opens only bytes taken from stdin. The media magic header is checked,
+  the demuxer is pinned, `-protocol_whitelist pipe` is used. It cannot read additional input through a file,
+  HTTP, concat or another protocol. The PCM stdout is read with a separate size limit and the stdlib writes the WAV header. The raw media and audio
+  sample stay in RAM; no file is produced in Downloads or in the vault.
+- The `moov` box that sits at the end of normal MP4 files is moved to the front in RAM only in a supported progressive layout
+  containing a single `moov` and a single `mdat`;
+  the `stco`/`co64` addresses are verified and corrected. Box/depth/table size
+  limits, the real `mdat` payload addresses and number overflows are checked.
+  A zero-length open-ended `moov`, fragment/index boxes in this layout or
+  unsupported position information is rejected. This is not a general MP4 repair tool. If `moov` is already at the front, the file does not change.
 
-### Servis tercihi ve Windows kabul testi
+### Service preference and Windows acceptance test
 
-AudD, stdlib HTTP ile tek sabit endpoint ve kisa ses ornegini destekledigi
-icin bu surumun istege bagli saglayicisidir. Anahtar yokken servis kapali
-kalir, kullanici anahtari eklese bile is basina yukleme izni gerekir. AcoustID/
-Chromaprint, ACRCloud ve Shazam ekleri bu yamada uygulanmadi; alternatiflerin
-maliyet, girdi/lisans ve gizlilik kosullari ayrica degerlendirilmelidir.
+AudD is this version's optional provider because it supports a single fixed endpoint and a short audio sample
+over stdlib HTTP. While there is no key the service stays off,
+and even if the user adds a key, a per-job upload permission is required. The AcoustID/
+Chromaprint, ACRCloud and Shazam add-ons were not implemented in this patch; the cost, input/license and privacy terms of the alternatives
+must be evaluated separately.
 
-19.10.2026 kontrolu: AudD ana sayfasi ilk 300 istegi ucretsiz, devamini
-1000 istek icin 5 USD olarak listeler. API belgesi standart endpoint icin
-10 MB dosya tavani; ana sayfa yaklasik ilk 12 saniyeyi isleme bilgisini verir.
-Buradaki 384044 bayt/12 sn uygulama tavanidir; fiyat veya dogruluk garantisi
-degildir. Kullanmadan once guncel fiyat/kota ve kosullari kontrol et:
+Check of 19.10.2026: the AudD home page lists the first 300 requests as free and the following
+1000 requests as 5 USD. The API documentation gives a 10 MB file ceiling for the standard endpoint; the home page gives the information that roughly the first 12 seconds are processed.
+The 384044 bytes/12 s here is an application ceiling; it is not a
+price or accuracy guarantee. Before using it, check the current price/quota and terms:
 
 - https://audd.io/
 - https://docs.audd.io/
-- https://audd.io/terms/index.php (kosul surumu 07.07.2026)
+- https://audd.io/terms/index.php (terms version 07.07.2026)
 - https://audd.io/privacy/index.php
 - https://github.com/yt-dlp/yt-dlp#usage-and-options
 - https://ffmpeg.org/ffmpeg-protocols.html
 
-AudD'nin sozlesmesi kimliksizlestirilmis/toplulastirilmis musteri icerigiyle
-hizmeti gelistirme hakkini sakli tutar; genel bir "veri tutulmaz/egitimde
-kullanilmaz" garantisi verilmez. Tani, kaynak platformunun kosullarini veya
-telif sahibinin izin gereksinimini ortadan kaldirmaz.
+AudD's agreement reserves the right to improve the service with de-identified/aggregated customer content;
+no general "data is not retained / not used in training" guarantee is given. Recognition does not remove the source platform's terms or
+the copyright holder's permission requirement.
 
-Otomatik testler gercek ucretli servise veya kullanici hesabina baglanmaz.
-Gercek yerel loopback vekili, yavas HTTP basligi/DNS sure sonu, anonim WAV,
-normal ve faststart AAC MP4 ile ayni 12 sn ffmpeg cikisi, sonuclari tekrar
-ucretlendirmeme, iptal edilen servis izni, token redaksiyonu ve negatif
-yetki/URL/medya senaryolari denetlenir:
+The automated tests do not connect to a real paid service or a user account.
+A real local loopback proxy, a slow HTTP header/DNS timeout, an anonymous WAV,
+the same 12 s ffmpeg output for a normal and a faststart AAC MP4, not charging for results again,
+a cancelled service permission, token redaction and negative
+authority/URL/media scenarios are checked:
 
 ```sh
 python -m unittest discover -s tests -p "v3_yakala_muzik_test.py"
 python -m unittest discover -s tests -p "v3_yakala*_test.py"
 ```
 
-Windows 11'de kendi makinenizde dogrulanacaklar: PATH'teki gercek yt-dlp/ffmpeg
-surumlerinin tum sabit guvenlik seceneklerini desteklemesi, Turkce/bosluklu
-yollar, DPAPI saklama/acma ve farkli hesabin acamamasi, gercek izinli reel/
-TikTok/YouTube orneklerinde metadata ve ses erisimi, servis izni verilmeden
-hicbir yukleme olmamasi, AudD ile izinli bir ornegin gercek eslesmesi,
-baglantinin dogru parcayi acmasi, zaman asimi/servis kapatma ve islemin bellege
-tam teslimi. Canli platformlar giris, bolge, CDN veya JS gerektirebilir.
-Ozellikle yeni YouTube akislari JS runtime gerektirdiginde bu surum bunu
-acmaz ve guvenli `unavailable` doner. Bu durumlarda kullanicinin resmi
-platform/manuel tanima yoluna gecmesi gerekir. Otomatik hesap girisi,
-browser cookie alma veya protokol izni genisletme onerilmez.
+What you must verify on your own machine on Windows 11: that the real yt-dlp/ffmpeg versions on PATH
+support all the fixed security options, Turkish/space-containing
+paths, DPAPI store/open and that a different account cannot open it, metadata and audio access in real permitted reel/
+TikTok/YouTube examples, that no upload happens at all without the service permission,
+a real match of a permitted sample with AudD, the link opening the right piece,
+timeout/service shutdown, and full delivery of the process into memory. Live platforms may require login, region, CDN or JS.
+In particular, when new YouTube flows require a JS runtime, this version does not
+turn it on and returns a safe `unavailable`. In these cases the user must move to the official
+platform/manual recognition path. Automatic account login,
+taking browser cookies or widening the protocol permission is not recommended.
 
-## İşleme nasıl çalışır
+## How processing works
 
-`python3 beyin.py yakala isle` bekleyen kartların metnini çıkarır, sonra ajan dersleri
-`knowledge/` notlarına bağlar ve kartı `bitti` ile kapatır.
+`python3 beyin.py yakala isle` extracts the text of pending cards, then the agent connects the lessons
+to `knowledge/` notes and closes the card with `bitti`.
 
-| Kaynak | Yol |
+| Source | Path |
 |---|---|
-| Web Clipper ile gelen sayfa | Yakalanan metin kullanılır, ağa çıkılmaz |
-| YouTube | [Defuddle](https://github.com/kepano/defuddle) ile bölümlü transkript; olmazsa ya da dili konuşma diliyle uyuşmazsa `yt-dlp` altyazısı; o da yoksa yalnız ses indirilir, yerel Whisper ile yazıya dökülür, ses silinir |
-| X, Reddit, GitHub, makale | Defuddle; yoksa düz HTTP ile metin |
-| Mail | Seçili metin; tamamı için ajanın Gmail/Outlook bağlantısı |
-| PDF, metin dosyası | `pdftotext` ya da doğrudan okuma; görselleri ajan açar |
-| DOCX dosyası | Metin ve tablo hücreleri yerel olarak okunur; görsel, ek içerik veya metinsiz belge ajan incelemesine bırakılır, eksik kalan kısım kartın `uyari` alanında yazar |
+| A page that came in with the Web Clipper | The captured text is used, no network is used |
+| YouTube | A sectioned transcript with [Defuddle](https://github.com/kepano/defuddle); if that fails or its language does not match the spoken language, the `yt-dlp` subtitle; if that is also missing, only the audio is downloaded, transcribed to text with local Whisper, and the audio is deleted |
+| X, Reddit, GitHub, article | Defuddle; if that fails, text over plain HTTP |
+| Mail | The selected text; for the whole mail, the agent's Gmail/Outlook connection |
+| PDF, text file | `pdftotext` or direct reading; the agent opens the images |
+| DOCX file | Text and table cells are read locally; images, embedded content or a document without text are left to the agent's review, and the part that is missing is written in the card's `uyari` field |
 
-Metin ekleri UTF-8 olarak okunur; BOM çıkarılır. Kodlaması bozuk ek ham metne alınmaz, dosya adı kartta uyarı olarak gösterilir.
+Text attachments are read as UTF-8; the BOM is removed. An attachment with a corrupt encoding is not taken into the raw text, and its file name is shown as a warning on the card.
 
-Ham metin kart klasörünün içinde `.ham/` altında durur. Nokta ile başlayan klasör olduğu için
-aramaya ve Obsidian'a karışmaz. `.ham/` ve yakalanan dosyaların durduğu `dosyalar/`, içlerine yazılan
-`.gitignore` ile kart klasörü hangisi olursa olsun depoya da girmez.
+The raw text sits in the card folder under `.ham/`. Because it is a folder starting with a dot, it does not mix into
+search or Obsidian. `.ham/` and `dosyalar/`, where captured files sit, stay out of the repository whatever the card folder is, thanks to the
+`.gitignore` written into them.
 
-Dosya kartı yalnız kendi klasörünün `dosyalar/` alt klasöründeki, yakalanırken oraya kopyalanmış
-dosyaları okur. Kartın `## Dosyalar` bölümü elle ya da eşitlenen bir cihazdan değiştirilse de vault'un
-geri kalanı (kasa türü klasörler, `.obsidian/`, başka notlar) `.ham/` içine kopyalanmaz; `dosyalar/`
-başka bir yere bağlantı (symlink, junction) ise hiçbir dosya okunmaz.
+The file card reads only the files in the `dosyalar/` subfolder of its own folder that were copied there at capture time.
+Even if the card's `## Files` section is changed by hand or from a synced device, the rest of the vault
+(safe-type folders, `.obsidian/`, other notes) is not copied into `.ham/`; if `dosyalar/` is a link to
+somewhere else (symlink, junction), no file is read.
 
-### Web sayfasında eksik bölüm uyarısı
+### Missing-section warning on a web page
 
-Defuddle metin döndürdükten sonra `isle`, aynı kaynak URL'sine **bir ek kaynak alımı** yaparak
-ana içerikteki h2/h3 başlıklarını çıkarılan metinle karşılaştırır. Defuddle komutu sayfayı kendisi
-indirir ve HTML'i geri vermez; bu yüzden kontrol kendi isteğini yapar. Yönlendirmeler ek HTTP
-istekleri gerektirebilir. Bu kontrol mevcut HTTP
-korumalarını kullanır: DNS ve yönlendirmelerde özel/yerel adresler reddedilir. Bağlantı ve her
-okuma için zaman aşımı 15 saniyedir; yönlendirmeler dahil isteğin tamamı en fazla 30 saniye sürer,
-süre dolarsa kontrol yapılmamış sayılır. Karşılaştırma için HTML en fazla 5 MB olabilir. Kontrolde
-oluşan herhangi bir hata (ağ, ayrıştırma) metni düşürmez; kart yine `cikarildi` olur. Kaynak HTML tekrar
-deneme döngüsünde indirilmez ve `.ham/` dosyasına eklenmez. Defuddle başarısızsa düz HTTP
-yedeği yine tek kaynak alımı kullanır. Video, dosya, seçili metin ve Web Clipper yollarında bu ek
-kaynak alımı yoktur; Web Clipper metni ayrıca doğrulanmış sayılmaz.
+After Defuddle returns text, `isle` makes **one extra source fetch** to the same source URL and compares
+the h2/h3 headings in the main content with the extracted text. The Defuddle command downloads the page itself
+and does not hand back the HTML; this is why the check makes its own request. Redirects may require extra HTTP
+requests. This check uses the existing HTTP
+protections: private/local addresses are rejected in DNS and redirects. The timeout for the connection and for each
+read is 15 seconds; the whole request including redirects takes at most 30 seconds,
+and if the time runs out the check is counted as not done. The HTML for comparison can be at most 5 MB. Any error
+that occurs in the check (network, parsing) does not drop the text; the card still becomes `cikarildi`. The source HTML is not downloaded again
+in the retry loop and is not added to the `.ham/` file. If Defuddle fails, the plain HTTP
+fallback still uses a single source fetch. In the video, file, selected text and Web Clipper paths there is no such extra
+source fetch; the Web Clipper text is not counted as separately verified.
 
-Kontrol bir sezgiseldir ve tek bir `article` veya `main` alanına bakar. Gezinme, yan panel ve
-açıkça gizlenmiş içerik ayıklanır; aynı başlık tekrarları, büyük/küçük harf, HTML entity ve olağan
-Markdown biçim farkları sayılmaz. İki kanıt aranır:
+The check is a heuristic and looks at a single `article` or `main` area. Navigation, side panels and
+explicitly hidden content are filtered out; repeats of the same heading, upper/lower case, HTML entities and ordinary
+Markdown formatting differences do not count. Two kinds of evidence are sought:
 
-- **Başlıklar:** alanda en az 6 farklı, anlamlı h2/h3 başlığı olmalıdır. En az 3 başlık metinde
-  bulunuyor, en az 3 başlık ve toplamın en az %25'i bulunamıyorsa uyarı yazılır. Defuddle'ın
-  `id`/`class` kelime kuralları (`error-` gibi) bir bölümü bütünüyle sildiğinde böyle görünür.
-- **`empty:hidden` blokları:** Tailwind'in `empty:hidden` sınıfı öğeyi yalnız içi boşken gizler,
-  ama Defuddle `:hidden` ile biten her sınıfı gizli sayıp siler (not kutuları bu yüzden kaybolur).
-  Alanda bu sınıfı taşıyan, en az 5 kelimelik bir paragraf veya liste maddesi metinde yoksa ve en
-  az 3 başlık metinde bulunuyorsa uyarı yazılır. Defuddle'ın kendi kuralına uyulur: `md:block`
-  gibi bir gösterme sınıfı da taşıyan öğe sayılmaz; `md:hidden` gibi ekran boyutuna bağlı
-  sınıflar çoğu zaman bir kopyayı gizlediği için kanıt sayılmaz.
+- **Headings:** the area must have at least 6 distinct, meaningful h2/h3 headings. If at least 3 headings are
+  found in the text, and at least 3 headings and at least 25% of the total are not found, a warning is written. This is how it looks when Defuddle's
+  `id`/`class` word rules (such as `error-`) delete a section entirely.
+- **`empty:hidden` blocks:** Tailwind's `empty:hidden` class hides an element only when it is empty,
+  but Defuddle treats every class ending in `:hidden` as hidden and deletes it (this is why note boxes disappear).
+  If the area has a paragraph or list item of at least 5 words carrying this class that is absent from the text, and at least
+  3 headings are found in the text, a warning is written. Defuddle's own rule is followed: an element that also carries a display class such as `md:block`
+  is not counted; classes tied to screen size such as `md:hidden`
+  often hide a duplicate, so they are not counted as evidence.
 
-Uyarı kartın `uyari` alanına **"Metin eksik olabilir"** diye yazılır; aynı uyarı `isle` sonucunda
-`not` olarak görünür. Metin korunur ve durum `cikarildi` kalır. Ajan ders çıkarmadan önce kaynak
-sayfayı kontrol etmelidir.
+The warning is written to the card's `uyari` field as **"The text may be incomplete: ..."**; the same warning appears in the `isle` result
+as `not`. The text is preserved and the status stays `cikarildi`. The agent must check the source
+page before drawing lessons.
 
-Bu kontrol metnin tam olduğunu kanıtlamaz. Başlıkları korunmuş eksik paragrafları,
-içindekiler tablosunda kalan başlıkları veya CSS ile gizlenen her öğeyi tespit edemez.
-Birden çok ana içerik alanı, yetersiz başlık/örtüşme, başarısız istek veya boyut sınırı varsa
-yeni bir eksiklik iddiası üretilmez. Önceki uyarı kontrol yapılamadığında korunur; yeni kaynak
-yanıtındaki bütün uygun başlıklar metinde bulunduğunda ve kayıp `empty:hidden` bloğu olmadığında
-kaldırılır. Daha önce işlenmiş kartlar kendiliğinden değişmez; yeniden kontrol için
-`python3 beyin.py yakala isle <id>` kullanılır.
+This check does not prove the text is complete. It cannot detect missing paragraphs whose headings were preserved,
+headings left in the table of contents, or every element hidden with CSS.
+If there are multiple main content areas, insufficient headings/overlap, a failed request or a size limit,
+no new claim of incompleteness is produced. A previous warning is preserved when the check cannot be done; it is removed
+when all suitable headings in the new source response are found in the text and there is no lost `empty:hidden` block.
+Cards processed earlier do not change on their own; to re-check, use
+`python3 beyin.py yakala isle <id>`.
 
-### Videoda transkriptin dili
+### The transcript language in a video
 
-Otomatik dublajlı bir videoda YouTube her dublaj için ayrı bir altyazı izi sunar. `isle`,
-`yt-dlp` kuruluysa videoda konuşulan dili videonun bilgisinden öğrenir, Defuddle'dan o dildeki
-transkripti ister ve gelen dili kontrol eder. Uyuşmazsa `yt-dlp` ile yalnız konuşma dilindeki
-izi indirir; elle yazılmış altyazı otomatik olandan önce gelir. Sonuç kartın frontmatter'ına yazılır:
+In an automatically dubbed video, YouTube offers a separate subtitle track for each dub. `isle`, if
+`yt-dlp` is installed, learns the language spoken in the video from the video's information, asks Defuddle for the
+transcript in that language and checks the language that comes back. If they do not match, it downloads only the track in the spoken language with `yt-dlp`;
+a manually written subtitle takes precedence over an automatic one. The result is written to the card's frontmatter:
 
-- `dil`: kaydedilen transkriptin dili.
-- `altyazi`: `yt-dlp` ile alınan iz, örneğin `en-orig (otomatik)` ya da `tr (elle)`.
-- `uyari`: yalnız bir sorun belirtisi varsa yazılır: transkript konuşma dilinde alınamadıysa ya da
-  video dublajlıyken (birden çok dilde ses ya da `-orig` izi) konuşulan dil belirlenemediyse.
+- `dil`: the language of the saved transcript.
+- `altyazi`: the track obtained with `yt-dlp`, for example `en-orig (automatic)` or `tr (manual)`.
+- `uyari`: written only if there is a sign of a problem: if the transcript could not be obtained in the spoken language, or
+  if the video is dubbed (audio in more than one language, or an `-orig` track) and the spoken language could not be determined.
 
-`yt-dlp` kurulu değilse dil doğrulanamaz: Defuddle'ın seçtiği transkript eskisi gibi kaydedilir ve
-dili `dil` alanına yazılır. `dil` videoda konuşulan dil değilse `yt-dlp` kurup
-`python3 beyin.py yakala isle <id>` ile yeniden dene; `uyari` olan kart da aynı komutla yeniden
-denenir. Daha önce işlenmiş kartlar değişmez.
+If `yt-dlp` is not installed, the language cannot be verified: the transcript Defuddle chose is saved as before and
+its language is written to the `dil` field. If `dil` is not the language spoken in the video, install `yt-dlp` and retry with
+`python3 beyin.py yakala isle <id>`; a card with a `uyari` is also retried with the same command. Cards
+processed earlier do not change.
 
-### İsteğe bağlı araçlar
+### Optional tools
 
-Hiçbiri zorunlu değil; varsa işleme genişler, yoksa elde olanla devam edilir.
-`python3 beyin.py yakala durum` hangilerinin bulunduğunu söyler.
+None is required; if present, processing expands, if not, it continues with what is at hand.
+`python3 beyin.py yakala durum` tells you which ones are found.
 
-- **Node.js** (`npx`): Defuddle için. Sabit sürüm (`defuddle@0.19.4`) çalıştırılır.
-- **yt-dlp**: videoda konuşulan dil, altyazı ve ses.
-- **Whisper**: Mac'te `mlx_whisper`, diğerlerinde `whisper` ya da `whisper-ctranslate2`. Ses indirmeyi istemezsen `isle --ses-yok`.
-  Videoda konuşulan dili `yt-dlp` söyleyebildiyse Whisper'a `--language` olarak verilir; dil bilinmiyor ya da video
-  dublajlıysa Whisper dili kendisi tanır. Model seçmek için `BEYIN_WHISPER_MODEL` ortam değişkeni
-  (ör. `large-v3-turbo`) `--model` olarak geçer. `whisper-ctranslate2`'nin varsayılanı `small`; Türkçe gibi
-  dillerde terimleri bozabilir (likidite → "liquidite"). GPU varsa daha büyük bir model seç.
-  NVIDIA kartlı makinede `whisper-ctranslate2` CUDA'yı kendisi seçer; CUDA kütüphanesi yüklenemezse (ör.
-  `cublas64_12.dll` yok) ses bir kez CPU ile yeniden yazıya dökülür ve kartın uyarısı hatayı adıyla söyler.
-  Hızlandırmak için eksik kütüphaneyi kur (ör. `pip install nvidia-cublas-cu12` ve klasörünü PATH'e ekle).
-  Whisper hiç metin üretmezse kartta Whisper'ın kendi son hata satırı yazar.
-- **pdftotext** (Poppler): PDF metni.
+- **Node.js** (`npx`): for Defuddle. A pinned version (`defuddle@0.19.4`) is run.
+- **yt-dlp**: the language spoken in the video, subtitles and audio.
+- **Whisper**: on Mac `mlx_whisper`, elsewhere `whisper` or `whisper-ctranslate2`. If you do not want the audio downloaded, `isle --ses-yok`.
+  If `yt-dlp` could tell the language spoken in the video, it is passed to Whisper as `--language`; if the language is unknown or the video
+  is dubbed, Whisper recognizes the language itself. To choose a model, the `BEYIN_WHISPER_MODEL` environment variable
+  (e.g. `large-v3-turbo`) is passed as `--model`. The default of `whisper-ctranslate2` is `small`; in languages such as Turkish
+  it can garble terms (e.g. "likidite" (liquidity) → "liquidite"). If you have a GPU, choose a larger model.
+  On a machine with an NVIDIA card `whisper-ctranslate2` chooses CUDA itself; if the CUDA library cannot be loaded (e.g.
+  `cublas64_12.dll` is missing), the audio is transcribed again once on the CPU and the card's warning names the error.
+  To speed it up, install the missing library (e.g. `pip install nvidia-cublas-cu12` and add its folder to PATH).
+  If Whisper produces no text at all, the card shows Whisper's own last error line.
+- **pdftotext** (Poppler): PDF text.
 
-Görüntü tabanlı PDF'den metin çıkmazsa dosya adı işlem sonucunda ve kartın uyarısında gösterilir.
-Diğer eklerden çıkarılan metin korunur; OCR yapılmaz.
+If no text comes out of an image-based PDF, the file name is shown in the processing result and in the card's warning.
+Text extracted from the other attachments is preserved; no OCR is done.
 
-Windows'ta bu araçlar bir `.cmd`/`.bat` sarmalayici olarak kuruluysa, argumanlar komut
-yorumlayicidan (cmd.exe) gecmeden dogrudan calistirilir; bu mumkun degilse o arac atlanir ve
-elde olanla devam edilir.
+On Windows, if these tools are installed as a `.cmd`/`.bat` wrapper, the arguments are run directly,
+without passing through the command interpreter (cmd.exe); if this is not possible, that tool is skipped and
+processing continues with what is at hand.
 
-## Gizlilik
+## Privacy
 
-- Yakalama ağa çıkmaz; yalnız vault'a bir dosya yazar.
-- Ağ yalnız `isle` adımında ve yalnız yakaladığın kaynaklar için kullanılır. Defuddle,
-  X gönderisi sayfada yoksa gönderi adresini FxTwitter API'sine sorar.
-- Mail, pano metni ve dosya kartları `visibility: private` ile yazılır. Seçilen ek
-  bağlantılardan biri mail adresiyse ana kaynak herkese açık olsa da aynı kural uygulanır.
-- Kaldırmak için `python3 beyin.py yakala kaldir`: kısayol, skill ve bildirim gider, kartların kalır.
+- Capture does not go out to the network; it only writes a file to the vault.
+- The network is used only at the `isle` step and only for the sources you captured. If an X post is not on the page,
+  Defuddle asks the FxTwitter API for the post address.
+- Mail, clipboard text and file cards are written with `visibility: private`. If one of the selected additional
+  links is an email address, the same rule applies even if the main source is public.
+- To remove: `python3 beyin.py yakala kaldir`: the shortcut, skill and notification go away, your cards stay.
 
-## Komutlar
+## Commands
 
 ```text
-beyin.py yakala              yakalama penceresi
+beyin.py yakala              capture window
 beyin.py yakala ekle URL|DOSYA|METIN [--neden "..."]
 beyin.py yakala liste [--durum bekliyor|cikarildi|islendi|hata]
 beyin.py yakala isle [ID ...] [--ses-yok] [--tekrar]
@@ -1632,46 +1608,45 @@ beyin.py yakala kisayol ['cmd+"']
 beyin.py yakala kaldir | durum | sablon
 ```
 
-### Kaynak güvenliği
+### Source security
 
-Yakala kartı oluşturmak ağ kullanmaz. HTTP(S) kaynağını işlemeden önce yerel/özel IP adresleri,
-URL kullanıcı bilgileri ve bozuk adresler reddedilir. Defuddle ve yt-dlp'ye URL gönderilmeden önce
-DNS yanıtları da denetlenir; Python HTTP yolunun yönlendirmeleri aynı kapıdan geçer. DNS geçici
-olarak çözümlenemezse kart hata notuyla kalır, sıradaki kartlar işlenmeye devam eder.
+Creating a Yakala card uses no network. Before an HTTP(S) source is processed, local/private IP addresses,
+URL user info and malformed addresses are rejected. Before a URL is sent to Defuddle and yt-dlp,
+the DNS responses are also checked; redirects on the Python HTTP path pass through the same gate. If DNS
+temporarily cannot be resolved, the card stays with an error note and the next cards continue to be processed.
 
-Python HTTP yolu bağlanırken adı yeniden çözer, her cevabı aynı kapıdan geçirir ve soketi denetlenen
-IP adresine açar (TLS yine asıl sunucu adını doğrular). Denetimden sonra değişen bir DNS cevabı
-(rebinding) bu yolu yerel adrese yönlendiremez. Sistemde proxy ayarlıysa hedefi proxy çözer; bu bağlama
-proxy'nin kendisine uygulanmaz.
+The Python HTTP path resolves the name again at connect time, passes every answer through the same gate and opens the socket to the checked
+IP address (TLS still verifies the real server name). A DNS answer that changes after the check
+(rebinding) cannot redirect this path to a local address. If a proxy is set on the system, the proxy resolves the target; this binding
+is not applied to the proxy itself.
 
-Defuddle ve yt-dlp her çalıştığında `isle` yalnız `127.0.0.1` üzerinde dinleyen kısa ömürlü bir
-koruma proxy'si açar ve onu yardımcının tek proxy'si yapar (`ALL_PROXY`). Yardımcının açtığı her
-bağlantı, yönlendirmelerin her adımı dahil, hedef adını bu proxy'ye söyler; proxy aynı kapıyla adresi
-denetler ve soketi denetlenen IP adresine açar. Herkese açık bir sayfanın yerel adrese yönlendirmesi
-ya da sonradan değişen DNS cevabı yardımcıyı yerel ağa ulaştıramaz; kart, sayfanın yerel veya özel
-bir ağ adresine yönlendirdiğini söyleyen bir notla hata olur. HTTPS bağlantısı proxy içinde uçtan uca
-şifreli kalır. `NO_PROXY` listesi yardımcıya geçmez.
+Every time Defuddle and yt-dlp run, `isle` opens a short-lived protection proxy that listens only on `127.0.0.1`
+and makes it the helper's only proxy (`ALL_PROXY`). Every connection the helper opens,
+including every step of redirects, tells this proxy the target name; the proxy checks the address with the same gate
+and opens the socket to the checked IP address. A redirect of a public page to a local address
+or a DNS answer that changes later cannot let the helper reach the local network; the card ends in error with a note saying that the page redirected to a local or private
+network address. An HTTPS connection stays end-to-end
+encrypted inside the proxy. The `NO_PROXY` list is not passed to the helper.
 
-Ortamda (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`) ya da yt-dlp için işletim sisteminde bir proxy
-ayarlıysa (örneğin `127.0.0.1:7890` gibi yerel bir proxy istemcisi) koruma kapanmaz, o proxy'nin
-önünde durur: her hedef önce aynı kapıdan geçer, bağlantıyı ancak ondan sonra kullanıcının proxy'si
-taşır.
-Yerel veya özel adrese giden bir adım kullanıcının proxy'sine hiç sorulmaz. HTTP proxy'si, `socks5h`
-ve `socks4a` hedef adını alıp kendisi çözer (Python yolundaki gibi); `socks5` ve `socks4` denetlenen
-IP adresini alır. `NO_PROXY` listesindeki herkese açık bir ad doğrudan, denetlenen IP adresine
-bağlanır. Proxy girişi (`kullanici:parola@`) korunur. Koruma `https://` proxy'si (proxy'ye TLS ile
-bağlanma) gibi zincirleyemediği bir türde bağlantıyı açmaz; yardımcı o zaman sayfayı alamaz. npm
-yalnız kendi kayıt deposu için kullanıcının proxy ayarlarını ve `NO_PROXY` listesini
-`npm_config_https_proxy`, `npm_config_proxy` ve `npm_config_noproxy` üzerinden kullanmaya devam eder.
+If a proxy is set in the environment (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`) or, for yt-dlp, in the operating system
+(for example a local proxy client such as `127.0.0.1:7890`), the protection does not turn off; it stands in front of that proxy:
+every target first passes through the same gate, and only after that does the user's proxy
+carry the connection.
+A step going to a local or private address is never asked of the user's proxy. The HTTP proxy, `socks5h`
+and `socks4a` take the target name and resolve it themselves (as on the Python path); `socks5` and `socks4` take the checked
+IP address. A public name in the `NO_PROXY` list connects directly to the checked IP address. The proxy credentials (`user:password@`) are preserved. The protection does not
+open a connection through a type it cannot chain, such as an `https://` proxy (connecting to the proxy with TLS); the helper then cannot fetch the page. npm
+keeps using the user's proxy settings and the `NO_PROXY` list only for its own registry
+through `npm_config_https_proxy`, `npm_config_proxy` and `npm_config_noproxy`.
 
-Sınır: Defuddle'ın YouTube, Reddit, X, Bilibili ve C2 wiki okuyucuları o sitelerin sabit
-adreslerine kendi bağlantısını açar; bu istekler koruma proxy'sinden geçmez, ama hedefleri kart
-içeriğinin seçebildiği bir adres de değildir. yt-dlp yalnız YouTube adresiyle çalışır: kartın
-`kaynak_turu` alanı elle `youtube` yapılsa da başka bir site yt-dlp'ye verilmez, adres türüne göre
-işlenir.
-Ham kaynak metni güvenilmeyen veri olarak işaretlenir;
-metnin içindeki rol değişikliği, komut çalıştırma ve dosya silme istekleri talimat sayılmaz.
+Limit: Defuddle's YouTube, Reddit, X, Bilibili and C2 wiki readers open their own connection to those sites' fixed
+addresses; these requests do not pass through the protection proxy, but their targets are also not an address that the
+card content can choose. yt-dlp works only with a YouTube address: even if the card's
+`kaynak_turu` field is set to `youtube` by hand, another site is not given to yt-dlp; it is
+processed according to the address type.
+The raw source text is marked as untrusted data;
+role-change, command-execution and file-deletion requests inside the text are not counted as instructions.
 
-### Eşzamanlı kart yazımı
+### Concurrent card writes
 
-Kart ve ham kaynak sonucu yalnız çıkarım başındaki bayt görüntüsü hâlâ geçerliyse birlikte kaydedilir. Başka bir yakalama veya iş kartı değiştirdiyse geç sonuç üzerine yazmaz. POSIX üzerinde kilit vault içindeki bir dosyaya değil, yerel durum kökünde dizinin aygıt/inode kimliğine bağlanır; farklı state seçimi aynı kart için ikinci bir kilit alanı oluşturmaz. Windows mevcut adlandırılmış mutex yolunu kullanır. Bu kilit yalnız aynı makinede bu modül üzerinden yazan süreçleri koordine eder.
+The card and the raw source result are saved together only if the byte image at the start of extraction is still valid. If another capture or job changed the card, a late result does not overwrite it. On POSIX the lock is tied not to a file in the vault but to the directory's device/inode identity in the local state root; a different state choice does not create a second lock area for the same card. Windows uses the existing named mutex path. This lock coordinates only processes that write through this module on the same machine.

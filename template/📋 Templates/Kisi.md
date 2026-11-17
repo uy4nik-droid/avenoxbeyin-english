@@ -1,6 +1,7 @@
 ---
-# Kişi notu şablonu. Yeni kişi notunu notes/kisiler/<ad-soyad>.md olarak aç ve
-# aşağıdaki satırın başındaki "# " işaretini kaldır (şablonun kendisi kişi sayılmasın diye kapalı).
+# Person note template. Create a new person note as notes/kisiler/<first-last>.md and
+# remove the "# " at the start of the line below (it is commented out so the template itself does not count as a person).
+# facts keys: kurum = organization, rol = role, iliski = relationship, son_temas = last contact.
 # kind: person
 title:
 aliases:
@@ -15,14 +16,14 @@ modified: {{TODAY}}
 ---
 #
 
-## Beyan
-<!-- Kullanıcının doğrudan söyledikleri, tarihli: "2026-10-12 (kullanıcı): ..." -->
+## Statements
+<!-- What the user said directly, dated: "2026-10-12 (user): ..." -->
 
-## Çıkarım (onay bekliyor)
-<!-- Ajanın tahmini. Kullanıcı onaylarsa Beyan'a taşınır, reddederse silinmez: "reddedildi" diye işaretlenir. -->
+## Inferences (pending confirmation)
+<!-- The agent's guess. If the user confirms it, it moves to Statements; if the user rejects it, it is not deleted but marked "rejected". -->
 
-## Temaslar
-<!-- Tarih, kanal, kısa özet. -->
+## Interactions
+<!-- Date, channel, short summary. -->
 
-## Kaynaklar
-<!-- Bilginin geldiği not, receipt veya açık kaynak bağlantısı. -->
+## Sources
+<!-- Link to the note, receipt or open source the information came from. -->

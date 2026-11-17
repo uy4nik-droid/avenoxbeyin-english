@@ -153,7 +153,7 @@ class PublicationFallbackTest(StorageFiles):
             raise OSError(errno.ENOTSUP, 'No links')
 
         with patch.object(yakala.os, 'link', side_effect=swap):
-            with self.assertRaisesRegex(ValueError, 'Gecici yayin dosyasi degisti'):
+            with self.assertRaisesRegex(ValueError, 'The temporary publishing file changed'):
                 yakala._agent_create_bytes(target, b'original result')
         self.assertFalse(target.exists())
         self.assertEqual(replaced[0].read_bytes(), b'REPLACEMENT OWNED BY ANOTHER WRITER')
@@ -383,7 +383,7 @@ class AgentJournalTest(StorageFiles):
         journal = self.write(job)
         text = yakala._agent_read_note(journal)  # No own/private exemption.
         self.assertIn('visibility: "internal"', text)
-        self.assertIn('# Yakala ajan gunlugu - 2026-10\n\n- 2026-10-20 12:34', text)
+        self.assertIn('# Yakala agent log - 2026-10\n\n- 2026-10-20 12:34', text)
         entry = text[text.index('- 2026-10-20'):]
         self.assertEqual(entry.count('<!-- yakala-ajan:' + job['id'] + ' -->'), 1)
         self.assertLessEqual(len(entry), 300)  # Includes all link targets and the UUID marker.
@@ -434,7 +434,7 @@ class AgentJournalTest(StorageFiles):
         self.assertTrue(text.endswith(before[split:]))
         self.assertLess(text.index(second['id'].encode()), text.index(first['id'].encode()))
         self.assertEqual(text.count(b'\n'), text.count(b'\r\n'))
-        self.assertEqual(text.count(b'# Yakala ajan gunlugu'), 1)
+        self.assertEqual(text.count(b'# Yakala agent log'), 1)
         self.assertEqual(text.count(b'<!-- yakala-ajan:'), 2)
         self.assertIn('visibility: "internal"', yakala._agent_read_note(journal))
 
@@ -505,7 +505,7 @@ class AgentJournalTest(StorageFiles):
             return original(path, data.replace(b'completed', b'CORRUPTED'))
 
         with patch.object(yakala, '_agent_create_bytes', side_effect=corrupt), \
-                self.assertRaisesRegex(ValueError, 'geri okunamadi'):
+                self.assertRaisesRegex(ValueError, 'Could not read back'):
             self.write(job)
         self.assertNotIn('journal', job)
 
@@ -514,7 +514,7 @@ class AgentJournalTest(StorageFiles):
         journal = self.vault / Path(job['outcome']).parent.parent / 'Gunluk-2026-10.md'
         before = b'x' * (2 * 1024 * 1024 + 1)
         journal.write_bytes(before)
-        with self.assertRaisesRegex(ValueError, 'cok buyuk'):
+        with self.assertRaisesRegex(ValueError, 'too large'):
             self.write(job)
         self.assertEqual(journal.read_bytes(), before)
 

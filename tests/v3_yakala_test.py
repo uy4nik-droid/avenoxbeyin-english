@@ -864,19 +864,19 @@ class YakalaUnitTest(unittest.TestCase):
         hostile = '--password\x00 <b>kalin</b> a_b C:\\new\\tab\n--geticon ' + 'x' * 300
         shown = ('--password  <b>kalin</b> a_b C:\\new\\tab --geticon ' + 'x' * 300)[:120].replace('\\', '\\\\')
         _, kdialog = self._linux_fallback({'metin': hostile})
-        self.assertEqual(kdialog, ['/usr/bin/kdialog', '--title', 'Beyne at', '--inputbox', 'Neden kaydediyorsun?\n' + shown, ''])
+        self.assertEqual(kdialog, ['/usr/bin/kdialog', '--title', 'Beyne at', '--inputbox', 'Why are you saving this?\n' + shown, ''])
         _, zenity = self._linux_fallback({'metin': hostile}, tools=('zenity',))
         self.assertEqual(zenity, ['/usr/bin/zenity', '--entry', '--title', 'Beyne at', '--text',
-                                  'Neden kaydediyorsun?\n' + shown.replace('_', '__')])
+                                  'Why are you saving this?\n' + shown.replace('_', '__')])
         for command, ours in ((kdialog, ['--title', '--inputbox']), (zenity, ['--entry', '--title', '--text'])):
             self.assertEqual([part for part in command if part.startswith('-')], ours)
             # One fixed first line, then the clipboard on one line: it cannot add an argument, a line or markup of its own.
-            self.assertEqual(command[4 if command is kdialog else 5].split('\n')[0], 'Neden kaydediyorsun?')
+            self.assertEqual(command[4 if command is kdialog else 5].split('\n')[0], 'Why are you saving this?')
             self.assertEqual(sum(part.count('\n') for part in command), 1)
             self.assertFalse(any('\x00' in part for part in command))
         # The whole clipboard text is what gets saved, not the shortened line the dialog shows.
         self.assertIn('x' * 300, yakala.cards(self.vault)[0]['body'])
-        self.assertEqual(self._linux_fallback({})[1][4], 'Neden kaydediyorsun?')
+        self.assertEqual(self._linux_fallback({})[1][4], 'Why are you saving this?')
 
     def test_linux_dialog_cancel_empty_answer_and_typed_note(self):
         for answer in ((1, ''), (5, ''), (None, '')):  # Cancel, zenity timeout, the tool hung or vanished
@@ -966,7 +966,7 @@ class YakalaUnitTest(unittest.TestCase):
             self.assertIs(done['kisayol_calisiyor'], False)  # never reported as working when the check did not pass
             self.assertEqual(shlex.split(done['ipucu'].split(': ', 1)[1]), self._linux_argv(state))
             self.assertIn(done['ipucu'], yakala.human(done, 'kur'))
-            self.assertIn('UYARI', yakala.human(done, 'kur'))
+            self.assertIn('WARNING', yakala.human(done, 'kur'))
             self.assertTrue(entry.is_file())
             return done
         for fault in (FileNotFoundError(2, 'gdbus yok'), subprocess.TimeoutExpired(['gdbus'], 5), 1):
@@ -1058,7 +1058,7 @@ class YakalaUnitTest(unittest.TestCase):
             self.linux_missing = {'kdialog', 'zenity'}
             done = yakala.install(self.vault, state)
         self.assertEqual(done['uyari'], yakala.LINUX_NO_WINDOW)
-        self.assertIn('UYARI: ' + yakala.LINUX_NO_WINDOW, yakala.human(done, 'kur'))
+        self.assertIn('WARNING: ' + yakala.LINUX_NO_WINDOW, yakala.human(done, 'kur'))
 
     def test_linux_state_copy_hands_over_to_the_vault_module(self):
         state = Path(self.tmp.name) / 'state'
@@ -1303,7 +1303,7 @@ class YakalaUnitTest(unittest.TestCase):
             answer[0] = b'\tstate = not running\n\tlast exit code = 0\n'
             stopped = yakala.status(self.vault, state)
         self.assertIs(stopped['dinleyici_calisiyor'], False)
-        self.assertIn('durmus (baslatmak icin: beyin.py yakala kur)', yakala.human(stopped, 'durum'))
+        self.assertIn('stopped (to start it: beyin.py yakala kur)', yakala.human(stopped, 'durum'))
 
     def test_inbox_report_skips_processed_cards(self):
         import beyin_v3_hygiene as hygiene
@@ -1446,7 +1446,7 @@ class YakalaInboxTest(unittest.TestCase):
         self.assertTrue(cli('ekle', '--metin', 'deneme')['path'].startswith('Notlar/Yakala/'))
         self.assertEqual(cli('liste')['bekleyen'], 1)
         self.assertEqual(cli('sablon')['path'], 'Notlar/Yakala')
-        self.assertIn('Yakalanan 1 kaynak bekliyor (Notlar/Yakala)', yakala.session_notice(self.vault, self.state))
+        self.assertIn('1 captured source(s) waiting (Notlar/Yakala)', yakala.session_notice(self.vault, self.state))
         self.assertEqual(self.top(), ['Notlar'])
         # Another state directory knows nothing of that choice; `kur` without --klasor keeps it.
         self.assertEqual(yakala.find_inbox(self.vault, Path(self.tmp.name) / 'other-state'), INBOX)
@@ -1475,7 +1475,7 @@ class YakalaInboxTest(unittest.TestCase):
         # The user picks the other folder: the queue that stays behind is reported, not moved.
         moved = yakala.install(self.vault, self.state, hotkey=False, folder_spec='000-Inbox/Yakala')
         self.assertEqual((moved['klasor'], moved['onceki_klasor'], moved['onceki_klasorde_kalan']), ('000-Inbox/Yakala', INBOX, 1))
-        self.assertIn('UYARI: 1 kart eski klasorde kaldi (' + INBOX + ')', yakala.human(moved, 'kur'))
+        self.assertIn('WARNING: 1 card(s) stayed in the old folder (' + INBOX + ')', yakala.human(moved, 'kur'))
         self.assertTrue((self.vault / waiting['path']).is_file())
         self.assertEqual(yakala.pending(self.vault, self.state), 0)
         self.assertIn('000-Inbox/Yakala/', yakala.capture(self.vault, text='yeni', state=self.state)['path'])
@@ -1592,9 +1592,9 @@ class YakalaVideoLanguageTest(unittest.TestCase):
         entry, meta, raw = self.isle({'video': dubbed(), 'defuddle': {'': defuddle('ar', ARABIC)}, 'speech': {'auto:en-orig': ENGLISH}})
         self.assertIn(ENGLISH, raw)
         self.assertNotIn(ARABIC, raw)
-        self.assertEqual((entry['yontem'], entry['dil'], entry['altyazi']), ('yt-dlp-altyazi', 'en', 'en-orig (otomatik)'))
+        self.assertEqual((entry['yontem'], entry['dil'], entry['altyazi']), ('yt-dlp-altyazi', 'en', 'en-orig (automatic)'))
         self.assertIn('![](' + VIDEO + ')\n\n## Transcript\n\n**0:01** So, I gave', raw)
-        self.assertEqual((meta['dil'], meta['altyazi']), ('en', 'en-orig (otomatik)'))
+        self.assertEqual((meta['dil'], meta['altyazi']), ('en', 'en-orig (automatic)'))
         self.assertNotIn('uyari', meta)
         self.assertEqual(self.track_requests(), [('en-orig', True)])
         self.assertIn('--lang', self.calls('npx')[0])
@@ -1604,13 +1604,13 @@ class YakalaVideoLanguageTest(unittest.TestCase):
         self.assertEqual((entry['durum'], entry.get('yontem')), ('cikarildi', 'yt-dlp-altyazi'))
         self.assertIn(ENGLISH, raw)  # not `ar-orig`, the first `-orig` track in the alphabet
         self.assertEqual(self.track_requests(), [('en-orig', True)])  # asking for all 21 is what drew HTTP 429
-        self.assertEqual((meta.get('dil'), meta.get('altyazi')), ('en', 'en-orig (otomatik)'))
+        self.assertEqual((meta.get('dil'), meta.get('altyazi')), ('en', 'en-orig (automatic)'))
 
     def test_http_429_on_the_first_track_request_moves_to_the_next_track(self):
         scenario = {'video': video('tr', audio=[('tr', -1)], manual=['tr'], recognised=['tr-orig', 'tr'], translated=['en']),
                     'speech': {'auto:tr-orig': TURKISH}, 'fail_first': 1}
         entry, meta, raw = self.isle(scenario, npx=False)
-        self.assertEqual((entry['durum'], entry.get('altyazi')), ('cikarildi', 'tr-orig (otomatik)'))
+        self.assertEqual((entry['durum'], entry.get('altyazi')), ('cikarildi', 'tr-orig (automatic)'))
         self.assertIn(TURKISH, raw)
         self.assertEqual(self.track_requests(), [('tr', False), ('tr-orig', True)])
         self.assertEqual(meta['dil'], 'tr')
@@ -1622,7 +1622,7 @@ class YakalaVideoLanguageTest(unittest.TestCase):
         entry, meta, raw = self.isle(scenario, whisper=True)
         self.assertEqual((entry['durum'], entry['yontem'], meta.get('dil')), ('cikarildi', 'defuddle', 'ar'))
         self.assertIn(ARABIC, raw)
-        for part in ('konusma dilinde olmayabilir', 'video en-US', 'transkript ar'):
+        for part in ('may not be in the spoken language', 'video en-US', 'transcript ar'):
             self.assertIn(part, meta.get('uyari', ''))
         self.assertEqual(entry['not'], meta['uyari'])
         self.assertEqual(self.track_requests(), [('en-orig', True)])
@@ -1630,7 +1630,7 @@ class YakalaVideoLanguageTest(unittest.TestCase):
         self.assertEqual([call for call in self.calls('yt-dlp') if '-f' in call], [])
         # A later run that gets the track replaces the warning it wrote.
         entry, meta, raw = self.isle(dict(scenario, fail_first=0, speech={'auto:en-orig': ENGLISH}))
-        self.assertEqual((meta['dil'], meta['altyazi']), ('en', 'en-orig (otomatik)'))
+        self.assertEqual((meta['dil'], meta['altyazi']), ('en', 'en-orig (automatic)'))
         self.assertNotIn('uyari', meta)
         self.assertNotIn(ARABIC, raw)
 
@@ -1647,7 +1647,7 @@ class YakalaVideoLanguageTest(unittest.TestCase):
         self.assertEqual(self.track_requests(), [])
         # Without Defuddle a track is still taken, and the card names it.
         entry, meta, raw = self.isle(scenario, npx=False)
-        self.assertEqual((entry['yontem'], meta.get('dil'), meta.get('altyazi')), ('yt-dlp-altyazi', 'en', 'en (elle)'))
+        self.assertEqual((entry['yontem'], meta.get('dil'), meta.get('altyazi')), ('yt-dlp-altyazi', 'en', 'en (manual)'))
         self.assertNotIn('uyari', meta)
         self.assertNotIn('not', entry)
         self.assertEqual(self.track_requests(), [('en', False)])
@@ -1658,15 +1658,15 @@ class YakalaVideoLanguageTest(unittest.TestCase):
                     'defuddle': {'': defuddle('en', ENGLISH)}}
         entry, meta, raw = self.isle(scenario)
         self.assertEqual((entry['yontem'], meta.get('dil')), ('defuddle', 'en'))
-        for part in ('dublajli', 'konusulan dil belirlenemedi', 'transkript dili: en'):
+        for part in ('looks dubbed', 'spoken language could not be determined', 'transcript language: en'):
             self.assertIn(part, meta.get('uyari', ''))
         self.assertEqual(entry['not'], meta['uyari'])
         self.assertNotIn('--lang', self.calls('npx')[0])
         # No audio language at all, but speech recognised in two languages: the track taken is named.
         scenario = {'video': video(None, recognised=['en-orig', 'tr-orig']), 'speech': {'auto:tr-orig': TURKISH}}
         entry, meta, raw = self.isle(scenario, npx=False)
-        self.assertEqual((entry['yontem'], meta.get('dil'), meta.get('altyazi')), ('yt-dlp-altyazi', 'tr', 'tr-orig (otomatik)'))
-        for part in ('dublajli', 'kullanilan altyazi izi: tr-orig (otomatik)'):
+        self.assertEqual((entry['yontem'], meta.get('dil'), meta.get('altyazi')), ('yt-dlp-altyazi', 'tr', 'tr-orig (automatic)'))
+        for part in ('looks dubbed', 'subtitle track used: tr-orig (automatic)'):
             self.assertIn(part, meta.get('uyari', ''))
         self.assertEqual(self.track_requests(), [('tr-orig', True)])
 
@@ -1676,7 +1676,7 @@ class YakalaVideoLanguageTest(unittest.TestCase):
         entry, meta, raw = self.isle(scenario, npx=False, whisper=True)
         self.assertEqual((entry['durum'], entry.get('yontem')), ('cikarildi', 'ses-whisper'))
         self.assertIn(TURKISH, raw)
-        for part in ('dublajli', 'ses asil dilde olmayabilir'):
+        for part in ('looks dubbed', 'audio may not be in the original language'):
             self.assertIn(part, meta.get('uyari', ''))
         self.assertNotIn('dil', meta)
         # One audio language: its transcript is the spoken language, nothing to warn about.
@@ -1715,7 +1715,7 @@ class YakalaVideoLanguageTest(unittest.TestCase):
         runs = self.calls('whisper-ctranslate2')
         self.assertEqual([call[call.index('--device') + 1] if '--device' in call else None for call in runs], [None, 'cpu'])
         self.assertIn('--language', runs[1])  # the retry keeps the language and model it was given
-        for part in ('CPU ile', 'cublas64_12.dll'):
+        for part in ('transcribed on the CPU', 'cublas64_12.dll'):
             self.assertIn(part, meta.get('uyari', ''))
 
     def test_empty_whisper_output_also_retries_cuda_and_reports_failure(self):
@@ -1729,7 +1729,7 @@ class YakalaVideoLanguageTest(unittest.TestCase):
         entry, meta, _raw = self.isle(dict(scenario, whisper_works_on='never'),
                                     npx=False, whisper='whisper-ctranslate2')
         self.assertEqual(entry['durum'], 'hata')
-        self.assertIn('Whisper metin uretmedi', entry.get('not', ''))
+        self.assertIn('Whisper produced no text', entry.get('not', ''))
 
     def test_whisper_failure_names_whisper_error_instead_of_a_missing_tool(self):
         # Both runs fail (or the tool is not ctranslate2): the card carries Whisper's own last error line.
@@ -1737,12 +1737,12 @@ class YakalaVideoLanguageTest(unittest.TestCase):
                     'whisper_error': 'RuntimeError: CUDA failed with error out of memory', 'whisper_works_on': 'never'}
         entry, meta, raw = self.isle(scenario, npx=False, whisper='whisper-ctranslate2')
         self.assertEqual(len(self.calls('whisper-ctranslate2')), 2)
-        self.assertIn('Whisper metin uretmedi: RuntimeError: CUDA failed', entry.get('not', '') + meta.get('uyari', ''))
+        self.assertIn('Whisper produced no text: RuntimeError: CUDA failed', entry.get('not', '') + meta.get('uyari', ''))
         self.assertNotIn('bulunamadi', entry.get('not', ''))
         # openai-whisper falls back to the CPU on its own: no retry, only the error is named.
         entry, meta, raw = self.isle(dict(scenario, whisper_error='Killed', whisper_exit=1), npx=False, whisper=True)
         self.assertEqual(len(self.calls('whisper')), 1)
-        self.assertIn('Whisper metin uretmedi: Killed', entry.get('not', '') + meta.get('uyari', ''))
+        self.assertIn('Whisper produced no text: Killed', entry.get('not', '') + meta.get('uyari', ''))
 
     def test_whisper_language_flag_takes_only_a_plain_language_code(self):
         self.assertEqual(yakala._whisper_options('pt-BR')[1], ['--language', 'pt'])
@@ -1763,12 +1763,12 @@ class YakalaVideoLanguageTest(unittest.TestCase):
                     'speech': {'manual:tr': TURKISH, 'auto:tr-orig': 'otomatik ' * 20}}
         entry, meta, raw = self.isle(scenario, npx=False)
         self.assertIn(TURKISH, raw)  # the manual track, with Ş, ğ, ü, ç, ö, İ and ı intact
-        self.assertEqual((meta.get('dil'), meta.get('altyazi')), ('tr', 'tr (elle)'))
+        self.assertEqual((meta.get('dil'), meta.get('altyazi')), ('tr', 'tr (manual)'))
         self.assertEqual(self.track_requests(), [('tr', False)])
         # No manual Turkish track: the recognised one, never the English translation or the manual `en`.
         scenario = {'video': video('tr', audio=[('tr', -1)], manual=['en'], **tracks), 'speech': {'auto:tr-orig': TURKISH}}
         entry, meta, raw = self.isle(scenario, npx=False)
-        self.assertEqual((meta['dil'], meta['altyazi']), ('tr', 'tr-orig (otomatik)'))
+        self.assertEqual((meta['dil'], meta['altyazi']), ('tr', 'tr-orig (automatic)'))
         self.assertIn(TURKISH, raw)
         self.assertNotIn('uyari', meta)
         # With Defuddle the Turkish transcript is verified and no track is downloaded.
@@ -1787,7 +1787,7 @@ class YakalaVideoLanguageTest(unittest.TestCase):
         self.assertNotIn('--lang', self.calls('npx')[0])
         # No transcript and no yt-dlp: the old note, no language claim.
         entry, meta, raw = self.isle({'defuddle': {'': defuddle('en')}}, yt_dlp=False)
-        self.assertIn('Altyazi bulunamadi', entry['not'])
+        self.assertIn('No subtitles found', entry['not'])
         self.assertFalse({'dil', 'altyazi', 'uyari'} & set(meta))
 
     def test_spoken_language_and_track_order_from_metadata(self):
@@ -1887,7 +1887,7 @@ class YakalaInstalledTest(unittest.TestCase):
         entry = self.entry('isle', '--ses-yok')['kartlar'][0]
         self.assertEqual((entry['durum'], entry.get('yontem'), entry.get('dil')), ('cikarildi', 'yt-dlp-altyazi', 'en'))
         meta = yakala.find_card(self.vault, added['id'])['meta']
-        self.assertEqual((meta.get('dil'), meta.get('altyazi'), meta.get('uyari')), ('en', 'en-orig (otomatik)', None))
+        self.assertEqual((meta.get('dil'), meta.get('altyazi'), meta.get('uyari')), ('en', 'en-orig (automatic)', None))
         raw = (self.vault / entry['ham']).read_text(encoding='utf-8')
         self.assertIn(ENGLISH, raw)
         self.assertNotIn(ARABIC, raw)
@@ -1898,20 +1898,20 @@ class YakalaInstalledTest(unittest.TestCase):
 
     def test_session_notice_is_opt_in(self):
         self.entry('ekle', 'https://ornek.com/yazi')
-        self.assertNotIn('Yakalanan', self.session_start())
+        self.assertNotIn('captured source(s) waiting', self.session_start())
         installed = self.entry('kur', '--kisayol-yok')
         self.assertIsNone(installed['kisayol'])
         self.assertTrue((self.state / 'yakala.json').is_file())
         skill = self.vault / '.agents/skills/beyin-yakala/SKILL.md'
         self.assertIn('python3 beyin.py yakala isle', skill.read_text(encoding='utf-8'))
         self.assertTrue((self.vault / installed['web_clipper_sablonu']).is_file())
-        self.assertIn('Yakalanan 1 kaynak bekliyor', self.session_start())
+        self.assertIn('1 captured source(s) waiting', self.session_start())
         removed = self.entry('kaldir')
         self.assertTrue(removed['notlar_korundu'])
         self.assertFalse(skill.exists())
         self.assertFalse((self.state / 'yakala.json').exists())
         self.assertEqual(len(list((self.vault / INBOX).glob('*.md'))), 1)
-        self.assertNotIn('Yakalanan', self.session_start())
+        self.assertNotIn('captured source(s) waiting', self.session_start())
 
     @unittest.skipUnless(sys.platform == 'win32', 'Windows Start menu and Send To shortcuts')
     def test_windows_shortcuts(self):
@@ -1981,13 +1981,13 @@ class YakalaInstalledTest(unittest.TestCase):
                                   '../Disari/Yakala'], capture_output=True, text=True, encoding='utf-8', env=self.env,
                                  cwd=self.vault, timeout=60)
         self.assertNotEqual(refused.returncode, 0)
-        self.assertIn('vault\'un icinde olmali', refused.stderr)
+        self.assertIn('The folder must be inside the vault', refused.stderr)
         self.assertFalse((Path(self.tmp.name) / 'Disari').exists() or (self.state / 'yakala.json').exists())
         installed = self.entry('kur', '--kisayol-yok')
         self.assertEqual(installed['klasor'], '000-Inbox/Yakala')
         self.assertEqual(installed['web_clipper_sablonu'], '000-Inbox/Yakala/beyne-at-web-clipper.json')
         self.assertTrue(self.entry('ekle', 'https://ornek.com/yazi')['path'].startswith('000-Inbox/Yakala/'))
-        self.assertIn('Yakalanan 1 kaynak bekliyor (000-Inbox/Yakala)', self.session_start())
+        self.assertIn('1 captured source(s) waiting (000-Inbox/Yakala)', self.session_start())
         self.assertEqual((self.entry('durum')['klasor'], self.entry('sablon')['path']), ('000-Inbox/Yakala',) * 2)
         skill = (self.vault / '.agents/skills/beyin-yakala/SKILL.md').read_text(encoding='utf-8')
         self.assertIn('`000-Inbox/Yakala/`', skill)

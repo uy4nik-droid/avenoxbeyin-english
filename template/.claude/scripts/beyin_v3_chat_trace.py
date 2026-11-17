@@ -190,10 +190,10 @@ def hint(state, harness, payload):
                 value['next_due'] = value['turns'] + 8
             atomic(path, json.dumps(value))
             if due:
-                return ('[Sohbet izi] Anlamli bir sonuc varsa tek kisa paragrafla kaydet: '
+                return ('[Chat trace] If there is a meaningful outcome, record it in one short paragraph: '
                         'python3 beyin.py chat-trace write --harness ' + harness + ' --session ' + session +
-                        ' --file IZ_DOSYASI. Tarihle birlikte en cok 450 karakter; hassas bilgiyi ekleme. '
-                        'Kaydedilecek sonuc yoksa devam et. [kaydetme] bu oturumun iz ipuclarini susturur.\n')
+                        ' --file TRACE_FILE. At most 450 characters including the date; do not include sensitive information. '
+                        'If there is no outcome to record, carry on. [kaydetme] silences trace hints for this session.\n')
     except Exception:
         pass
     return ''
@@ -227,11 +227,11 @@ def write(vault, state, harness, session, text, *, day=None):
         with locked(engine):
             previous = engine.note_read(source)
             content = previous['content']
-            metadata = {'kind': 'note', 'title': 'Sohbet izleri ' + today[:7],
+            metadata = {'kind': 'note', 'title': 'Chat traces ' + today[:7],
                         'visibility': 'internal', 'remote_allowed': False, 'chat_trace': 1}
             if content is None:
-                body = ('# Sohbet izleri ' + today[:7] + '\n\n'
-                        'Kisa oturum ozetleri; ajan beyanidir, dogrulanmis karar kaydi degildir.\n\n' + paragraph + '\n')
+                body = ('# Chat traces ' + today[:7] + '\n\n'
+                        'Short session summaries; these are agent statements, not a verified decision record.\n\n' + paragraph + '\n')
                 expected = render(metadata, body)
                 result = engine.note_edit({'source': source, 'expected_sha256': None,
                                            'content': expected})

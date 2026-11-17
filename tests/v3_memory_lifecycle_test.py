@@ -399,7 +399,7 @@ class MemoryLifecycleDoDTest(unittest.TestCase):
         stop_res = hook.receipt_reminder(payload_stop, self.state, 'claude', 'Stop', vault=self.vault)
         self.assertIsNotNone(stop_res)
         self.assertEqual(stop_res.get('decision'), 'block')
-        self.assertIn("Öğrenilen: yok", stop_res.get('reason', ''))
+        self.assertIn("Learned: none", stop_res.get('reason', ''))
 
 
 if __name__ == '__main__':

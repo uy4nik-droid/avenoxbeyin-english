@@ -1,109 +1,117 @@
-# Yakala: Codex `apply_patch` okuma sınırı ve Windows uyumluluğu
+# Yakala: Codex `apply_patch` read boundary and Windows compatibility
 
-Araştırma ve Linux ölçümü: **19 Ekim 2026 UTC**. İlgili upstream PR: [#384](https://github.com/avenoxai/avenoxbeyin/pull/384).
+Research and Linux measurement: **19 October 2026 UTC**. Related upstream PR: [#384](https://github.com/avenoxai/avenoxbeyin/pull/384).
 
-## Sonuç ve uygulanan değişiklik
+## Result and the change made
 
-`apply_patch` aracının yazmasını engellemek, mevcut dosya içeriği hakkında tahmin
-doğrulamasını tek başına engellemiyor. `-a never -s read-only` altında doğru yama
-bağlamı yazma politikasına kadar ilerlerken yanlış bağlam doğrulamada hata veriyor.
-Bu ayrım güncel kararlı Codex **0.163.0** ile de tekrarlandı.
+Blocking writes from the `apply_patch` tool does not, on its own, block guess
+verification against existing file content. Under `-a never -s read-only`, a correct
+patch context proceeds as far as the write policy, while a wrong context fails at
+verification. This distinction was reproduced with the current stable Codex
+**0.163.0** as well.
 
-Linux'ta ölçülen çözüm, Codex'in belgelenmiş **adlı izin profili** ile yama
-doğrulamasının kullandığı dosya sistemi okumasını da kısıtlıyor. Yakala Linux ve
-macOS'ta her komutta yeni bir `beyin_yakala_<32 hex karakter>` adı üretip şu iki
-`-c` ayarını veriyor; macOS native doğrulaması henüz yapılmadı:
+The solution measured on Linux uses Codex's documented **named permission profile**
+to restrict the filesystem reads that patch verification uses as well. On Linux and
+macOS, Yakala (capture) generates a fresh `beyin_yakala_<32 hex characters>` name for
+every command and passes these two `-c` settings; native macOS verification has not
+been done yet:
 
 ```text
-permissions.beyin_yakala_<rastgele>.filesystem={":root"="deny"}
-default_permissions="beyin_yakala_<rastgele>"
+permissions.beyin_yakala_<random>.filesystem={":root"="deny"}
+default_permissions="beyin_yakala_<random>"
 ```
 
-Profilin başka dosya sistemi girdisi veya `extends` atası yok. `:minimal`, Python
-dizini, vault ve geçici dizin için ek okuma izni eklenmiyor. İstemciye `-s read-only`
-verilmiyor; bu eski seçici adlı profilin yerine geçer. Kullanıcının mevcut
-config dosyası değişmiyor. Rastgele ad, aynı adlı kullanıcı profilinden daha dar
-bir `read`/`write` girdisinin derin birleştirme yoluyla miras kalmasını önlüyor.
-128 bit rastgeleliğin çakışmayı pratikte ihmal edilebilir kılması bir olasılık
-değerlendirmesidir; bütün sistem durumlarını tarayarak ispatlanmış benzersizlik değildir.
+The profile has no other filesystem entry and no `extends` ancestor. No extra read
+permission is added for `:minimal`, the Python directory, the vault or the temporary
+directory. `-s read-only` is not passed to the client; this legacy selector is
+replaced by the named profile. The user's existing config file is not modified. The
+random name prevents a narrower `read`/`write` entry from a user profile of the same
+name from being inherited through deep merging. That 128 bits of randomness make a
+collision practically negligible is a probability assessment; it is not uniqueness
+proven by scanning all system states.
 
-POSIX ön kontrolü `allowed_permission_profiles`, `allowed_sandbox_modes` veya
-`remote_sandbox_config` varsa işi başlatmadan reddeder. Codex 0.163.0, izin
-listesinde olmayan rastgele profil yerine yönetilen varsayılana sessizce
-dönebildiği için `--strict-config` yeterli değildir [S7]. `CODEX_HOME`
-(varsayılan `~/.codex`), `/etc/codex`, proje/üst dizin config'leri ve profil
-parçaları taranır; yönetilen dosyalardaki izin seçicileri de reddedilir.
-Okunamayan/bozuk config, dolu bulut yönetim önbelleği veya macOS yönetim
-tercihi varsa güvenli profil varsayılmaz. İki görünümde de kart ASCII Türkçe
-açıklamayla `onay-bekliyor` olur; Windows `-s read-only` yolu değişmez.
+The POSIX preflight rejects the job without starting it if `allowed_permission_profiles`,
+`allowed_sandbox_modes` or `remote_sandbox_config` is present. `--strict-config` is not
+enough, because Codex 0.163.0 could silently fall back to the managed default instead
+of a random profile that is not on the allow list [S7]. `CODEX_HOME` (default
+`~/.codex`), `/etc/codex`, project/parent-directory configs and profile fragments are
+scanned; permission selectors in managed files are rejected too. If a config is
+unreadable or corrupt, a cloud management cache is present, or a macOS management
+preference exists, a safe profile is not assumed. In both views the card becomes
+`onay-bekliyor` with an ASCII Turkish description; the Windows `-s read-only` path is
+unchanged.
 
-**Windows ayrı bir uyumluluk yolu kullanır: `-s read-only`.** Kullanıcının
-19.10.2026 tarihli gerçek Windows 11 / Codex 0.155.1 denemesinde önceki düzeltme
-(`dc2a1bc2`, fork #9) `AGENTS.md` yüklenirken durdu; model olay dosyası boş kaldı.
-Windows `elevated` sandbox kök okuma izni istiyor. Bu nedenle Windows komutuna
-root-deny profili verilmez; `gizli` ve `pencere` aynı salt okuma seçicisini
-kullanır. Yazma engeli ve diğer araç kapıları korunur, fakat **Windows'ta
-`apply_patch` içerik tahmini kanalı kapanmış sayılmaz**. Yeni dalın native Windows
-başlangıcı henüz ölçülmedi; aşağıdaki uyumluluk bölümü bu ayrımı açıklar [S12-S14].
+**Windows uses a separate compatibility path: `-s read-only`.** In the user's real
+Windows 11 / Codex 0.155.1 trial on 19 October 2026, the previous fix (`dc2a1bc2`,
+fork #9) stopped while loading `AGENTS.md`; the model event file stayed empty. The
+Windows `elevated` sandbox requires root read permission. For this reason the
+root-deny profile is not passed to the Windows command; `gizli` and `pencere` use the
+same read-only selector. The write block and the other tool gates are kept, but **on
+Windows the `apply_patch` content-guessing channel is not considered closed**. The
+native Windows startup of the new branch has not been measured yet; the compatibility
+section below explains this distinction [S12-S14].
 
-`--strict-config` bilinmeyen üst düzey ayarları hata yapar. Desteklenmeyen bayraklar
-ve eski/ön sürümler zaten ön kontrolde reddedilir. En eski ikili ölçümü **0.155.1**
-olduğu için sürüm alt sınırı değişmedi. Genel kabuk, görüntü okuma, alt ajan, app,
-eklenti ve diğer MCP kapıları önceki iş bazındaki kapatma kontrollerini korur.
+`--strict-config` turns unknown top-level settings into errors. Unsupported flags and
+old/pre-release versions are already rejected in the preflight. The oldest binary
+measurement is **0.155.1**, so the lower version bound did not change. The general
+shell, image reading, subagent, app, plugin and other MCP gates keep the shutdown
+checks from the earlier job baseline.
 
-Bu profil **beta** olarak belgelenmiştir. Bir ayarın kabul edilmesi, gelecekteki
-her sürümde aynı güvenlik davranışını garanti etmez. Bu nedenle gerçek ikiliyle
-tekrarlanabilen, isteğe bağlı regresyon da eklendi. Native Windows ve macOS için
-aşağıdaki ölçümler tamamlanmadan Linux sonucu o platformlara genellenmemelidir.
+This profile is documented as **beta**. A setting being accepted does not guarantee
+the same security behavior in every future version. For this reason an optional
+regression that can be repeated with the real binary was also added. The Linux result
+must not be generalized to native Windows and macOS until the measurements below are
+completed.
 
-## Neden bu çözüm?
+## Why this solution?
 
-0.163.0 kaynak kodunda `ApplyPatchHandler::handle_call`, seçili ortamın
-`FileSystemSandboxContext` değerini `verify_apply_patch_args` çağrısına geçiriyor.
-`Update`/`Move` işlemlerinde bağlam eşleştirme ve `Delete` işleminde eski içerik
-okuma bu dosya sistemi üzerinden gerçekleşiyor. `Add` için mevcut içerik
-okunmadan yazma kararı veriliyor. Bu yüzden okuma ve yazmayı birlikte reddeden
-profil, tahmin sonucuna göre farklılaşan içerik kontrolünden önce uygulanıyor.
-Kaynak yolu aşağıdaki [S4] ve [S5] bağlantılarında.
+In the 0.163.0 source code, `ApplyPatchHandler::handle_call` passes the selected
+environment's `FileSystemSandboxContext` to the `verify_apply_patch_args` call.
+Context matching in `Update`/`Move` operations and reading the old content in a
+`Delete` operation happen through this filesystem. For `Add`, the write decision is
+made without reading existing content. So a profile that denies both reads and writes
+is applied before the content check that would vary with the guess result. The source
+path is in links [S4] and [S5] below.
 
-İzin derleyicisi özel profili boş bir kısıtlı dosya sistemi politikasıyla
-başlatıyor; kendiliğinden vault veya `:minimal` okuması eklemiyor [S6].
-Daha özgül bir izin geniş kök reddini açabileceğinden, salt kök reddini
-mevcut sabit adlı profile eklemek yeterli değildir [S2].
+The permission compiler starts a custom profile with an empty restricted filesystem
+policy; it does not add vault or `:minimal` reads on its own [S6]. Because a more
+specific permission can reopen a broad root deny, it is not sufficient to add a bare
+root deny to an existing fixed-name profile [S2].
 
-Resmî izin sayfası eski sandbox ayarlarıyla yeni profilleri karıştırmama uyarısı
-verir [S2]. İncelenen üç sürümde kaynak ve gerçek ikili ölçümü daha özel bir
-öncelik kuralını da doğruladı: `SessionFlags` içindeki açık
-`default_permissions`, yüklenmiş dosyadaki eski `sandbox_mode` ayarına üstün
-geliyor; gerçek `--sandbox`/`-s` komut satırı seçicisi ise profili devre dışı
-bırakıyor [S7]. Regresyonun geçici config dosyasında kasıtlı olarak
-`sandbox_mode="workspace-write"` bulunuyor. İkinci test ayrıca desteklenen
-`--profile fixture_legacy` seçicisiyle `fixture_legacy.config.toml` içindeki
-`sandbox_mode="read-only"` değerini yükletiyor. İkisinde de bütün native dosya
-okuma/yazma denemeleri reddediliyor. Yakala üretim komutu bu ek `--profile`
-bayrağını kullanmaz; ikinci test Codex'in katman önceliğini zorlar. Bu ayrıntı
-yalnız incelenen sürümler için kaynak ve çalıştırma kanıtıyla söylenmektedir.
+The official permissions page warns against mixing old sandbox settings with new
+profiles [S2]. In the three versions examined, source and real-binary measurement also
+confirmed a more specific precedence rule: an explicit `default_permissions` in
+`SessionFlags` overrides a legacy `sandbox_mode` setting in a loaded file, while a
+real `--sandbox`/`-s` command-line selector disables the profile [S7]. The regression's
+temporary config file deliberately contains `sandbox_mode="workspace-write"`. A second
+test also loads `sandbox_mode="read-only"` from `fixture_legacy.config.toml` through
+the supported `--profile fixture_legacy` selector. In both, all native file
+read/write attempts are rejected. The Yakala production command does not use this
+extra `--profile` flag; the second test forces Codex's layer precedence. This detail
+is stated only for the examined versions, with source and run evidence.
 
-### İncelenen alternatifler
+### Alternatives examined
 
-| Yol | Kanıt ve karar |
+| Path | Evidence and decision |
 | --- | --- |
-| `--disable apply_patch_freeform` | 0.155.1 ve 0.163.0 özellik listesi/kaynağında `removed`. 0.163.0 ikilisinde bayrağa rağmen aynı içerik tahmini ayrımı oluştu. Kullanılmadı. |
-| Salt `read-only` ve `never` | Yazmalar reddedildi; doğru/yanlış bağlam hataları farklı kaldı. Bu bulgunun nedeni. |
-| `PreToolUse` içinde `apply_patch` reddi | Desteklenen hook, handler doğrulamasından önce çalışabilir. Ancak sıradan hook hata/timeout/bozuk çıktısında çağrı devam edebilir; tek güvenlik sınırı olarak seçilmedi [S8, S9]. |
-| `model_catalog_json` ile `apply_patch_tool_type=null` | Resmî 0.163.0 ikilisinin geçici katalog denemesinde aracı kaldırdı; zorlanmış çağrı `unsupported custom tool call` oldu. Bu, model kataloğunu bütünüyle yönetmeyi gerektiren daha geniş bir müdahale. Model özelliklerini değiştirmeyen dosya sistemi profili seçildi [S3, S10]. |
-| Model prompt'unda araç yasağı | Araç seviyesindeki sınırı sağlamaz. Güvenlik çözümü sayılmadı. |
+| `--disable apply_patch_freeform` | `removed` in the 0.155.1 and 0.163.0 feature list/source. With the 0.163.0 binary the same content-guessing distinction occurred despite the flag. Not used. |
+| `read-only` alone and `never` | Writes were rejected; correct/wrong context errors stayed different. This is the cause of the finding. |
+| Rejecting `apply_patch` in `PreToolUse` | The supported hook can run before handler verification. However, on an ordinary hook error/timeout/corrupt output the call can proceed; not chosen as the sole security boundary [S8, S9]. |
+| `apply_patch_tool_type=null` via `model_catalog_json` | In a temporary-catalog trial with the official 0.163.0 binary it removed the tool; a forced call became `unsupported custom tool call`. This is a broader intervention that requires managing the model catalog as a whole. The filesystem profile, which does not change model features, was chosen [S3, S10]. |
+| Tool ban in the model prompt | Does not provide a tool-level boundary. Not counted as a security solution. |
 
-Bağımsız, sadece `apply_patch` aracını kapatan güncel bir CLI anahtarı bulunmadı;
-bu sonuç incelenen config şeması, CLI yardım metni, özellik listesi ve kayıt
-koduyla sınırlıdır. POSIX profili Linux'ta kanalı kapatır; Windows salt okuma
-uyumluluk yolunda bu bulgu açık kalır. Codex deposunda issue açılmadı.
+No current standalone CLI switch that disables only the `apply_patch` tool was found;
+this result is limited to the examined config schema, CLI help text, feature list and
+registration code. The POSIX profile closes the channel on Linux; on the Windows
+read-only compatibility path this finding stays open. No issue was opened in the Codex
+repository.
 
-## Gerçek ikiliyle test
+## Test with the real binary
 
-`tests/v3_yakala_codex_boundary_test.py` Python stdlib kullanır. Codex projenin
-bağımlılığı değildir; `BEYIN_CODEX_BINARY` verilmedikçe normal CI testi atlar.
-İkili otomatik indirilmez. Bilinen resmî ikili açıkça seçilir:
+`tests/v3_yakala_codex_boundary_test.py` uses the Python stdlib. Codex is not a
+dependency of the project; the normal CI test is skipped unless `BEYIN_CODEX_BINARY`
+is given. The binary is not downloaded automatically. A known official binary is
+selected explicitly:
 
 ```bash
 BEYIN_CODEX_BINARY=/absolute/path/to/codex \
@@ -111,66 +119,69 @@ BEYIN_CODEX_EVIDENCE=/absolute/path/to/codex-boundary.json \
 python3 -m unittest tests.v3_yakala_codex_boundary_test -v
 ```
 
-Bu iki native regresyon POSIX root-deny sözleşmesini sınar. Windows'ta açık bir
-platform gerekçesiyle atlanır; atlama, Windows başlangıcı veya okuma izolasyonu
-başarısı olarak sayılamaz. Windows kabul denemeleri aşağıda ayrıca listelenir.
+These two native regressions test the POSIX root-deny contract. On Windows they are
+skipped with an explicit platform reason; the skip cannot be counted as success of the
+Windows startup or of read isolation. Windows acceptance trials are listed separately
+below.
 
-Test yeni geçici `CODEX_HOME`, vault, state ve zararsız notlar oluşturur. Yalnız
-`127.0.0.1` üzerinde Responses protokolü taklit edilir; model hesabı, API anahtarı
-ve dış model servisi kullanılmaz. Çıkışlar gerçek Codex ikilisinden gelir;
-sahte sunucu yalnız modelin araç çağrısını belirler. Girdi olarak seçilen
-`gpt-5.5` adı, bu sürümlerin doğrudan custom-tool taşımasını sınamak içindir;
-barındırılan bir modelin yetenek, fiyat veya kalitesi ölçülmez.
+The test creates a fresh temporary `CODEX_HOME`, vault, state and harmless notes. The
+Responses protocol is mocked on `127.0.0.1` only; no model account, API key or
+external model service is used. The outputs come from the real Codex binary; the fake
+server only determines the model's tool calls. The `gpt-5.5` name chosen as input is
+there to test these versions' direct custom-tool transport; the capability, price or
+quality of a hosted model is not measured.
 
-Her sürümde iki uçtan uca regresyonun her birinde şunlar doğrulandı:
+In each of the two end-to-end regressions, for every version, the following were
+verified:
 
-- **28 yama çağrısı:** dört yol yazımı (göreli/mutlak, vault içi/dışı) için
-  doğru/yanlış bağlamlı Update ve Move, Delete, mevcut ve yeni dosyaya Add.
-  Aynı yol/işlemdeki doğru/yanlış çiftleri birebir aynı çıktı verdi. Update/Move
-  ve Delete, dosya okuma hatasıyla; Add, yazma politikasıyla reddedildi.
-  İşlem türleri arasında tek bir hata metni kullanıldığı iddia edilmez.
-- Dört başlangıç dosyasının SHA-256 değeri korundu. Yeni ya da taşınmış hedef
-  oluşmadı; hiçbir yama çıktısı sentetik doğru/yanlış içerik satırını taşımadı.
-- **5 gerçek MCP çağrısı:** normal not ve `AGENTS.md` okundu; private not
-  okunmadı; yeni sonuç notu yazıldı; `complete` kabul edilip manifest oluştu.
-  Yakala'nın işi/PID neslini doğrulayan gerçek stdio MCP süreci çalıştı.
-- **Normal hafıza başlangıcı:** testin ürettiği tek sentetik `SessionStart`
-  hook'u, `hooks/list` ile görülen kendi hash'i için güven kaydı alır.
-  Güven atlama bayrağı verilmez. Hook dosyadan okuduğu bağlamı ilk model
-  isteğine ekler; native yama okumaları aynı oturumda yine reddedilir.
-- Bilinmeyen üst düzey config anahtarı `--strict-config` altında model
-  isteği oluşmadan reddedilir. Çalıştırma sonrasında config hash'i aynıdır.
+- **28 patch calls:** Update and Move with correct/wrong context for four path writes
+  (relative/absolute, inside/outside the vault), Delete, and Add to an existing and a
+  new file. Correct/wrong pairs on the same path/operation produced byte-identical
+  output. Update/Move and Delete were rejected with a file read error; Add was
+  rejected by the write policy. It is not claimed that a single error text was used
+  across operation types.
+- The SHA-256 values of the four starting files were preserved. No new or moved
+  target was created; no patch output carried the synthetic correct/wrong content line.
+- **5 real MCP calls:** a normal note and `AGENTS.md` were read; a private note was not
+  read; a new result note was written; `complete` was accepted and a manifest was
+  created. A real stdio MCP process that verifies Yakala's job/PID generation ran.
+- **Normal memory startup:** the single synthetic `SessionStart` hook produced by the
+  test gets a trust record for its own hash seen through `hooks/list`. The trust-skip
+  flag is not passed. The hook adds the context it reads from the file to the first
+  model request; native patch reads are still rejected in the same session.
+- An unknown top-level config key is rejected under `--strict-config` before any
+  model request is created. The config hash is the same after the run.
 
-`--strict-config` için ölçüm kapsamı üst düzey bilinmeyen anahtardır. Araştırmada
-`permissions.<başka profil>.unknown_field` gibi iç içe bilinmeyen bir alanın
-bu üç sürümde her zaman reddedilmediği de görüldü. Bu bayrak tek başına genel
-bir profil doğrulama kanıtı olarak sunulmaz. Kök reddinin etkinliği doğrudan
-yama çağrılarıyla sınandı; özel profilde eksik/boş filesystem tablosu da
-kısıtlı başlar [S2, S6].
+The measurement scope for `--strict-config` is the unknown top-level key. The
+research also showed that a nested unknown field such as
+`permissions.<other profile>.unknown_field` is not always rejected in these three
+versions. This flag is not presented on its own as general profile-validation
+evidence. The effectiveness of the root deny was tested directly with patch calls;
+a missing/empty filesystem table in a custom profile also starts restricted [S2, S6].
 
-| İkili | Resmî yayın zamanı (UTC) | Linux sonucu |
+| Binary | Official release time (UTC) | Linux result |
 | --- | --- | --- |
-| 0.155.1 | 18.09.2026 20:03:04 | 2/2 gerçek CLI regresyonu geçti; test başına 28 patch + 5 MCP + hook |
-| 0.160.0 | 01.10.2026 20:19:13 | 2/2 gerçek CLI regresyonu geçti; test başına 28 patch + 5 MCP + hook |
-| 0.163.0 | 15.10.2026 21:30:38 | 2/2 gerçek CLI regresyonu geçti; test başına 28 patch + 5 MCP + hook |
-| 0.164.0-alpha.3 | 17.10.2026 04:03:25 | Yalnız kaynak karşılaştırması; gerçek ikili çalıştırılmadı, Yakala ön sürümü reddeder |
+| 0.155.1 | 2026-09-18 20:03:04 | 2/2 real CLI regressions passed; per test 28 patches + 5 MCP + hook |
+| 0.160.0 | 2026-10-01 20:19:13 | 2/2 real CLI regressions passed; per test 28 patches + 5 MCP + hook |
+| 0.163.0 | 2026-10-15 21:30:38 | 2/2 real CLI regressions passed; per test 28 patches + 5 MCP + hook |
+| 0.164.0-alpha.3 | 2026-10-17 04:03:25 | Source comparison only; the real binary was not run, Yakala rejects pre-releases |
 
-Windows uyumluluk değişikliği sonrasında, **19.10.2026 UTC** tarihinde aynı
-altı Linux CLI testi `nobody` / UID 65534 ile yeniden geçti: sürüm başına iki
-test, sırasıyla **25.313**, **19.736** ve **19.640 saniye**. Toplam 168 patch,
-30 gerçek MCP çağrısı ve altı hafıza hook'u denetlendi; config hash'leri korundu.
+After the Windows compatibility change, on **19 October 2026 UTC**, the same six
+Linux CLI tests passed again as `nobody` / UID 65534: two tests per version, taking
+**25.313**, **19.736** and **19.640 seconds** respectively. In total 168 patches, 30
+real MCP calls and six memory hooks were audited; config hashes were preserved.
 
-Güncellenen komut beklentileri ve mevcut Codex ön kontrolleri için **20 hedefli
-test, 20 başarı / 0.086 saniye** ölçüldü. Bu koşuya dahil platform/görünüm
-matrisi eski kodda iki Windows alt kontrolünde başarısızdı (**1 test / 2 fail,
-0.020 saniye**); düzeltmeden sonra **1 test / 1 başarı, 0.025 saniye** oldu.
-Matris de Linux'ta UID 65534 ile çalıştı. `subTest` döngülerindeki her kontrol
-ayrı test sayılmaz; bu sayılar tam V3 birleşim testinin yerini almaz.
+For the updated command expectations and the existing Codex preflights, **20 targeted
+tests, 20 passes / 0.086 seconds** were measured. The platform/view matrix included in
+this run failed on two Windows sub-checks with the old code (**1 test / 2 fail,
+0.020 seconds**); after the fix it became **1 test / 1 pass, 0.025 seconds**. The
+matrix also ran on Linux as UID 65534. Each check in the `subTest` loops is not
+counted as a separate test; these numbers do not replace the full V3 combined test.
 
-### İkili bütünlüğü
+### Binary integrity
 
-Resmî `codex-x86_64-unknown-linux-musl.tar.gz` varlıkları indirildi; aşağıdaki
-SHA-256 değerleri GitHub release API'sindeki `digest` alanıyla eşleşti.
+The official `codex-x86_64-unknown-linux-musl.tar.gz` assets were downloaded; the
+SHA-256 values below matched the `digest` field in the GitHub release API.
 
 ```text
 0.155.1 a0ef8b2debc3bf747e07b1a039354de31300ac0dcc2276498ba281470b5d9115
@@ -178,107 +189,110 @@ SHA-256 değerleri GitHub release API'sindeki `digest` alanıyla eşleşti.
 0.163.0 beb339e8ecd9ba057a6bb2dc81ad8ca474812edfbf0fc5056ca818797648dde4
 ```
 
-## Windows uyumluluğu ve kalan native doğrulama
+## Windows compatibility and remaining native verification
 
-19.10.2026 UTC kaynak incelemesinde aynı `elevated` ön koşulu Codex **0.155.1**,
-**0.163.0**, **0.164.0-alpha.3** ve `main` **89461ea6** içinde bulundu:
+In the source review of 19 October 2026 UTC, the same `elevated` precondition was
+found in Codex **0.155.1**, **0.163.0**, **0.164.0-alpha.3** and `main` **89461ea6**:
 ``elevated Windows sandbox requires effective `:root` read access`` [S13, S15].
-Kullanıcının bildirdiği başlangıç hatası bu koşulla örtüşür; Linux'ta Windows
-sandbox çalıştırılmış değildir. Kullanıcı aynı makinede eski `69ac79c` dalının
-`-s read-only` ile iki görünümde de `completed` olduğunu bildirdi. Bu, önceki
-dalın kullanıcı ölçümüdür; düzeltilmiş dalın kabul ölçümü değildir.
+The startup error reported by the user matches this condition; the Windows sandbox
+was not run on Linux. The user reported that, on the same machine, the older `69ac79c`
+branch with `-s read-only` ended as `completed` in both views. This is the user's
+measurement of the previous branch; it is not an acceptance measurement of the fixed
+branch.
 
-| Seçenek | Kaynak ve karar |
+| Option | Source and decision |
 | --- | --- |
-| Windows'ta root-deny | `elevated` kök okuma izni ön koşulunu sağlamaz; bildirilen gerçek başlangıç hatasının nedeni. Windows komutundan kaldırıldı. |
-| `:root=read` ve vault/home/state için exact-path deny | `elevated` kaynak testi bu tür alt yol reddini kabul eder. `unelevated` deny-read desteklemez. Kısıtlı profil AGENTS keşfi/okumasını sandbox içinden yapar; izin/metadata hatası başlangıcı durdurabilir. Gerekli başlangıç/runtime yollarını açmadan çalışacağı native ölçülmedi; bu yolları açmak ve listelenmeyen yollar da genel oracle kapanışı sağlamaz. Varsayılan seçilmedi [S12-S14]. |
-| MXC | Güncel belge uyumlu Windows 11 cihazı/politikası ister; tek komutlu MXC denemesi 0.162.0+ içindir. `prefer_mxc` destek yoksa legacy seçimine dönebilir. 0.155.1 desteğinin yerine geçirilmedi; MXC altında root-deny başarısı ölçülmedi [S12]. |
-| Windows `-s read-only` | Önceki çalışan Windows akışıyla uyum için seçildi. Native yazma izni verilmez; içerik tahmini sınırı açık kalır. |
-| Linux/macOS root-deny | Kod yolu korunur. Gerçek ikili kanıtı Linux'a aittir; macOS Seatbelt ölçümü değildir. |
+| Root-deny on Windows | Does not satisfy the `elevated` root read permission precondition; the cause of the reported real startup error. Removed from the Windows command. |
+| `:root=read` and exact-path deny for vault/home/state | The `elevated` source test accepts this kind of subpath deny. `unelevated` does not support deny-read. A restricted profile does AGENTS discovery/reading from inside the sandbox; a permission/metadata error can stop startup. That it would run without opening the required startup/runtime paths was not measured natively; opening those paths, and unlisted paths, also does not give a general oracle closure. Not chosen as the default [S12-S14]. |
+| MXC | The current documentation requires a compatible Windows 11 device/policy; the single-command MXC trial is for 0.162.0+. `prefer_mxc` can fall back to the legacy selection if there is no support. It was not substituted for 0.155.1 support; root-deny success under MXC was not measured [S12]. |
+| Windows `-s read-only` | Chosen for consistency with the previously working Windows flow. Native write permission is not granted; the content-guessing boundary stays open. |
+| Linux/macOS root-deny | The code path is kept. The real-binary evidence belongs to Linux; it is not a macOS Seatbelt measurement. |
 
-Platform seçimi komut hazırlanırken yapılır; başlangıç hatasından sonra izin
-genişletip otomatik yeniden deneme yoktur. Kullanıcının `windows.sandbox`,
-`prefer_mxc`, proje/hook güveni ve config dosyaları değiştirilmez. Genel kabuk,
-görüntü okuma, alt ajan, app/eklenti ve diğer MCP kapatma kontrolleri, `-a never`,
-`--strict-config`, işin ağ seçimi ve güvenilen Yakala MCP köprüsü korunur.
+The platform choice is made while the command is being prepared; there is no
+automatic retry that widens permissions after a startup error. The user's
+`windows.sandbox`, `prefer_mxc`, project/hook trust and config files are not
+modified. The general shell, image reading, subagent, app/plugin and other MCP
+shutdown checks, `-a never`, `--strict-config`, the job's network choice and the
+trusted Yakala MCP bridge are kept.
 
-Kalan kabul ölçümleri:
+Remaining acceptance measurements:
 
-1. **Windows:** güncel dalı kurup gerçek Codex 0.155.1 ile önce `gizli`, sonra
-   `pencere`, `ag: kisitli` ve zararsız bir kart kullan. `AGENTS.md` başlangıcının,
-   normal güvenilmiş hafıza hook'larının ve
-   `read_note → write_note → complete → receipt → Last-Session` zincirinin
-   tamamlandığını doğrula. İki görünüm için ayrı job kimliği ve gerçek sonucu
-   kaydet; bu belge henüz başarı iddia etmez.
-2. **Windows:** CLI sürümü, Windows sürümü, sandbox türü ve dosya sistemi
-   bilgisiyle etkin araç/config durumunu kaydet. `apply_patch` yazmasının
-   engellendiğini zararsız dosyada ölç; doğru/yanlış bağlam farkının kapandığı
-   varsayımını kullanma. UNC, farklı sürücü ve 8.3 alias kapsamı ölçülmedi.
-3. **macOS:** yukarıdaki iki gerçek CLI regresyonunu seçilen resmî ikiliyle
-   çalıştır; normal hafıza başlangıcını ayrıca doğrula. Linux sonucu bu ölçümün
-   yerine geçmez.
+1. **Windows:** install the current branch and, with the real Codex 0.155.1, use first
+   `gizli`, then `pencere`, `ag: kisitli` and a harmless card. Verify that the
+   `AGENTS.md` startup, the normal trusted memory hooks and the
+   `read_note → write_note → complete → receipt → Last-Session` chain are completed.
+   Record a separate job ID and the real result for the two views; this document does
+   not yet claim success.
+2. **Windows:** record the effective tool/config state together with the CLI version,
+   Windows version, sandbox type and filesystem information. Measure on a harmless
+   file that `apply_patch` writes are blocked; do not use the assumption that the
+   correct/wrong context difference is closed. UNC, different-drive and 8.3 alias
+   coverage was not measured.
+3. **macOS:** run the two real CLI regressions above with the selected official
+   binary; verify the normal memory startup separately. The Linux result does not
+   replace this measurement.
 
-Komut matrisi testi Linux'ta üç platform ve iki görünümü taklit eder; gerçek
-Windows/macOS sandbox'ını çalıştırmaz. Mevcut POSIX ikili testleri model hesabı
-olmadan MCP teslimine kadar gider; receipt/Last-Session yayınını ve masaüstü
-bildirimini ölçmez.
+The command-matrix test imitates three platforms and two views on Linux; it does not
+run the real Windows/macOS sandbox. The existing POSIX binary tests go as far as MCP
+delivery without a model account; they do not measure the receipt/Last-Session
+publication or the desktop notification.
 
-Normal hook'lar ve Yakala MCP güvenilen yerel koddur ve kendi dosya erişimini
-sürdürür. Profil bu kodları veya CLI'nin başlangıç bağlamı yüklemesini genel
-bir süreç sandbox'ına dönüştürmez. Modelin araca sunduğu patch içeriğinin
-tahmin doğrulaması burada incelenen somut sınırdır.
+Normal hooks and the Yakala MCP are trusted local code and keep their own file
+access. The profile does not turn this code, or the CLI's loading of the startup
+context, into a general process sandbox. The concrete boundary examined here is the
+guess verification of the patch content that the model submits to the tool.
 
-## Kaynaklar
+## Sources
 
-Aşağıdaki resmî İngilizce kaynaklar **19.10.2026 UTC** tarihinde incelendi.
-Sürüm bilgisi GitHub release listesi, `latest` yönlendirmesi ve release API ile
-doğrulandı. Web görünümü bazı GitHub kaynak sayfalarını açamadığında aynı
-resmî repo salt okunur `git` checkout ile incelendi.
+The official English sources below were reviewed on **19 October 2026 UTC**.
+Version information was verified with the GitHub release list, the `latest` redirect
+and the release API. When the web view could not open some GitHub source pages, the
+same official repo was examined with a read-only `git` checkout.
 
-- **[S1] Sürümler:** [liste](https://github.com/openai/codex/releases),
+- **[S1] Releases:** [list](https://github.com/openai/codex/releases),
   [latest](https://github.com/openai/codex/releases/latest),
   [0.155.1](https://github.com/openai/codex/releases/tag/rust-v0.155.1),
   [0.160.0](https://github.com/openai/codex/releases/tag/rust-v0.160.0),
   [0.163.0](https://github.com/openai/codex/releases/tag/rust-v0.163.0),
   [0.164.0-alpha.3](https://github.com/openai/codex/releases/tag/rust-v0.164.0-alpha.3),
   [release API](https://api.github.com/repos/openai/codex/releases?per_page=30).
-- **[S2] Adlı profiller, beta, deny, öncelik, MCP kapsamı ve platform sınırları:**
+- **[S2] Named profiles, beta, deny, precedence, MCP scope and platform limits:**
   [Permissions](https://learn.chatgpt.com/docs/permissions).
-- **[S3] CLI/config sözleşmesi:**
+- **[S3] CLI/config contract:**
   [Configuration Reference](https://learn.chatgpt.com/docs/config-file/config-reference),
   [CLI source](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/cli/src/main.rs).
-- **[S4] Yama handler'ı ve sandbox'ın doğrulamaya aktarılması:**
+- **[S4] Patch handler and passing the sandbox to verification:**
   [0.163.0 apply_patch handler](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/core/src/tools/handlers/apply_patch.rs).
-- **[S5] Update/Move/Delete ön okumaları:**
+- **[S5] Update/Move/Delete pre-reads:**
   [apply-patch invocation](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/apply-patch/src/invocation.rs).
-- **[S6] Özel profilin derlenmesi:**
+- **[S6] Compiling the custom profile:**
   [config/permissions.rs](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/core/src/config/permissions.rs).
-- **[S7] `resolve_permission_config_syntax` ve legacy seçici önceliği:**
+- **[S7] `resolve_permission_config_syntax` and legacy selector precedence:**
   [config/mod.rs](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/core/src/config/mod.rs).
-- **[S8] Hook güveni, araç sırası ve callback hata sınırları:**
+- **[S8] Hook trust, tool order and callback error limits:**
   [Hooks](https://learn.chatgpt.com/docs/hooks).
-- **[S9] Hook kararı ve handler çağrısı:**
+- **[S9] Hook decision and handler call:**
   [hook_runtime.rs](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/core/src/hook_runtime.rs),
   [tools/registry.rs](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/core/src/tools/registry.rs).
-- **[S10] Araç kaydı ve kaldırılmış bayrak:**
+- **[S10] Tool registration and removed flag:**
   [spec_plan.rs](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/core/src/tools/spec_plan.rs),
   [features/lib.rs](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/features/src/lib.rs).
-- **[S11] Strict config yükleme:**
+- **[S11] Strict config loading:**
   [config/loader/mod.rs](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/config/src/loader/mod.rs).
-- **[S12] Windows sandbox türleri, deny-read sınırları ve MXC gereksinimleri:**
+- **[S12] Windows sandbox types, deny-read limits and MXC requirements:**
   [Windows sandbox](https://learn.chatgpt.com/docs/windows/windows-sandbox).
-- **[S13] Elevated kök okuma şartı ve alt yol reddi testi:**
+- **[S13] Elevated root-read requirement and subpath-deny test:**
   [0.155.1 resolved_permissions.rs](https://github.com/openai/codex/blob/be2951ea34f0d295ed0becf97079f92fa5f6950e/codex-rs/windows-sandbox-rs/src/resolved_permissions.rs),
   [0.163.0 resolved_permissions.rs](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/windows-sandbox-rs/src/resolved_permissions.rs),
-  [unelevated sınırı](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/windows-sandbox-rs/src/lib.rs).
-- **[S14] AGENTS keşfi/okuması ve başlangıç hata yolu:**
+  [unelevated limit](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/windows-sandbox-rs/src/lib.rs).
+- **[S14] AGENTS discovery/reading and startup error path:**
   [0.155.1 agents_md.rs](https://github.com/openai/codex/blob/be2951ea34f0d295ed0becf97079f92fa5f6950e/codex-rs/core/src/agents_md.rs),
   [0.163.0 agents_md.rs](https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/core/src/agents_md.rs).
-- **[S15] Sonraki kaynaklarda aynı koşul:**
+- **[S15] The same condition in later sources:**
   [0.164.0-alpha.3](https://github.com/openai/codex/blob/bd43893f3db678fcb7124296905a65b2dfa9dac0/codex-rs/windows-sandbox-rs/src/resolved_permissions.rs),
-  [19.10.2026 tarihinde okunan main](https://github.com/openai/codex/blob/89461ea6833832b0551ce24ee32205824d5c108d/codex-rs/windows-sandbox-rs/src/resolved_permissions.rs).
+  [main as read on 19 October 2026](https://github.com/openai/codex/blob/89461ea6833832b0551ce24ee32205824d5c108d/codex-rs/windows-sandbox-rs/src/resolved_permissions.rs).
 
-İncelenen tag'lerin çözülmüş commit'leri:
+Resolved commits of the examined tags:
 
 ```text
 rust-v0.155.1       be2951ea34f0d295ed0becf97079f92fa5f6950e

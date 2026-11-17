@@ -133,7 +133,7 @@ class CardCompatibilityTest(unittest.TestCase):
         card = y.find_card(self.vault, saved['id'])
         self.assertEqual(card['meta']['url'], HOVER)
         self.assertEqual(card['meta']['ek_urller'], [PAGE, QUOTE])
-        self.assertIn('## Ek bağlantılar\n\n- ' + PAGE + '\n- ' + QUOTE, card['body'])
+        self.assertIn('## Additional links\n\n- ' + PAGE + '\n- ' + QUOTE, card['body'])
         self.assertEqual(len(y.cards(self.vault)), 2)
         with patch.object(y, 'tools', return_value={}), \
                 patch.object(y, 'extract', return_value=('captured text', 'test', None)):
@@ -151,7 +151,7 @@ class CardCompatibilityTest(unittest.TestCase):
         y.capture(self.vault, url=PAGE, why='only note')
         card = y.find_card(self.vault, saved['id'])
         self.assertEqual(card['meta']['ek_urller'], [QUOTE, CLIP])
-        self.assertEqual(card['body'].count('## Ek bağlantılar'), 1)
+        self.assertEqual(card['body'].count('## Additional links'), 1)
         self.assertEqual(card['body'].count('- ' + QUOTE), 1)
         self.assertEqual(card['body'].count('- ' + CLIP), 1)
 

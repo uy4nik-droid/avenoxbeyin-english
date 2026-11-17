@@ -470,7 +470,7 @@ def _plan(vault_root, workspace_id, kind="general", name=None, description=None,
         raise ValueError(f"workspace already exists: {workspace_id}")
 
     display_name = name.strip() if isinstance(name, str) and name.strip() else workspace_id.replace("-", " ").title()
-    desc = description.strip() if isinstance(description, str) and description.strip() else f"{display_name} çalışma alanı"
+    desc = description.strip() if isinstance(description, str) and description.strip() else f"{display_name} workspace"
 
     # Default folders
     parent = _scope_path(project_parent) if project_parent is not None else _project_parent(vault_root)
@@ -496,18 +496,18 @@ def _plan(vault_root, workspace_id, kind="general", name=None, description=None,
 
     # Scaffolding templates
     rules_file_path = f"{default_project_dir}/Kurallar.md"
-    rules_body = rules.strip() if isinstance(rules, str) and rules.strip() else "- Bu çalışma alanına ait kararlar ve tercihler yerinde tutulur.\n- Genel vault kuralları geçerlidir."
+    rules_body = rules.strip() if isinstance(rules, str) and rules.strip() else "- Decisions and preferences for this workspace are kept here.\n- General vault rules apply."
 
-    rules_content = f"""# {display_name} — Kurallar
+    rules_content = f"""# {display_name} — Rules
 
 {desc}
 
-## Kapsam ve Çalışma İlkeleri
-- **Alan Türü:** {kind}
-- **Kaynak Klasörleri:** {', '.join(source_list)}
-- **Hafıza Politikası:** selective
+## Scope and Working Principles
+- **Workspace Type:** {kind}
+- **Source Folders:** {', '.join(source_list)}
+- **Memory Policy:** selective
 
-## Özel Kurallar
+## Specific Rules
 {rules_body}
 """
 
@@ -518,8 +518,8 @@ def _plan(vault_root, workspace_id, kind="general", name=None, description=None,
 
 {desc}
 
-## Belgeler ve Notlar
-- [[{default_project_dir}/Kurallar|Çalışma Alanı Kuralları]]
+## Documents and Notes
+- [[{default_project_dir}/Kurallar|Workspace Rules]]
 
 {MOC_START_MARKER}
 {MOC_END_MARKER}

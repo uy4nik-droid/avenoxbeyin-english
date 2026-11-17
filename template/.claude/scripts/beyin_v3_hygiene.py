@@ -485,9 +485,9 @@ def hook_cap_warning(vault, payload, cap=DEFAULT_CAP, harness=None, state=None):
             continue
         words = measured[0]
         relative = _vault_relative(vault, path) or str(path)
-        lines.append('Buyuk not: "%s" %d kelime - %d kelime tavan uzerinde. Bolum SINYALI, emir degil: '
-                     'dosya tek soruyu cevapliyorsa birak; birden fazla soruyu cevapliyorsa alt dosyaya bol '
-                     've notlar arasina [[wikilink]] ile bagla.\n' % (relative, words, words - cap))
+        lines.append('Large note: "%s" %d words - %d words over the cap. A split SIGNAL, not an order: '
+                     'if the file answers a single question, leave it; if it answers several questions, split it into '
+                     'sub-files and link the notes with [[wikilink]].\n' % (relative, words, words - cap))
     return ''.join(lines)
 
 
@@ -537,10 +537,10 @@ def folder_questions(vault, state, cooldown_days=14, limit=3):
                 empty = next(entries, None) is None
         except OSError:
             empty = False
-        questions.append('%s/ klasoru %d gundur %s. Kullaniciya sor: bu alanda yazmaya '
-                         'deger bir not var mi? Varsa o klasor altina kaynakli not yaz; yoksa sadece soruyu '
-                         'ilet, kendin bos icerik uretme.' % (name, int((now - newest) // 86400),
-                                                              'bos' if empty else 'dokunulmadi'))
+        questions.append('%s/ folder has been %s for %d days. Ask the user: is there a note worth '
+                         'writing in this area? If so, write a sourced note under that folder; if not, just pass on '
+                         'the question, do not produce empty content yourself.' % (name, 'empty' if empty else 'untouched',
+                                                                                   int((now - newest) // 86400)))
         if len(questions) >= limit:
             break
     return questions

@@ -4,7 +4,7 @@ This module is an opt-in foundation, not a replacement installer or lifecycle mi
 
 `template/.claude/scripts/beyin_v3.py` exposes `MemoryStore(state_dir, vault_root)`. SQLite records and receipts persist in `state_dir/memory.sqlite3`; the runtime directory is private to the local account. Each operation owns and closes its connection. Write operations use `BEGIN IMMEDIATE` transactions; this is local process coordination, not distributed cloud synchronization.
 
-The database records the resolved vault root it was created for (`metadata.vault_root`) and refuses any other root with `runtime belongs to another vault`, so two vaults never share one index. Nothing rebinds it implicitly. For a moved vault, `install_v3.py --state <state> --rebind-state` moves the binding after verifying that the recorded folder is gone or is the same folder, or provably uses another state root, and that the vault carries this state's installation pin; it copies the database to `memory-before-rebind.sqlite3` first. See [MULTI-MACHINE.md](MULTI-MACHINE.md#vaultu-başka-klasöre-ya-da-hesaba-taşımak).
+The database records the resolved vault root it was created for (`metadata.vault_root`) and refuses any other root with `runtime belongs to another vault`, so two vaults never share one index. Nothing rebinds it implicitly. For a moved vault, `install_v3.py --state <state> --rebind-state` moves the binding after verifying that the recorded folder is gone or is the same folder, or provably uses another state root, and that the vault carries this state's installation pin; it copies the database to `memory-before-rebind.sqlite3` first. See [MULTI-MACHINE.md](MULTI-MACHINE.md#moving-the-vault-to-another-folder-or-account).
 
 ## Hook acknowledgement retention
 
@@ -87,159 +87,178 @@ V3 writes exclusively to its explicit managed vault files:
 
 All other paths belong to the user. In particular, `.brain/` and `custom/` directories are reserved as an untouched, unmanaged user layer. Installer, updater, and `doctor` checks never treat files under `.brain/` or `custom/` as conflicts or unmanaged system intrusions.
 
-## Proje klasörü kapsamlarını yönetme
+## Managing project folder scopes
 
-`.beyin-projects.json` içindeki bulunamayan klasörler uyarı ve doctor tanısı üretir; diğer
-projelerin sorguları devam eder. Eksik klasör eşlemesi eski `--no-sync` indeks satırlarının
-başka projelere ortak not gibi açılmaması için kapsam sınırı olarak korunur.
+Folders in `.beyin-projects.json` that cannot be found produce a warning and a doctor
+diagnosis; queries for the other projects continue. The missing-folder mapping is kept as a
+scope boundary so that stale `--no-sync` index rows are not opened to other projects as
+shared notes.
 
-Kasa dışına çıkan, mutlak ya da `.` içeren yol, boş proje adı veya iki projeye atanmış klasör
-gibi tek bir hatalı girdi artık bütün açık proje çağrılarını durdurmaz: girdi stderr uyarısıyla
-atlanır, işaret edebileceği kasa klasörü hiçbir projeye açılmaz ve girdi düzeltilene kadar
-`shared_unscoped` kapalı sayılır. Bozuk JSON veya bilinmeyen anahtar gibi dosya düzeyindeki
-hatalar açık proje çağrısını durdurmaya devam eder. Okuma dosyayı değiştirmez.
+A single bad entry, such as a path that leaves the vault, an absolute path or one containing
+`.`, an empty project name, or a folder assigned to two projects, no longer stops every open
+project call. The entry is skipped with a stderr warning, the vault folder it might point to
+is not opened to any project, and `shared_unscoped` is treated as off until the entry is
+fixed. File-level errors such as broken JSON or an unknown key still stop open project calls.
+Reading does not change the file.
 
-`project-scope list` yalnız okur. `project-scope add --folder "Projeler/Deneme" --project deneme`,
-`project-scope remove --folder "Projeler/Deneme"` ve `project-scope prune` açıkça kapsam
-dosyasını düzenler. `prune` artık bulunamayan klasör girdilerini ve geçersiz yolları çıkarır. Bozuk
-veya symlink yapılandırma üzerine yazılmaz; önce dosyayı onar.
+`project-scope list` only reads. `project-scope add --folder "Projeler/Deneme" --project deneme`,
+`project-scope remove --folder "Projeler/Deneme"` and `project-scope prune` explicitly edit the
+scope file. `prune` now removes folder entries that can no longer be found and invalid paths.
+A broken or symlinked configuration is not overwritten; repair the file first.
 
-`--shared-unscoped on|off` yalnız `add` ile kullanılabilir. Eylemsiz çağrı `list`
-sayılır; bayrak eylemsiz, `list`, `remove` veya `prune` ile verilirse komut hiçbir
-kapsam veya runtime dosyasını değiştirmeden açık hata ve çıkış kodu 1 döndürür.
-Mevcut eşlemeyi koruyarak ayarı değiştirmek için aynı klasör ve proje adıyla yeniden
-`add` kullan:
+`--shared-unscoped on|off` can be used only with `add`. A call with no action is treated as
+`list`; if the flag is given with no action, `list`, `remove` or `prune`, the command returns
+an explicit error and exit code 1 without changing any scope or runtime file. To change the
+setting while keeping the existing mapping, run `add` again with the same folder and project
+name:
 
 ```sh
 python3 beyin.py project-scope add --folder "Projeler/Deneme" --project deneme --shared-unscoped on
 ```
 
-Windows'ta `python3` yerine `py -3` kullan. Kapatmak için `off` ver; bayrağı
-vermezsen mevcut değer korunur, yeni dosyada varsayılan `false` olur. `add` çıktısı
-kaydedilen `shared_unscoped` değerini de gösterir. `on`, hiçbir
-projeye atanmamış uygun notları dış proje köprüsü dahil tüm açık proje sorgularına
-dahil eder; başka projeye ait veya `private` notları açmaz. Yalnız mevcut değeri
-görmek için bayraksız `project-scope list` kullan.
+On Windows, use `py -3` instead of `python3`. Pass `off` to turn it off; if you leave out the
+flag, the existing value is kept, and a new file defaults to `false`. The `add` output also
+shows the saved `shared_unscoped` value. `on` includes eligible notes that are not assigned to
+any project in all open project queries, including the external project bridge; it does not
+open notes that belong to another project or are `private`. To see only the current value, use
+`project-scope list` without the flag.
 
-## Çalışma alanları, bağlantı denetimi ve MOC
+## Workspaces, link checking and MOC
 
-`workspace`, `lint` ve `moc` yalnız açıkça çağrıldığında çalışır; SessionStart, `sync` ve
-`doctor` bunları çalıştırmaz. `workspace list`, `workspace inspect`, `workspace plan`,
-`workspace provision --dry-run` ve `lint` salt okunurdur ve state oluşturmaz.
+`workspace`, `lint` and `moc` run only when called explicitly; SessionStart, `sync` and
+`doctor` do not run them. `workspace list`, `workspace inspect`, `workspace plan`,
+`workspace provision --dry-run` and `lint` are read-only and do not create state.
 
-- Çalışma alanı üstverisi (ad, tür, yaşam döngüsü, kural dosyası, not kökleri, provision
-  durumu) vault kökündeki `.beyin-workspaces.json` dosyasındadır. Klasör bağlantıları
-  `.beyin-projects.json` içindeki `folders` haritasında kalır ve o dosyanın biçimi değişmez.
-  Eski sürüm kapsam dosyasını aynen okur ve kayıt dosyasını yok sayar; `rollback` sonrasında
-  proje kapsamları çalışmaya devam eder. Bir çalışma alanının kaynakları her okumada `folders`
-  haritasından türetilir: `project-scope add/remove` ile yapılan değişiklik hemen görünür.
-  Kaydı olmayan projeler `registered: false` ile listelenir. Daha yeni bir şema sürümüyle
-  yazılmış veya bozuk kayıt dosyası değiştirilmez.
-- `workspace disconnect` yalnız hala o çalışma alanını gösteren bağlantıyı kaldırır; diskteki
-  klasöre ve notlara dokunmaz. `archive` kapsamı değiştirmez, çalışma alanını yalnız listeden
-  gizler.
-- `workspace provision <id>` ilk dosyadan önce `provision.status: pending` kaydını yazar, sonra
-  klasörleri ve şablonları oluşturur (var olan dosya korunur), klasörleri bağlar ve doğrular.
-  Proje klasörü vault'un kendi proje klasörünün altındadır (şablonda `🏰 300-Projects/<id>`,
-  yoksa `projects/<id>`). `--source` verilse de kural ve MOC şablonlarının bulunduğu bu klasör
-  ve not kökü de çalışma alanına bağlanır (`plan` çıktısındaki `bindings`); doğrulama, şablon
-  dosyalarının retrieval kapsamında bu çalışma alanına düştüğünü de denetler.
-  Hata olursa yalnız bu denemenin kendi değişiklikleri geri alınır: oluşturduğu ve değişmemiş
-  dosyalar, boş kalan klasörler, hala bu çalışma alanını gösteren bağlantılar ve kendi kaydı.
-  Arada yapılmış başka değişiklikler korunur. Bir şey geri alınamazsa hata çıktısındaki
-  `reconciliation` nesnesi neyin kaldığını söyler ve kayıt `provision.status: failed` olarak
-  kalır; aynı `workspace provision <id>` komutu kaydı kaldığı yerden tamamlar.
-- `lint [--folder <klasör>]` kırık wikilink, eksik başlık veya ek, yetim ve gelen bağlantısı
-  olmayan notları raporlar. Kısmi yol (`[[klasör/not]]`) ve ekler Obsidian gibi ad ve yol
-  sonuyla çözülür; kod blokları ve satır içi kod sayılmaz. Hassas, arşiv (`📦 900-Archive`,
-  `Arşiv` gibi), `visibility: private` ve kurulum klasörlerindeki notlar taranmaz; böyle bir nota
-  giden bağlantı da kırık görünür. İstisna: kökteki `receipts/` klasörünün üst seviyesinde
-  bulunan düz `.md` receipt dosyalarına tam vault yoluyla verilen bağlantı çözülür; receipt
-  gövdesi okunmaz ve `#başlık` bölümü doğrulanmaz. Receipt dosyaları tarama/MOC listesine
-  girmez; yalın ad veya olmayan receipt hâlâ kırık sayılır. Sayılar her zaman tam döner; listeler en fazla 100 kayıt
-  taşır, kalanı `truncated` alanında sayılır (tamamı için daha dar bir `--folder` kullan).
-  `folder_counts`, kırpılmadan önceki bulguları kaynak dosyanın doğrudan üst klasörüne
-  göre sayar (`.` kasa kökü); kırık bağlantı sayısı hedef dosya değil bağlantı adedidir.
-  En çok bulgusu olan ilk 100 klasör listelenir, eşitlikte yol sırası kullanılır; kalan
-  klasör ve bulgu sayıları `folder_counts_remaining` alanında tutulur. `--folder`
-  kullanıldığında bu dağılım da yalnız seçilen tarama alanını kapsar. Bu özet dışlama
-  politikasını değiştirmez: dizin dışı bırakılmış veya üretilmiş dosyalar için yeni bir
-  muafiyet eklemez.
-- `moc [--folder knowledge] [--file MOC.md]` yalnız hedef klasördeki düz bir `.md` dosyasına
-  yazar. `CLAUDE.md`, `AGENTS.md`, `Kurallar.md` gibi talimat, companion veya kural dosyası
-  adları kabul edilmez. Dosya yoksa oluşturur. Varsa yalnız tek bir `<!-- beyin-moc:start -->` ve
-  `<!-- beyin-moc:end -->` çifti taşıdığında ve yalnız bu iki işaretin arasını yeniden üretir;
-  işaretsiz dosyaya dokunmaz. Dizinin görüneceği yere işaret çiftini elle ekle. MOC yalnız
-  kendi okuyucularının da görebildiği notları listeler: notun proje kapsamı (`project` alanı
-  veya `.beyin-projects.json` klasörü) MOC dosyasının kapsamıyla aynı olmalı, görünürlüğü
-  MOC'unkinden dar olmamalı (`visibility: public` bir MOC yalnız public notları listeler) ve
-  `trust: untrusted` ya da reddedilmiş çıkarım olmamalı. İç içe kapsamda her proje klasörü için
-  ayrı `moc --folder <klasör>` çalıştır; atlanan notlar çıktıdaki `skipped` sayılarında görünür.
-  Kapsam dosyası değişince `moc` yeniden çalıştırılmalı. Değişiklik yoksa dosyaya yazılmaz.
-  Obsidian Beyin kilidini kullanmadığı için dosya, yeni metin hazır
-  olduktan sonra yeniden adlandırmadan hemen önce (içerik özeti, mtime, boyut, inode) tekrar
-  karşılaştırılır; değiştiyse hiçbir şey yazılmaz ve komut yeniden çalıştırılmayı ister.
-  macOS ve Linux'ta eski dosya yeniden adlandırma boyunca açık tutulur, bu arada yerinde
-  kaydedilen bir düzenleme fark edilip geri konur; önce dosyayı boşaltıp sonra yazan editör
-  için geri koymadan önce dosyanın değişmesi durana kadar (en fazla 0,2 sn) beklenir. Kalan
-  sınır: bir editör dosyayı tam bu mikro saniyelik aralıkta yeni bir dosyayla değiştirirse
-  işletim sistemi bunu kilitleyemez.
+- Workspace metadata (name, kind, lifecycle, rules file, note roots, provision status) lives
+  in the `.beyin-workspaces.json` file at the vault root. Folder bindings stay in the
+  `folders` map in `.beyin-projects.json`, and the format of that file does not change. An
+  older version reads the scope file as before and ignores the registry file; after
+  `rollback`, project scopes keep working. A workspace's sources are derived from the
+  `folders` map on every read: a change made with `project-scope add/remove` is visible
+  immediately. Projects with no registry entry are listed with `registered: false`. A registry
+  file written with a newer schema version, or a corrupt one, is not modified.
+- `workspace disconnect` removes only a binding that still points to that workspace; it does
+  not touch the folder or notes on disk. `archive` does not change scope; it only hides the
+  workspace from the list.
+- `workspace provision <id>` writes a `provision.status: pending` record before the first
+  file, then creates the folders and templates (an existing file is kept), binds the folders
+  and verifies them. The project folder lives under the vault's own project folder
+  (`🏰 300-Projects/<id>` in the template, otherwise `projects/<id>`). Even when `--source` is
+  given, this folder, which holds the rule and MOC templates, and the note root are also bound
+  to the workspace (`bindings` in the `plan` output); verification also checks that the
+  template files fall into this workspace within the retrieval scope.
+  If an error occurs, only this attempt's own changes are rolled back: the files it created
+  and that are unchanged, folders left empty, bindings that still point to this workspace, and
+  its own record. Other changes made in the meantime are kept. If something cannot be rolled
+  back, the `reconciliation` object in the error output says what remains, and the record
+  stays as `provision.status: failed`; the same `workspace provision <id>` command completes
+  the record from where it stopped.
+- `lint [--folder <folder>]` reports broken wikilinks, missing headings or attachments, and
+  orphan notes with no incoming links. Partial paths (`[[folder/note]]`) and attachments are
+  resolved like Obsidian does, by name and path ending; code blocks and inline code are not
+  counted. Notes in sensitive folders, archive folders (such as `📦 900-Archive` or
+  `Arşiv`), `visibility: private` notes and installation folders are not scanned; a link to
+  such a note also appears as broken. Exception: a link given by full vault path to a plain
+  `.md` receipt file at the top level of the root `receipts/` folder resolves; the receipt
+  body is not read and a `#heading` section is not verified. Receipt files do not enter the
+  scan or the MOC list; a bare name or a nonexistent receipt still counts as broken. Counts
+  are always returned in full; lists carry at most 100 entries, and the rest is counted in the
+  `truncated` field (use a narrower `--folder` for all of them). `folder_counts` counts the
+  findings before truncation by the direct parent folder of the source file (`.` is the vault
+  root); the broken-link count is the number of links, not of target files. The first 100
+  folders with the most findings are listed, with ties broken by path order; the counts of the
+  remaining folders and findings are kept in the `folder_counts_remaining` field. When
+  `--folder` is used, this breakdown also covers only the selected scan area. This summary
+  does not change the exclusion policy: it adds no new exemption for files that are left out
+  of the index or generated.
+- `moc [--folder knowledge] [--file MOC.md]` writes only to a plain `.md` file in the target
+  folder. Names of instruction, companion or rules files such as `CLAUDE.md`, `AGENTS.md` and
+  `Kurallar.md` are not accepted. If the file does not exist, it creates it. If it exists, it
+  regenerates only the part between a single `<!-- beyin-moc:start -->` and
+  `<!-- beyin-moc:end -->` pair, and only when the file carries exactly that pair; it does not
+  touch a file without markers. Add the marker pair by hand where the index should appear. A
+  MOC lists only notes that its own readers can also see: the note's project scope (the
+  `project` field or the `.beyin-projects.json` folder) must equal the scope of the MOC file,
+  its visibility must not be narrower than the MOC's (a `visibility: public` MOC lists only
+  public notes), and it must not be `trust: untrusted` or a rejected inference. In a nested
+  scope, run a separate `moc --folder <folder>` for each project folder; skipped notes appear
+  in the `skipped` counts in the output. `moc` must be run again when the scope file changes.
+  If nothing changed, the file is not written.
+  Because Obsidian does not use the Beyin lock, the file is compared again (content digest,
+  mtime, size, inode) after the new text is ready and just before the rename; if it changed,
+  nothing is written and the command asks to be run again. On macOS and Linux the old file is
+  held open during the rename, and an in-place edit saved in the meantime is noticed and put
+  back; for an editor that first empties the file and then writes, the command waits (up to
+  0.2 s) until the file stops changing before putting it back. The remaining limit: if an
+  editor replaces the file with a new file in exactly that microsecond-scale gap, the operating
+  system cannot lock against it.
 
-## Receipt görünümü çakışması ve kurtarma
+## Receipt view conflict and recovery
 
-`daily/v3/YYYY-MM-DD.md` ve `knowledge/v3/outcomes.md` değişmez receipt kaynaklarından
-üretilir. Görünüm elle değişmişse veya yerel takip geçmişi yoksa mevcut baytlar korunur
-ve `kind: receipt_view` uyarısı görünür kalır (`sync.status: degraded`). Sağlam kaynak
-bağlamı, lifecycle kayıtları ve yeni receipt yazımı devam eder; gerçek kaynak
-çakışmaları bağlamı ve geçmişi engellemeye devam eder. `receipt`, `task-update`,
-`context` ve `recap` JSON çıktıları ilgili tanıyı `source_sync.warnings` altında
-bildirir. `history` JSON liste biçimini korur ve uyarıyı stderr'e yazar.
+`daily/v3/YYYY-MM-DD.md` and `knowledge/v3/outcomes.md` are generated from the immutable
+receipt sources. If a view has been edited by hand or there is no local tracking history, the
+existing bytes are preserved and a `kind: receipt_view` warning stays visible
+(`sync.status: degraded`). Healthy source context, lifecycle records and writing new receipts
+continue; real source conflicts continue to block context and history. The `receipt`,
+`task-update`, `context` and `recap` JSON outputs report the relevant diagnosis under
+`source_sync.warnings`. `history` keeps its JSON list format and writes the warning to stderr.
 
-Yalnız CRLF/CR/LF farkı elle düzenleme sayılmaz. Yeni receipt özetleri LF kullanır;
-eski kaynak dosyalar ve indeks özetleri yeniden yazılmaz. CRLF çıkışlı bir receipt
-kaynağı, 3.12.0'ın okuduğu gibi sondaki CR ile dizine alınır; böylece `rollback`
-sonrasında eski sürümün bayt karşılaştırması da aynı satırı görür. Üretilen görünümler
-eski özetler için de LF kullanır. Sahipliği kanıtlanan eski görünüm ilk sync'te LF'ye
-geçer; takip edilen hash yazılan ham baytlara aittir ve sonraki LF kayıtları yeniden
-yazılmaz. Görünüm, güncel deterministik
-çıktıyla satır sonları dışında aynıysa güncellenebilir. Eski karma satır sonlu görünüm
-gecikmişse, içerdiği receipt bağlantıları yalnız yeniden üretilecek alt kümeyi seçer:
-yeniden üretilen **ham baytların** hash'i kayıtlı eski hash'e eşit olmalı, mevcut metin
-de yalnız satır sonlarında farklı olmalıdır. Bağlantı veya başlık tek başına yazma
-izni vermez. 3.10-3.12 sürümlerinin yazdığı görünüm o sürümlerin biçimiyle (hash adlı
-bağlantı, gizlenmemiş özet) yalnız karşılaştırma için yeniden üretilir; kanıt tutarsa
-güncel biçimle değiştirilir. Saat dilimi, başka bir üretici biçimi veya eksik geçmiş
-nedeniyle bu kanıt kurulamıyorsa görünüm korunur; aşağıdaki açık kurtarma komutunu
-kullanın. Aynı kontrol eski günlük düzenine ait takip edilen görünümün kaldırılmasında
-da geçerlidir.
+A CRLF/CR/LF difference alone does not count as a manual edit. New receipt summaries use LF;
+old source files and index summaries are not rewritten. A receipt source with CRLF line endings
+is indexed with the trailing CR, as 3.12.0 read it, so after `rollback` the older version's
+byte comparison sees the same line. Generated views use LF for old summaries too. A previous
+view whose ownership is proven moves to LF on the first sync; the tracked hash belongs to the
+raw bytes written, and later LF records are not rewritten. A view can be updated if it is
+identical to the current deterministic output apart from line endings. If an old view with
+mixed line endings is stale, the receipt links it contains select only the subset to be
+regenerated: the hash of the regenerated **raw bytes** must equal the recorded old hash, and
+the current text must differ only in line endings. A link or heading alone does not give
+permission to write. The view written by versions 3.10-3.12 is regenerated in those versions'
+format (hash-named link, unhidden summary) only for comparison; if the evidence matches, it is
+replaced with the current format. If this evidence cannot be established because of a time
+zone, another generator format or missing history, the view is preserved; use the explicit
+recovery command below. The same check applies when removing a tracked view that belongs to
+the old daily layout.
 
-Takip edilen veya mevcut receipt'lerin üreteceği görünüm, başlığı silinse bile kaynak
-not olarak dizine eklenmez. Aynı dosyanın sabit bağlantıları da dışlanır. Önceden
-yanlışlıkla dizine alınmış görünüm kayıtları ve bu kayıtlara ait geçmiş olayları
-otomatik bağlamdan saklanır; denetim olaylarının baytları değiştirilmez. Görünümün
-yerinde sonradan oluşan gerçek bir not yeniden dizine alınabilir. Yerel state tamamen
-kaybolsa bile kurtarma arşivinin yanında kaydedilmiş köken bilgisi ve arşiv özeti,
-halen mevcut aynı sabit bağlantıyı tanımak için kullanılır. Bu yan kayıt silinirse,
-bozulursa veya bağlantı hem yer hem içerik değiştirirse eski köken yeniden
-kanıtlanamaz; bu dosyaları elle inceleyin.
+The view that tracked or existing receipts would generate is not indexed as a source note,
+even if its heading is deleted. Fixed links to the same file are also excluded. View records
+that were wrongly indexed earlier, and the history events belonging to them, are hidden from
+automatic context; the bytes of audit events are not changed. A real note that later appears
+in the view's place can be indexed again. Even if the local state is lost entirely, the
+provenance information saved next to the recovery archive and the archive digest are used to
+recognise the same fixed link that still exists. If this side record is deleted or corrupted,
+or a link changes both place and content, the old provenance cannot be proven again; inspect
+those files by hand.
 
-Açık kurtarma komutu: `python3 beyin.py sync --recover-views` (Windows: `py -3 beyin.py sync --recover-views`).
-Çakışan baytlar görünümün yanındaki `.archive/` içinde her denemeye ayrı bir dosya
-olarak kalıcı yazıldıktan sonra görünüm yeniden üretilir. Kurtarma başarısızsa kaynak
-ve takip kaydı korunur; symlink arşiv hedefleri kabul edilmez. Komut receipt kaynaklarını
-ve runtime veritabanını silmez. Arşivdeki kullanıcı eklemelerini uygun bilgi notlarına taşı.
-Sabit bağlantı varsa arşivin yanında küçük bir `.provenance.json` kaydı da saklanır;
-bu kaydı arşivle birlikte koruyun.
-POSIX'te özgün görünüm değiştirilmeden önce arşiv dosyası, arşiv dizini ve üst dizin
-`fsync` bariyerlerinden geçer; bariyer hatası kurtarmayı durdurur. Bu sıra güç kesintisi
-veya uzak dosya sistemi için mutlak kalıcılık garantisi değildir. Windows'ta dizin
-`fsync` desteği bulunmadığından aynı kalıcılık iddiası yapılmaz.
+Explicit recovery command: `python3 beyin.py sync --recover-views` (Windows: `py -3 beyin.py sync --recover-views`).
+The conflicting bytes are durably written as a separate file for each attempt inside
+`.archive/` next to the view, and then the view is regenerated. If recovery fails, the source
+and the tracking record are kept; symlink archive targets are not accepted. The command does
+not delete receipt sources or the runtime database. Move any user additions in the archive to
+suitable knowledge notes. If there is a fixed link, a small `.provenance.json` record is also
+stored next to the archive; keep this record together with the archive.
+On POSIX, before the original view is changed, the archive file, the archive directory and the
+parent directory pass `fsync` barriers; a barrier error stops the recovery. This order is not
+an absolute durability guarantee against power loss or a remote file system. On Windows,
+directory `fsync` is not supported, so the same durability claim is not made.
 
-### Öğrenim adaylarını sonuçlandırma hataları
+### Errors when resolving learning candidates
 
-Açık bir `learn --resolve distilled|discarded` isteğinde aday defterinin varlığını denetleme veya mevcut defteri okuma, kilitleme ya da yazma işlemi bir G/Ç hatasıyla başarısız olursa komut çıkış 1 verir. JSON hatası, özel dosya yolu veya defter içeriği yerine sabit `learning candidate resolution failed` mesajını taşır. Başarılı sonuçlandırma, hatasız tamamlanan eşleşmesiz istek ve defterin bulunmaması mevcut sonuçlarını ve çıkış 0 davranışını korur. Eşleşme bulunmasa da mevcut yeniden yazma adımı çalışır; bu adımın G/Ç hatası da çıkış 1 verir. Receipt'in otomatik aday takibi isteğe bağlı kalır; sonuçlandırma hatası kalıcı receipt'i geri almaz veya başarısız saymaz. Defter biçimi ve yazma/tekrar davranışı değişmez.
+In an explicit `learn --resolve distilled|discarded` request, if checking for the candidate
+ledger or reading, locking or writing the existing ledger fails with an I/O error, the command
+exits with 1. The JSON error carries the fixed message `learning candidate resolution failed`
+instead of a private file path or ledger content. Successful resolution, a request that
+completes without error but matches nothing, and a missing ledger keep their existing results
+and exit code 0 behavior. The existing rewrite step runs even when no match is found; an I/O
+error in this step also exits with 1. The receipt's automatic candidate tracking remains
+optional; a resolution failure does not roll back or fail the persisted receipt. The ledger
+format and the write/retry behavior do not change.
 
-Açık `learn --list` isteği de mevcut aday defterinin denetimi veya okunması G/Ç hatasıyla başarısız olduğunda çıkış 1 ve özel yol/içerik içermeyen sabit `learning candidate listing failed` mesajı verir. Bulunmayan veya normal dosya olmayan defter boş liste olarak kalır. Başarılı filtreleme, bozuk satırların atlanması ve hook aday kontrollerinin mevcut en iyi çaba davranışı değişmez.
+An explicit `learn --list` request likewise exits with 1 and the fixed message
+`learning candidate listing failed`, with no private path or content, when checking or reading
+the existing candidate ledger fails with an I/O error. A ledger that does not exist or is not a
+regular file stays an empty list. Successful filtering, skipping of malformed lines, and the
+existing best-effort behavior of the hook candidate checks do not change.
 
 ## Memory audit read errors
 

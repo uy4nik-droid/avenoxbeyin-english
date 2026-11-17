@@ -1,30 +1,30 @@
 ---
-name: Öneri veya tasarım tartışması
-about: Bir ihtiyacı, kullanım örneğini ve olası çözümü tartışın.
+name: Proposal or design discussion
+about: Discuss a need, a use case and a possible solution.
 title: ''
 labels: []
 assignees: ''
 ---
 
-## İhtiyaç
+## Need
 
-<!-- Hangi işi yapmak zorlaşıyor ve kim etkileniyor? Kişisel veri içermeyen somut bir örnek verin.
-Çözüm tasarlamanız veya kod yazmanız gerekmez. -->
+<!-- What job is becoming hard to do, and who is affected? Give a concrete example without personal data.
+You do not need to design a solution or write code. -->
 
-## Öneri ve alternatifler
+## Proposal and alternatives
 
-<!-- Beklediğiniz davranış; benzer issue'lar, mevcut özellikler ve denediğiniz alternatifler.
-Uygunsa çekirdeğe eklemek yerine isteğe bağlı çözüm olup olamayacağını değerlendirin. -->
+<!-- The behavior you expect; similar issues, existing features and alternatives you tried.
+If appropriate, consider whether it could be an optional solution instead of being added to the core. -->
 
-## Sınırlar (isteğe bağlı)
+## Constraints (optional)
 
-<!-- Gizlilik, local-first/çevrimdışı kullanım, bağımlılıklar, platform, kurulum,
-API/CLI ve veri uyumluluğu, rollback veya bakım maliyeti gibi olası etkiler.
-Bilmiyorsanız boş bırakabilirsiniz. -->
+<!-- Possible impacts such as privacy, local-first/offline use, dependencies, platform, installation,
+API/CLI and data compatibility, rollback or maintenance cost.
+You can leave this empty if you don't know. -->
 
-## Büyük değişikliklerde tasarım yaklaşımı (isteğe bağlı)
+## Design approach for large changes (optional)
 
-<!-- Mimari, güvenlik, state veya dağıtımı önemli ölçüde etkileyecek önerilerde:
-alternatiflerin artı/eksi yönleri, ilgili tasarım issue'su/RFC/ADR, aşamalı küçük PR planı,
-upgrade/rollback ve doğrulama yaklaşımını paylaşabilirsiniz.
-Bunlar küçük özellikler için şart değildir; tasarım kararı maintainer ile birlikte verilir. -->
+<!-- For proposals that would significantly affect architecture, security, state or distribution:
+you can share the pros and cons of the alternatives, the related design issue/RFC/ADR, a plan of small phased PRs,
+and the upgrade/rollback and verification approach.
+These are not required for small features; the design decision is made together with the maintainer. -->

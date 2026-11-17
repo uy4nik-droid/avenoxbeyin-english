@@ -482,7 +482,7 @@ class GuardedHelperTest(unittest.TestCase):
         with dns, dial:
             text, method, note = yakala.extract(vault, card, dict(NO_TOOLS, npx='npx'))
         self.assertEqual((text, method), (None, None))
-        self.assertIn('yerel veya ozel bir ag adresine yonlendirdi', note)
+        self.assertIn('redirected to a local or private network address', note)
         self.assertEqual(self.pages.hits['secret'], [])
         self.assertEqual(self.pages.hits['public'], ['/yonlendir', '/yonlendir'])  # Defuddle, then the stdlib fallback
 

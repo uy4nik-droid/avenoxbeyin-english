@@ -494,7 +494,7 @@ class ReceiptViewIsolationTest(unittest.TestCase):
         self.damage_view()
         result = json.loads(self.cli('recap').stdout)
         text = entry.human_result(result, 'recap')
-        self.assertIn('Uyari:', text)
+        self.assertIn('Warning:', text)
         self.assertIn('receipt view', text)
 
     def test_cli_invalid_source_and_view_report_both_warnings(self):

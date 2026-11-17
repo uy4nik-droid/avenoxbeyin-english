@@ -1,40 +1,42 @@
-# Mobil ve Harici Yakalama Sunucusu (`ingest-server`)
+# Mobile and External Capture Server (`ingest-server`)
 
-İkinci beyin masaüstü başında kısayollar, CLI ve hook mekanizmalarıyla çok hızlı çalışır. Ancak masadan kalktığınızda yolda, mobilde (iOS / Android) veya harici bir cihazda aklınıza gelen bir fikri, okuduğunuz bir makaleyi veya tweet'i anında kasaya göndermek istediğinizde `beyin.py ingest-server` devreye girer.
+The second brain works very fast at your desk, with hotkeys, the CLI and hooks. But when you get up
+from the desk and want to send an idea that comes to you on the road, on mobile (iOS / Android) or
+on an external device, or an article or tweet you are reading, straight to the vault, `beyin.py ingest-server` comes into play.
 
-Bu sunucu, **yerel-first ve mutlak mahremiyet** prensipleriyle tasarlanmıştır:
-- **Tek yönlü (Append-only):** Dışarıdan gelen veriler doğrudan `000-Inbox/` (veya mevcut inbox) klasörüne zaman damgalı Markdown dosyaları olarak yazılır.
-- **Sıfır veri sızıntısı:** Sunucu kasa içindeki hiçbir dosyayı HTTP üzerinden dışarıya servis etmez. Yalnızca sağlık yoklaması (`GET /health`) ve veri alımı (`POST /ingest` veya `POST /yakala`) açıktır.
-- **Sıfır ek bağımlılık:** Python standart kütüphanesiyle (`http.server`) çalışır; pip veya ek paket gerektirmez.
-- **Sertleştirilmiş güvenlik:** Zamanlama saldırılarına karşı sabit zamanlı (`hmac.compare_digest`) token doğrulaması, 1MB üst sınır, frontmatter enjeksiyon koruması ve `untrusted: true` güven etiketi ile çalışır.
+This server is designed around the principles of **local-first and absolute privacy**:
+- **One-way (append-only):** Data arriving from outside is written directly into the `000-Inbox/` (or the existing inbox) folder as timestamped Markdown files.
+- **Zero data leakage:** The server does not serve any file inside the vault over HTTP. Only the health check (`GET /health`) and data intake (`POST /ingest` or `POST /yakala`) are exposed.
+- **Zero extra dependencies:** It runs on the Python standard library (`http.server`); it needs no pip or extra packages.
+- **Hardened security:** It works with constant-time token verification against timing attacks (`hmac.compare_digest`), a 1 MB upper limit, frontmatter injection protection and an `untrusted: true` trust label.
 
 ---
 
-## 1. Sunucuyu Başlatma
+## 1. Starting the Server
 
-### Yerel Test (Sadece bu bilgisayar)
+### Local Test (This computer only)
 ```bash
 python3 beyin.py ingest-server --port 8484
 # Windows:
 py -3 beyin.py ingest-server --port 8484
 ```
 
-### Ev Ağı veya Tailscale Üzerinden Erişim (Token Korumalı)
-Telefonunuzdan veya harici cihazınızdan erişmek için yerel ağ arayüzüne bağlayın ve mutlaka bir Bearer token belirleyin:
+### Access over a Home Network or Tailscale (Token Protected)
+To reach it from your phone or an external device, bind to the local network interface and be sure to set a Bearer token:
 ```bash
 python3 beyin.py ingest-server --host 0.0.0.0 --port 8484 --token "COK_GIZLI_PAROLANIZ"
 ```
-*(Token ortam değişkeni olarak da verilebilir: `export BEYIN_INGEST_TOKEN="COK_GIZLI_PAROLANIZ"`)*
+*(The token can also be given as an environment variable: `export BEYIN_INGEST_TOKEN="COK_GIZLI_PAROLANIZ"`)*
 
 > [!TIP]
-> **Güvenli Ağ Önerisi (Tailscale / WireGuard):** Sunucu portunu doğrudan genel internete (modem port yönlendirmesiyle) açmak yerine ücretsiz bir mesh VPN olan [Tailscale](https://tailscale.com/) kullanmanız önerilir. Bu sayede yalnızca sizin cihazlarınız (telefonunuz ve bilgisayarınız) şifreli bir tünel üzerinden haberleşir.
+> **Secure network recommendation (Tailscale / WireGuard):** Instead of exposing the server port directly to the public internet (through modem port forwarding), we recommend using [Tailscale](https://tailscale.com/), a free mesh VPN. This way only your own devices (your phone and your computer) communicate, over an encrypted tunnel.
 
 ---
 
-## 2. API Uç Noktaları
+## 2. API Endpoints
 
 ### `GET /health`
-Sunucunun ayakta olup olmadığını kontrol eder.
+Checks whether the server is up.
 ```json
 {
   "status": "ok",
@@ -44,62 +46,62 @@ Sunucunun ayakta olup olmadığını kontrol eder.
 }
 ```
 
-### `POST /ingest` veya `POST /yakala`
-Gelen kutusuna yeni bir not fırlatır.
+### `POST /ingest` or `POST /yakala`
+Drops a new note into the inbox.
 
-**İstek Başlıkları (Headers):**
+**Request Headers:**
 - `Content-Type: application/json`
-- `Authorization: Bearer <token>` *(Eğer token belirlenmişse)*
+- `Authorization: Bearer <token>` *(If a token has been set)*
 
-`application/json` ile gönderilen bozuk JSON ve geçersiz UTF-8 gövdeleri HTTP 400 ile reddedilir; gelen kutusuna dosya yazılmaz. Düz metin göndermek için `Content-Type: text/plain` kullanın.
+Malformed JSON and invalid UTF-8 bodies sent with `application/json` are rejected with HTTP 400; no file is written to the inbox. To send plain text, use `Content-Type: text/plain`.
 
-**Örnek JSON Gövdesi:**
+**Example JSON Body:**
 ```json
 {
-  "title": "Dağıtık Sistemlerde SQLite Kilitleri",
+  "title": "SQLite Locks in Distributed Systems",
   "url": "https://example.com/sqlite-locking",
-  "text": "WAL modunda dahi Windows üzerinde açık handle'lar silme işlemlerini kilitliyor.",
-  "tags": ["sqlite", "mimari", "mobil"]
+  "text": "Even in WAL mode, open handles on Windows lock delete operations.",
+  "tags": ["sqlite", "architecture", "mobile"]
 }
 ```
 
-**Başarılı Cevap (HTTP 201 Created):**
+**Successful Response (HTTP 201 Created):**
 ```json
 {
   "status": "accepted",
-  "file": "000-Inbox/20261012-073000-dagitik-sistemlerde-sqlite-kilitleri.md",
+  "file": "000-Inbox/20261012-073000-sqlite-locks-in-distributed-systems.md",
   "bytes": 284,
-  "message": "Kayit basariyla gelen kutusuna eklendi."
+  "message": "Capture added to the inbox."
 }
 ```
 
-Düz metin (raw text) gönderildiğinde de otomatik olarak ayrıştırılıp ilk satırı başlık yapılarak gelen kutusuna kaydedilir.
+When plain text (raw text) is sent, it is also parsed automatically, its first line is used as the title, and it is saved to the inbox.
 
 ---
 
-## 3. Apple Kestirmeler (iOS Shortcuts) Entegrasyonu
+## 3. Apple Shortcuts (iOS Shortcuts) Integration
 
-iPhone veya iPad'inizden Safari'de gezinirken veya herhangi bir metni seçtiğinizde tek tıkla ikinci beyninize göndermek için:
+To send any text you select, or a page you are browsing in Safari on your iPhone or iPad, to your second brain with one tap:
 
-1. **Kestirmeler (Shortcuts)** uygulamasını açın ve **+ (Yeni Kestirme)** oluşturun.
-2. Sağ alt köşedeki ayar simgesine basıp **"Paylaşma Sayfasında Göster" (Show in Share Sheet)** seçeneğini açın.
-3. Şu eylemleri ekleyin:
-   - **Metin:** `{"text": "[Kestirme Girdisi]", "title": "Mobil Paylaşım"}`
-   - **URL İçeriğini Al (Get Contents of URL):**
-     - URL: `http://<bilgisayar-tailscale-ip>:8484/ingest`
-     - Yöntem: `POST`
-     - Başlıklar:
+1. Open the **Shortcuts** app and create a **+ (New Shortcut)**.
+2. Tap the settings icon in the bottom right corner and turn on **"Show in Share Sheet"**.
+3. Add these actions:
+   - **Text:** `{"text": "[Shortcut Input]", "title": "Mobile Share"}`
+   - **Get Contents of URL:**
+     - URL: `http://<computer-tailscale-ip>:8484/ingest`
+     - Method: `POST`
+     - Headers:
        - `Content-Type`: `application/json`
        - `Authorization`: `Bearer COK_GIZLI_PAROLANIZ`
-     - İstek Gövdesi: `JSON`
-4. Kestirmeyi kaydedin. Artık iOS paylaşım menüsünden herhangi bir link veya metni seçip doğrudan kasanıza atabilirsiniz.
+     - Request Body: `JSON`
+4. Save the shortcut. Now you can pick any link or text from the iOS share menu and send it straight to your vault.
 
 ---
 
-## 4. Android Entegrasyonu (HTTP Shortcuts / Termux)
+## 4. Android Integration (HTTP Shortcuts / Termux)
 
-- Google Play'den ücretsiz **HTTP Shortcuts** uygulamasını indirerek tek tıkla ana ekranınıza bir yakalama widget'ı ekleyebilirsiniz.
-- Ya da Termux üzerinden basit bir alias:
+- You can download the free **HTTP Shortcuts** app from Google Play and add a capture widget to your home screen with one tap.
+- Or a simple alias through Termux:
 ```bash
 yakala() {
   curl -X POST "http://100.x.y.z:8484/ingest" \
@@ -111,12 +113,12 @@ yakala() {
 
 ---
 
-## 5. Yakalananları İşleme (Sindirim)
+## 5. Processing What Was Captured (Digestion)
 
-Mobil veya harici cihazlardan toplanan girdiler `000-Inbox/` klasöründe birikir. Masanıza döndüğünüzde:
-1. `python3 beyin.py triage` çalıştırarak gelen kutusunda kaç kaynak olduğunu ve en eskilerini görün.
-2. Ajanınıza `"Gelen kutusundakileri işle"` veya `"beyin-yakala"` diyerek ham kayıtların kalıcı `knowledge/` notlarına ve görevlere dönüştürülmesini sağlayın.
+Entries collected from mobile or external devices pile up in the `000-Inbox/` folder. When you are back at your desk:
+1. Run `python3 beyin.py triage` to see how many sources are in the inbox and the oldest ones.
+2. Tell your agent `"Process what's in the inbox"` or `"beyin-yakala"` to have the raw records turned into permanent `knowledge/` notes and tasks.
 
-Güvenlik: yerel ağda dinleme Bearer token gerektirir. Token yalnız Authorization başlığıyla kabul edilir; URL sorgusuna yazılmaz. Bağlantı başına 5 saniye okuma zaman aşımı uygulanır.
+Security: listening on the local network requires a Bearer token. The token is accepted only in the Authorization header; it is never written into the URL query. A 5-second read timeout is applied per connection.
 
-Tokensiz loopback modunda Origin taşıyan tarayıcı yazma istekleri ve cross-site Fetch Metadata reddedilir; yerel CLI yakalamaları çalışır. Tarayıcı CORS erişimi token korumalı mod gerektirir.
+In tokenless loopback mode, browser write requests that carry an Origin and cross-site Fetch Metadata are rejected; local CLI captures work. Browser CORS access requires token-protected mode.

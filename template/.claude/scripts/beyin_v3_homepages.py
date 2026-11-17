@@ -341,11 +341,11 @@ def _create_locked(engine, request):
             value = _fact(metadata, field)
             groups[source].append('- **' + _markdown_text(label) + ':** ' +
                                   cell(source, record_id, field, value, editable=editable) +
-                                  (' _(düzenlenebilir)_' if editable else ' _(salt okunur)_'))
-    blocks = ['\n'.join(lines) + '\n\n**Kişisel notum:**\n' for lines in groups.values()]
-    section = ('## Seçilen bilgiler\n\n'
-               'Düzenlenebilir değerleri bu notta değiştirebilirsin; değişiklikler olağan '
-               'eşitlemede esas kayda işlenir. Kişisel notların yalnız bu sayfada kalır.\n\n' +
+                                  (' _(editable)_' if editable else ' _(read-only)_'))
+    blocks = ['\n'.join(lines) + '\n\n**My note:**\n' for lines in groups.values()]
+    section = ('## Selected information\n\n'
+               'You can change the editable values in this note; changes are written to the source record '
+               'at the next regular sync. Your personal notes stay on this page only.\n\n' +
                CREATION.pattern.replace('([0-9a-f]{64})', fingerprint) + '\n\n' + '\n'.join(blocks))
     if target['exists']:
         newline = '\r\n' if '\r\n' in target['content'] else '\n'

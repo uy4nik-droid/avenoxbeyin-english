@@ -1,46 +1,49 @@
-# Yakala güvenlik güncellemesi (#299 / #302)
+# Yakala security update (#299 / #302)
 
-Bu güncelleme adres ayrıştırıcıları arasındaki farkları kapatır. Host'ta yüzde kodlaması,
-ASCII dışı karakterler ve alternatif sayısal IP yazımları reddedilir. İçerik işlenirken
-Defuddle veya YouTube yardımcısı başlamadan önce DNS sonuçlarının tamamı kontrol edilir;
-`localtest.me` ve özel IP'ye çözülen `nip.io` adresleri de reddedilir.
+This update closes the gaps between address parsers. Percent-encoding in the host, non-ASCII
+characters and alternative numeric IP notations are rejected. When content is processed, all DNS
+results are checked before the Defuddle or YouTube helper starts; `localtest.me` and `nip.io`
+addresses that resolve to a private IP are also rejected.
 
-Dosya bağlantılarında UNC, sürücü harfi, üst dizin ve Windows aygıt adları `resolve()`
-çalışmadan reddedilir. Göreli dosya yolu çözüldükten sonra vault içinde kalması da kontrol edilir;
-Windows junction'ları dışarıdaki dosyaları okutamaz.
+For file links, UNC paths, drive letters, parent directories and Windows device names are rejected
+before `resolve()` runs. After a relative file path is resolved, the result is also checked to make
+sure it stays inside the vault; Windows junctions cannot be used to read files outside it.
 
-Yeni `.ham/` kayıtlarında her dosyaya özgü rastgele kimlikle açılış ve kapanış işareti vardır.
-Kaynağın kendi yazdığı "kaynak bitti" veya "kullanıcı talimatı" başlıkları bu sınırı kapatmaz.
-İçerik yine güvenilmeyen veridir; bu işaretler prompt injection'a karşı tek başına güvence değildir.
-Eski ham kayıtlar değiştirilmez; gerektiğinde kartı `yakala isle <id>` ile yeniden işle.
+New `.ham/` records carry an opening and closing marker with a random ID unique to each file.
+"Source ended" or "user instruction" headings written by the source itself do not close this
+boundary. The content is still untrusted data; these markers alone are not a guarantee against
+prompt injection. Old raw records are not changed; when needed, reprocess the card with
+`yakala isle <id>`.
 
-## Mevcut Yakala kurulumunu yenile
+## Refresh an existing Yakala install
 
-Beyin güncellemesi betiği yeniler; `yakala kur` tarafından yazılmış `beyin-yakala` skill'i
-kendiliğinden yenilenmez. Bu güvenlik güncellemesini aldıktan sonra vault klasöründe bir kez:
+The Beyin update script refreshes itself; the `beyin-yakala` skill written by `yakala kur` is not
+refreshed automatically. After you get this security update, run this once in the vault folder:
 
 ```powershell
 py -3 beyin.py yakala kur
 ```
 
-macOS / Linux'ta `python3 beyin.py yakala kur`. Yalnız şablon ve skill kurduysan aynı komuta
-`--kisayol-yok` ekle. Kayıtlı tuş ve gelen kutusu seçimi korunur. Kurulum işaretini taşıyan
-skill kopyaları yeni güvenilmeyen içerik ve sınır kurallarını alır; kullanıcının kendi yazdığı
-işaretsiz skill değiştirilmez. Test, eski işaretli skill'in yenilenmesini paket kurulumunda doğrular.
+On macOS / Linux use `python3 beyin.py yakala kur`. If you installed only the template and the
+skill, add `--kisayol-yok` to the same command. The saved hotkey and inbox choice are kept. Skill
+copies that carry the install marker receive the new untrusted-content and boundary rules; a skill
+the user wrote themselves, without the marker, is not changed. A test verifies in the package
+install that an old marked skill is refreshed.
 
-## Sınırlar
+## Limits
 
-Yakalama ağa çıkmaz; bu PR'daki mevcut davranış gereği yerel/intranet URL'leri yakalamada da
-reddedilir. Önceden alınmış Web Clipper içeriği ağ bağlantısı ve DNS sorgusu olmadan işlenir,
-ancak kartın URL'si aynı sözdizimi/IP kontrolünden geçer.
+Capture does not go out to the network; under the current behavior in this PR, local/intranet URLs
+are also rejected at capture. A Web Clipper content item that was already fetched is processed
+without a network connection or DNS query, but the card's URL goes through the same syntax/IP check.
 
-Defuddle ve yt-dlp artık `127.0.0.1` üzerindeki kısa ömürlü bir koruma proxy'si üzerinden çıkar:
-her bağlantı ve yönlendirme adımı aynı adres kapısından geçer, soket denetlenen IP adresine açılır.
-DNS kontrolü ile bağlantı arasında değişen cevap (rebinding) ve yerel adrese yönlendirme yardımcıyı
-yerel ağa ulaştıramaz. Kullanıcının kendi ayarladığı proxy (HTTP veya SOCKS) korumanın arkasında
-kalır: hedef önce aynı kapıdan geçer, yerel bir adım o proxy'ye hiç sorulmaz. Defuddle'ın YouTube,
-Reddit, X, Bilibili ve C2 wiki okuyucularının o sitelerin sabit adreslerine açtığı istekler koruma
-proxy'sinden geçmez. Ayrıntı: [YAKALA.md](YAKALA.md) > Kaynak güvenliği.
+Defuddle and yt-dlp now go out through a short-lived protection proxy on `127.0.0.1`: every
+connection and redirect step passes through the same address gate, and the socket is opened to the
+IP address that was checked. An answer that changes between the DNS check and the connection
+(rebinding) and a redirect to a local address cannot let the helper reach the local network. A
+proxy the user configured themselves (HTTP or SOCKS) stays behind the protection: the target first
+passes through the same gate, and a local hop is never asked of that proxy. Requests that
+Defuddle's YouTube, Reddit, X, Bilibili and C2 wiki readers open to those sites' fixed addresses do
+not go through the protection proxy. Details: [YAKALA.md](YAKALA.md) > Source security.
 
-Dosya kartı yalnız kendi `dosyalar/` klasöründeki yakalanmış dosyaları okur; vault içindeki kasa
-türü klasörler, `.obsidian/` ve başka notlar `## Dosyalar` bağıyla `.ham/` içine kopyalanamaz.
+The file card reads only captured files in its own `dosyalar/` folder; safe-type folders inside
+the vault, `.obsidian/` and other notes cannot be copied into `.ham/` through a `## Files` link.

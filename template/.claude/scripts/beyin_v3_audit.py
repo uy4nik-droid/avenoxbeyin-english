@@ -46,7 +46,7 @@ STATUS_ANTIPAIRS = [
     # Dogrulanmis / Dogrulanmamis (Verification state)
     (
         {"dogrulandi", "dogrulanmis", "verified", "passed", "kanitlandi", "onaylandi", "gecerli"},
-        {"dogrulanmadi", "dogrulanmamis", "unverified", "failed", "kanitlanmadi", "reddedildi", "gecersiz"},
+        {"dogrulanmadi", "dogrulanmamis", "unverified", "failed", "kanitlanmadi", "reddedildi", "rejected", "gecersiz"},
     ),
     # Calisiyor / Calismiyor (Operational state). "acik", "kapali", "canli" and "devam" name no
     # state in most Turkish prose ("acik kaynak", "canli yayin", "devam etti"); in a measured
@@ -340,27 +340,27 @@ def _evaluate_pair(a: dict, b: dict, threshold: float, min_shared: int) -> dict 
         finding_type = 'status_contradiction'
         severity = 'warning'
         recom = (
-            f"Eski kayittaki durum ('{conflict['older_term']}') yeni kayitta ('{conflict['newer_term']}') "
-            f"olarak degismis gorunuyor. Eski kaydi tarihsel (supersedes veya status: archived) olarak "
-            f"isaretlemeyi ya da guncel durumu tek kaynakta toplamayi degerlendir."
+            f"The status in the older record ('{conflict['older_term']}') appears to have changed to "
+            f"('{conflict['newer_term']}') in the newer record. Consider marking the older record as historical "
+            f"(supersedes or status: archived) or keeping the current status in a single source."
         )
     elif overlap >= 0.80 and jaccard >= 0.30 and vocab_ratio <= 3.0:
         finding_type = 'near_duplicate'
         severity = 'warning' if overlap >= 0.85 else 'info'
         pct = int(round(overlap * 100))
         recom = (
-            f"Iki kayit buyuk olcude ortusuyor (%{pct}). Ayri not acmak yerine '{older['path']}' "
-            f"kaydini guncellemek veya yeni bulgulari mevcut nota eklemek baglam yukunu azaltabilir."
+            f"The two records largely overlap ({pct}%). Instead of opening a separate note, updating "
+            f"'{older['path']}' or adding the new findings to the existing note could reduce context load."
         )
     elif jaccard >= 0.20 and vocab_ratio <= 4.0:
         finding_type = 'substantial_overlap'
         severity = 'info'
         pct = int(round(overlap * 100))
-        novel_str = ', '.join(f"'{w}'" for w in novel_sample[:4]) if novel_sample else 'ek kavramlar'
+        novel_str = ', '.join(f"'{w}'" for w in novel_sample[:4]) if novel_sample else 'additional concepts'
         recom = (
-            f"Notlar ortak bir konuyu paylasiyor (%{pct} ortusme). Yeni not {novel_str} gibi ek kavramlar "
-            f"iceriyor; bagimsiz bir dogrulama veya ayri bir deneme amaci tasimiyorsa iki notu birbirine "
-            f"baglamayi ([[link]]) veya tek kaynakta birlestirmeyi degerlendir."
+            f"The notes share a common topic ({pct}% overlap). The newer note contains additional concepts such as "
+            f"{novel_str}; unless it serves as an independent verification or a separate experiment, consider "
+            f"linking the two notes ([[link]]) or merging them into a single source."
         )
     else:
         return None
@@ -499,21 +499,21 @@ def audit_memory(
 
 
 def format_audit_human(report: dict) -> str:
-    """Format auditor report as clean ASCII Turkish terminal output."""
-    lines = ['=== Ikinci Beyin Hafiza Denetim Raporu (Auditor) ===\n']
+    """Format auditor report as clean ASCII terminal output."""
+    lines = ['=== Second Brain Memory Audit Report (Auditor) ===\n']
     target = report.get('target')
     notes_scanned = report.get('notes_scanned', 0)
     pairs_compared = report.get('pairs_compared', 0)
     findings = report.get('findings', [])
 
     if target:
-        lines.append(f"Hedef Not: {target}")
-        lines.append(f"Karsilastirilan Not: {notes_scanned} | Bulgu: {len(findings)}\n")
+        lines.append(f"Target Note: {target}")
+        lines.append(f"Notes Compared: {notes_scanned} | Findings: {len(findings)}\n")
     else:
-        lines.append(f"Taranan Not: {notes_scanned} | Aday Karsilastirma: {pairs_compared} | Bulgu: {len(findings)}\n")
+        lines.append(f"Notes Scanned: {notes_scanned} | Candidate Comparisons: {pairs_compared} | Findings: {len(findings)}\n")
 
     if not findings:
-        lines.append("Belirgin bir tekrar, celiski veya guncellik sorunu tespit edilmedi; hafiza durumu dengeli.")
+        lines.append("No notable duplication, contradiction or staleness issue detected; memory state is balanced.")
         return '\n'.join(lines)
 
     contradictions = [f for f in findings if f.get('type') == 'status_contradiction']
@@ -521,44 +521,44 @@ def format_audit_human(report: dict) -> str:
     overlaps = [f for f in findings if f.get('type') == 'substantial_overlap']
 
     if contradictions:
-        lines.append("[Celiski ve Guncellik Sinyalleri]")
+        lines.append("[Contradiction and Staleness Signals]")
         for c in contradictions:
             lines.append(f"  - {c['older_note']} <-> {c['newer_note']}")
             pct = int(round(c.get('overlap', 0) * 100))
-            lines.append(f"    Ortusme: %{pct} ({c.get('shared_terms_count', 0)} ortak terim)")
+            lines.append(f"    Overlap: {pct}% ({c.get('shared_terms_count', 0)} shared terms)")
             conf = c.get('conflict', {})
             if conf:
-                lines.append(f"    Eski durum: \"{conf.get('older_term')}\" -> Yeni durum: \"{conf.get('newer_term')}\"")
-            lines.append(f"    Tavsiye: {c.get('recommendation', '')}")
+                lines.append(f"    Old status: \"{conf.get('older_term')}\" -> New status: \"{conf.get('newer_term')}\"")
+            lines.append(f"    Recommendation: {c.get('recommendation', '')}")
             lines.append("")
 
     if duplicates:
-        lines.append("[Yuksek Tekrar ve Ortusme]")
+        lines.append("[High Duplication and Overlap]")
         for d in duplicates:
             lines.append(f"  - {d['older_note']} <-> {d['newer_note']}")
             pct = int(round(d.get('overlap', 0) * 100))
-            lines.append(f"    Ortusme: %{pct} ({d.get('shared_terms_count', 0)} ortak terim)")
+            lines.append(f"    Overlap: {pct}% ({d.get('shared_terms_count', 0)} shared terms)")
             nov = d.get('novel_terms_newer_sample', [])
             if nov:
-                lines.append(f"    Yeni terimler: {', '.join(nov[:5])}")
+                lines.append(f"    New terms: {', '.join(nov[:5])}")
             if d.get('context_bloat'):
-                lines.append(f"    Baglam boyutu: {d.get('words_older', 0)} ve {d.get('words_newer', 0)} kelime")
-            lines.append(f"    Tavsiye: {d.get('recommendation', '')}")
+                lines.append(f"    Context size: {d.get('words_older', 0)} and {d.get('words_newer', 0)} words")
+            lines.append(f"    Recommendation: {d.get('recommendation', '')}")
             lines.append("")
 
     if overlaps:
-        lines.append("[Kismi Ortusme ve Iliskilendirme]")
+        lines.append("[Partial Overlap and Linking]")
         for o in overlaps:
             lines.append(f"  - {o['older_note']} <-> {o['newer_note']}")
             pct = int(round(o.get('overlap', 0) * 100))
-            lines.append(f"    Ortusme: %{pct} ({o.get('shared_terms_count', 0)} ortak terim)")
+            lines.append(f"    Overlap: {pct}% ({o.get('shared_terms_count', 0)} shared terms)")
             nov = o.get('novel_terms_newer_sample', [])
             if nov:
-                lines.append(f"    Ek kavramlar: {', '.join(nov[:5])}")
-            lines.append(f"    Tavsiye: {o.get('recommendation', '')}")
+                lines.append(f"    Additional concepts: {', '.join(nov[:5])}")
+            lines.append(f"    Recommendation: {o.get('recommendation', '')}")
             lines.append("")
 
-    lines.append("[Denetci Siniri]")
-    lines.append("  Benzerlik tek basina gereksizlik degildir; bagimsiz dogrulamalar ve kanitlar")
-    lines.append("  korunmaya deger olabilir. Denetci yalniz tavsiye verir; hicbir notu silmez.")
+    lines.append("[Auditor Limits]")
+    lines.append("  Similarity alone does not mean redundancy; independent verifications and evidence")
+    lines.append("  may be worth keeping. The auditor only makes recommendations; it never deletes a note.")
     return '\n'.join(lines)

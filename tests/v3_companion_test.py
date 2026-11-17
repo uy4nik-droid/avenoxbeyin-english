@@ -72,7 +72,7 @@ class CompanionTest(unittest.TestCase):
         self.run_cli(extracted / 'scripts/install_v3.py', '--vault', self.vault, '--state', self.state)
         core = self.vault / COMPANION / 'Core.md'
         self.assertTrue(core.is_file(), 'Fresh V3 must create identity sources, not only a technical router')
-        self.assertIn('düşünme ortağı', (self.vault / 'AGENTS.md').read_text(encoding='utf-8'))
+        self.assertIn('thinking partner', (self.vault / 'AGENTS.md').read_text(encoding='utf-8'))
         for name in ('Core.md', 'Kurallar.md', 'Last-Session.md', 'Threads.md', 'Journal.md'):
             self.assertTrue((core.parent / name).exists())
         manifest = json.loads((self.state / 'v3-install.json').read_text())

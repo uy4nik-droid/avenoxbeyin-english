@@ -787,17 +787,17 @@ class MutationQueueTest(unittest.TestCase):
         finally:
             sys.path.remove(str(ROOT / 'scripts'))
         off = beyin_entry.human_result(mutation.status(self.tmp / 'absent-state'), 'mutation-queue')
-        self.assertIn('kapali (acmak icin: beyin.py mutation-queue --enable)', off)
+        self.assertIn('off (to turn on: beyin.py mutation-queue --enable)', off)
         item = mutation.enqueue_mutation(self.state, 'task_update', 'tasks/missing.md',
             {'id': 'missing', 'expected_revision': 1, 'changes': {'status': 'active'}})
         mutation.replay_mutations(self.vault, self.state, self.sync)
         dismissed = beyin_entry.human_result(mutation.resolve(self.state, item['mutation_id']), 'mutation-queue')
-        self.assertEqual(dismissed, 'Kuyruk kaydi ' + item['mutation_id'] + ': dismissed.')
+        self.assertEqual(dismissed, 'Queue record ' + item['mutation_id'] + ': dismissed.')
         lines = beyin_entry.human_result({'status': 'observed_metadata', 'mutation_queue': mutation.doctor(self.state)},
                                          'doctor').splitlines()
-        self.assertIn('Cevrimdisi mutasyon kuyrugu: acik (0 bekleyen, 0 cakisma, 0 basarisiz)', lines)
+        self.assertIn('Offline mutation queue: on (0 pending, 0 conflicts, 0 failed)', lines)
         quiet = beyin_entry.human_result({'status': 'observed_metadata', 'mutation_queue': {'enabled': False}}, 'doctor')
-        self.assertNotIn('kuyrug', quiet)
+        self.assertNotIn('queue', quiet)
 
     # Input checks and review exits.
 
@@ -1086,11 +1086,11 @@ class MutationQueueTest(unittest.TestCase):
         result = mutation.replay_mutations(self.vault, self.state, self.sync)
         self.assertNotIn('source_sync', result)
         self.assertEqual(beyin_entry.human_result(result, 'mutation-queue'),
-                         'Kuyruk yeniden oynatildi: 1 uygulandi, 0 cakisma, 0 basarisiz.')
+                         'Queue replayed: 1 applied, 0 conflicts, 0 failed.')
         for status in ('error', 'degraded', 'conflict'):
             with self.subTest(status=status):
                 human = beyin_entry.human_result(dict(result, source_sync={'status': status}), 'mutation-queue')
-                self.assertIn('Kaynak esitlemesi', human)
+                self.assertIn('Source sync', human)
                 self.assertIn('beyin.py sync', human)
 
     def test_installed_replay_reports_sync_error_without_exception_contents(self):
@@ -1119,7 +1119,7 @@ class MutationQueueTest(unittest.TestCase):
                     self.assertEqual(result['source_sync']['error'], 'IntegrityError')
                     self.assertEqual((result['applied'], result['failed']), (1, 0))
                 else:
-                    self.assertIn('Kaynak esitlemesi', proc.stdout)
+                    self.assertIn('Source sync', proc.stdout)
                 self.assertEqual(path.read_bytes(), written)
                 with self.sync.store._connect() as db:
                     self.assertEqual(db.execute('SELECT COUNT(*) FROM markdown_sources WHERE source=?',

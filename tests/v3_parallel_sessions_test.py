@@ -14,7 +14,7 @@ from v3_package_helpers import inherited_env, without_hook_clock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / 'template/.claude/scripts'
-NOTICE = '[Paralel oturum]'
+NOTICE = '[Parallel session]'
 MARKER_KEYS = {'schema', 'harness', 'session', 'first_at', 'last_at', 'announced'}
 PROMPT_CANARY = 'PROMPT_TEXT_CANARY_NEVER_IN_A_MARKER'
 
@@ -90,8 +90,8 @@ class ParallelSessionsTest(unittest.TestCase):
         self.enable()
         self.assertEqual(self.notice(self.hook('UserPromptSubmit', 'session-a', prompt=PROMPT_CANARY)), [])
         lines = self.notice(self.hook('UserPromptSubmit', 'session-b'))
-        self.assertEqual(lines, ["[Paralel oturum] Bu vault'ta 1 oturum daha acik: #" + receipt_short('session-a') +
-                                 ' (az once). Ayni dosyaya dokunmadan once diskten yeniden oku; commit oncesi git status.'])
+        self.assertEqual(lines, ["[Parallel session] 1 more session(s) open in this vault: #" + receipt_short('session-a') +
+                                 ' (just now). Re-read from disk before touching the same file; run git status before committing.'])
         self.assertTrue(lines[0].isascii())
         # The second prompt repeats nothing; A learns of B once, on its own next prompt.
         self.assertEqual(self.notice(self.hook('UserPromptSubmit', 'session-b')), [])
@@ -101,7 +101,7 @@ class ParallelSessionsTest(unittest.TestCase):
         self.hook('UserPromptSubmit', 'session-c', harness='codex')
         later = self.notice(self.hook('UserPromptSubmit', 'session-b'))
         self.assertEqual(len(later), 1)
-        self.assertIn("1 oturum daha acik: #" + receipt_short('session-c'), later[0])
+        self.assertIn("1 more session(s) open in this vault: #" + receipt_short('session-c'), later[0])
         self.assertNotIn(receipt_short('session-a'), later[0])
         # Markers carry the six fields only: no prompt, no cwd, no raw session id.
         for path in self.markers.iterdir():
@@ -118,9 +118,9 @@ class ParallelSessionsTest(unittest.TestCase):
             self.hook('UserPromptSubmit', session)
         lines = self.notice(self.hook('UserPromptSubmit', 's-4'))
         self.assertEqual(len(lines), 1)
-        self.assertIn('3 oturum daha acik', lines[0])
+        self.assertIn('3 more session(s) open', lines[0])
         self.assertEqual(lines[0].count('#'), 2)
-        self.assertIn('ve 1 tane daha', lines[0])
+        self.assertIn('and 1 more', lines[0])
         self.assertEqual(self.notice(self.hook('UserPromptSubmit', 's-4')), [])
 
     def test_stale_marker_is_ignored_and_a_day_old_one_pruned(self):
@@ -141,7 +141,7 @@ class ParallelSessionsTest(unittest.TestCase):
         self.assertFalse((self.markers / marker_name('claude', 'ending')).exists())
         self.assertTrue((self.markers / marker_name('claude', 'staying')).is_file())
         fresh = self.notice(self.hook('UserPromptSubmit', 'fresh'))
-        self.assertIn('1 oturum daha acik: #' + receipt_short('staying'), fresh[0])
+        self.assertIn('1 more session(s) open in this vault: #' + receipt_short('staying'), fresh[0])
         # A ghost after /clear is gone even when the notice was switched off in between.
         self.hook('UserPromptSubmit', 'cleared')
         self.cli('preferences', '--parallel-sessions', 'off')
@@ -191,10 +191,10 @@ class ParallelSessionsTest(unittest.TestCase):
         self.assertIn('#' + receipt_short('claude-session'), hermes[0])
         self.assertTrue((self.markers / marker_name('hermes', 'hermes-1')).is_file())
         opencode = self.notice(self.hook('SessionStart', 'opencode-1', harness='opencode', prompt='selam'))
-        self.assertIn('2 oturum daha acik', opencode[0])
+        self.assertIn('2 more session(s) open', opencode[0])
         antigravity = self.hook('PreInvocation', None, harness='antigravity', prompt=None, conversationId='ag-1',
                                 invocationNum=0)
-        self.assertIn('3 oturum daha acik', self.notice(antigravity)[0])
+        self.assertIn('3 more session(s) open', self.notice(antigravity)[0])
         self.assertTrue((self.markers / marker_name('antigravity', 'ag-1')).is_file())
 
     def test_prune_keeps_at_most_128_markers(self):
@@ -222,7 +222,7 @@ class ParallelSessionsTest(unittest.TestCase):
         own.write_text('[]', encoding='utf-8')
         lines = self.notice(self.hook('UserPromptSubmit', 'damaged-own'))
         self.assertEqual(len(lines), 1)
-        self.assertIn('1 oturum daha acik: #' + receipt_short('valid'), lines[0])
+        self.assertIn('1 more session(s) open in this vault: #' + receipt_short('valid'), lines[0])
         self.assertEqual(set(json.loads(own.read_text(encoding='utf-8'))), MARKER_KEYS, 'a damaged own marker is replaced')
         # A damaged switch reads as off: no line, no crash, reported by preferences and doctor.
         (self.state / 'parallel-sessions.json').write_text('{"enabled": "yes"}', encoding='utf-8')
@@ -230,7 +230,7 @@ class ParallelSessionsTest(unittest.TestCase):
         self.assertFalse((self.markers / marker_name('claude', 'after-damage')).exists())
         prefs = self.cli('preferences')
         self.assertEqual(prefs['parallel_sessions'], 'off')
-        self.assertIn('gecersiz', prefs['parallel_sessions_notice'])
+        self.assertIn('is invalid', prefs['parallel_sessions_notice'])
         self.assertFalse(self.cli('doctor')['parallel_sessions']['valid'])
         # A marker folder that is a symlink is never followed.
         if hasattr(os, 'symlink'):
@@ -279,7 +279,7 @@ class ParallelSessionsTest(unittest.TestCase):
                                capture_output=True, text=True, encoding='utf-8', env=self.env, cwd=self.vault,
                                timeout=60)
         self.assertEqual(human.returncode, 0, human.stderr)
-        self.assertIn('Paralel oturum bildirimi: acik', human.stdout)
+        self.assertIn('Parallel session notice: on', human.stdout)
 
     def test_prune_cleans_dead_temp_files(self):
         self.enable()
@@ -324,7 +324,7 @@ class ParallelSessionsTest(unittest.TestCase):
         self.assertEqual(res_b.returncode, 0, res_b.stderr)
         lines_b = self.notice(json.loads(res_b.stdout.strip()))
         self.assertEqual(len(lines_b), 1)
-        self.assertIn("1 oturum daha acik: #" + receipt_short('session-on-mac'), lines_b[0])
+        self.assertIn("1 more session(s) open in this vault: #" + receipt_short('session-on-mac'), lines_b[0])
 
         # Machine A ends its session
         self.hook('SessionEnd', 'session-on-mac', prompt=None)

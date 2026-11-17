@@ -280,8 +280,8 @@ class InstalledOpeningTest(unittest.TestCase):
         human = self.run_cli(self.vault / 'beyin.py', 'doctor', '--human')
         self.assertEqual(self.tree(), before, 'doctor must not write')
         self.assertEqual((report['status'], report['budget'], report['harness']), ('clipped', 5000, 'claude'))
-        self.assertIn(f'Kurallar.md acilista kirpiliyor (bilgi): kural metni {report["chars"]} karakter; '
-                      f'Claude Code acilisi bu ayarlarla (5000 karakter) en fazla {report["share"]} karakterini tam gosterir',
+        self.assertIn(f'Kurallar.md is clipped at session opening (info): the rules text is {report["chars"]} characters; '
+                      f'with these settings the Claude Code opening (5000 characters) shows at most {report["share"]} characters of it whole',
                       human)
         self.assertIn(f'Memory hygiene: Kurallar.md opens clipped (fit ceiling {report["share"]} of {report["chars"]} chars).',
                       initial_context)
@@ -293,7 +293,7 @@ class InstalledOpeningTest(unittest.TestCase):
         self.assertNotIn('Memory hygiene: Kurallar.md opens clipped', whole_context)
         self.assertEqual(json.loads(self.run_cli(self.vault / 'beyin.py', 'doctor', '--json'))
                          ['companion_rules_opening']['status'], 'ok')
-        self.assertNotIn('Kurallar.md acilista kirpiliyor', self.run_cli(self.vault / 'beyin.py', 'doctor', '--human'))
+        self.assertNotIn('Kurallar.md is clipped at session opening', self.run_cli(self.vault / 'beyin.py', 'doctor', '--human'))
 
 
 if __name__ == '__main__':

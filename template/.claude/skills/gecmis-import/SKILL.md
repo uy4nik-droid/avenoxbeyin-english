@@ -1,87 +1,87 @@
 ---
 name: gecmis-import
-description: Eski sohbet geçmişini (ChatGPT, Claude, Gemini Takeout dışa aktarımları) beyin kasasının günlük log biçimine çevirip daily/ altına yazar. Tetik - "geçmiş import", "geçmişimi aktar", "takeout", "ChatGPT geçmişi", "eski sohbetlerimi beyne yükle", "import chat history". Kullanma - tek not kaydetmek veya kasada aramak (beyin), sağlık kontrolü (beyin-doktor).
+description: Converts old chat history (ChatGPT, Claude, Gemini Takeout exports) into the brain vault's daily log format and writes it under daily/. Triggers - "import chat history", "import my history", "takeout", "ChatGPT history", "load my old chats into the brain", "geçmiş import", "geçmişimi aktar", "ChatGPT geçmişi", "eski sohbetlerimi beyne yükle". Do not use - saving a single note or searching the vault (beyin), health check (beyin-doktor).
 ---
 
-# Geçmiş İçe Aktarımı
+# History Import
 
-Eski sohbet arşivini beynin normal hattına sokar. Dışa aktarım dosyası yerelde okunur,
-sohbetler aylara bölünür ve `daily/import-YYYY-MM-part-NNN.md` dosyalarına yazılır.
-Akşam derleyicisi bu dosyaların içeriğini normal günlük loglar gibi okur ve özetleme için
-kullanıcının kendi Claude aboneliği üzerinden Claude'a gönderir. Dışa aktarım dosyasının
-kendisi yüklenmez ve veriler başka hiçbir yere gönderilmez.
+Feeds an old chat archive into the brain's normal pipeline. The export file is read locally,
+the chats are split by month and written to `daily/import-YYYY-MM-part-NNN.md` files.
+The evening compiler reads the content of these files like normal daily logs and sends it to
+Claude through the user's own Claude subscription for summarisation. The export file
+itself is not uploaded and the data is not sent anywhere else.
 
-Özel veya hassas sohbetler, kullanıcı tarih ya da anahtar kelime filtresiyle hariç tutmadıkça
-içe aktarıma ve sonraki derlemeye dahil olur.
+Private or sensitive chats are included in the import and in the later compilation unless the
+user excludes them with a date or keyword filter.
 
-## Zorunlu onay kapısı
+## Mandatory approval gate
 
-Agent aşağıdaki adımları sırayla tamamlamak ZORUNDADIR. Kullanıcının izni olmadan dışa aktarım
-dosyasını açmak, ayrıştırmak veya `daily/` altına dosya yazmak YASAKTIR.
+The agent MUST complete the steps below in order. Opening the export file, parsing it or
+writing files under `daily/` without the user's permission is FORBIDDEN.
 
-1. Agent veri akışını açıkça anlatmak ZORUNDADIR: dışa aktarım yerelde okunur, seçilen sohbetler
-   yerel `daily/` dosyalarına yazılır, akşam derleyicisi bu dosyaların içeriğini özetleme için
-   kullanıcının kendi Claude aboneliği üzerinden Claude'a gönderir. Bunun dışında hiçbir yere
-   yükleme veya gönderim yapılmaz.
-2. Agent özel ve hassas sohbetlerin varsayılan olarak dahil olacağını söylemek ZORUNDADIR.
-   Kullanıcıya başlangıç ve bitiş tarihi sınırı ile bir veya daha fazla anahtar kelimeden oluşan
-   hariç tutma listesi sunmak ZORUNDADIR. Eşleşme büyük küçük harf duyarsızdır ve eşleşen
-   konuşmanın tamamı atlanır.
-3. Agent dışa aktarım dosyasının yolunu kullanıcıdan istemek ve yolu yalnızca metin olarak almak
-   ZORUNDADIR. Yolu tahmin edemez veya dosyayı henüz açamaz. Ardından yalnızca yerel, salt okunur
-   önizleme taraması için açık izin istemek ve yanıtı beklemek ZORUNDADIR. Açık izin yoksa
-   dosyayı açamaz. İzin verilirse betiği `--preview` ve seçilen filtrelerle çalıştırır. Bu mod
-   hiçbir çıktı dosyası yazmaz.
-4. Agent önizlemedeki içe aktarılacak sohbet sayısını, tarih aralığını ve tarih, anahtar kelime,
-   boş içerik veya geçersiz kayıt nedeniyle atlanacak sayıları kullanıcıya göstermek ZORUNDADIR.
-5. Agent kullanıcıya dürüst vazgeçme seçeneklerini de söylemek ZORUNDADIR: içe aktarılan
-   dosyaları hiç derlemeyebilir veya akşam derlemesinden önce istemediği aylık parça dosyasını
-   silebilir. Kullanıcı vazgeçerse işlem durur.
-6. Agent seçilen tarih aralığını ve anahtar kelime listesini tekrar yazıp şu açık onayı istemek
-   ZORUNDADIR: `Evet, bu önizleme ve filtrelerle içe aktar.` Kullanıcı açıkça evet demedikçe
-   içe aktarım ve yazma işlemi başlatılamaz. Belirsiz yanıt onay sayılmaz.
+1. The agent MUST explain the data flow clearly: the export is read locally, the selected chats
+   are written to local `daily/` files, and the evening compiler sends the content of these files to
+   Claude through the user's own Claude subscription for summarisation. Nothing is uploaded or
+   sent anywhere else.
+2. The agent MUST say that private and sensitive chats are included by default.
+   It MUST offer the user a start and end date limit and an exclusion list made of one or more
+   keywords. Matching is case-insensitive and the whole matching
+   conversation is skipped.
+3. The agent MUST ask the user for the path of the export file and take the path only as text.
+   It may not guess the path or open the file yet. It MUST then ask for explicit permission for a
+   local, read-only preview scan only and wait for the answer. Without explicit permission it may not
+   open the file. If permission is given, it runs the script with `--preview` and the chosen filters. This mode
+   writes no output files.
+4. The agent MUST show the user the number of chats to be imported from the preview, the date range,
+   and the counts that will be skipped for date, keyword, empty content or invalid record reasons.
+5. The agent MUST also tell the user the honest ways to back out: they can choose never to compile
+   the imported files, or they can delete a monthly part file they do not want before the evening
+   compilation. If the user backs out, the process stops.
+6. The agent MUST restate the chosen date range and keyword list and ask for this explicit
+   approval: `Yes, import with this preview and these filters.` Unless the user explicitly says yes,
+   the import and writing may not start. An ambiguous answer does not count as approval.
 
-Bu onay talimatı agent içindir. Betiğe otomatik onay, etkileşimli onay veya onayı atlayan bir
-bayrak ekleme.
+This approval instruction is for the agent. Do not add automatic approval, interactive approval or a
+flag that skips approval to the script.
 
-## Adımlar
+## Steps
 
-1. Onay kapısını tamamla ve kullanıcıdan aldığın dışa aktarım yolunu kullan. Tahmin etme.
-2. Dosya türünü doğrula.
-   - ChatGPT: dışa aktarım zip'i içindeki `conversations.json`. Zip açılmadıysa kullanıcıdan
-     açmasını iste veya açık izinle yerelde `unzip` kullan.
-   - Claude: dışa aktarım içindeki `conversations.json`.
-   - Gemini: Google Takeout içindeki `My Activity/Gemini Apps/MyActivity.json`.
-3. Dosya boyutunu `wc -c < <yol>` ile ölç. 50 MB üstündeyse betik son 12 takvim ayını
-   otomatik sınır olarak uygular. Bunu önizlemede söyle. Kullanıcının daha dar tarih sınırı varsa
-   daha dar olan sınır geçerli olur.
-4. Aşağıdaki uygun betiği `.claude/scripts/.state/import-chatgpt.py` gibi bir geçici yola yaz.
-   Önce `--preview` ile çalıştır. İkinci açık onaydan sonra aynı filtrelerle `--preview` olmadan
-   çalıştır.
-5. Her anahtar kelime için ayrı `--exclude-keyword` kullan. Tarihler dahil olan günlerdir.
+1. Complete the approval gate and use the export path you got from the user. Do not guess.
+2. Verify the file type.
+   - ChatGPT: `conversations.json` inside the export zip. If the zip has not been extracted, ask the user to
+     extract it or use `unzip` locally with explicit permission.
+   - Claude: `conversations.json` inside the export.
+   - Gemini: `My Activity/Gemini Apps/MyActivity.json` inside Google Takeout.
+3. Measure the file size with `wc -c < <path>`. If it is over 50 MB, the script applies the last 12 calendar months
+   as an automatic limit. Say this in the preview. If the user has a narrower date limit,
+   the narrower limit applies.
+4. Write the matching script below to a temporary path such as `.claude/scripts/.state/import-chatgpt.py`.
+   Run it with `--preview` first. After the second explicit approval, run it with the same filters without
+   `--preview`.
+5. Use a separate `--exclude-keyword` for each keyword. Dates are inclusive days.
 
 ```text
 python3 .claude/scripts/.state/import-chatgpt.py conversations.json \
   --preview --start 2025-01-01 --end 2025-12-31 \
-  --exclude-keyword "sağlık" --exclude-keyword "özel proje"
+  --exclude-keyword "health" --exclude-keyword "private project"
 ```
 
-6. Betiğin özet çıktısını kullanıcıya aynen aktar. Mevcut bir hedef dosya varsa betik üzerine
-   yazmayı reddeder. Bu durumda kullanıcıdan açıkça yeni bir çıktı klasörü seçmesini veya mevcut
-   dosyaları kendisinin ele almasını iste. Dosyayı silme, birleştirme ya da üzerine yazma.
-7. Derleme planını aşağıdaki `Sonra ne olur` bölümüne göre anlat.
+6. Relay the script's summary output to the user verbatim. If a target file already exists, the script refuses to
+   overwrite it. In that case ask the user to explicitly choose a new output folder or to deal with the existing
+   files themselves. Do not delete, merge or overwrite the file.
+7. Explain the compilation plan according to the `What happens next` section below.
 
-## ChatGPT betiği
+## ChatGPT script
 
-ChatGPT dışa aktarımında her sohbet bir `mapping` ağacıdır. Dallanma varsa bütün erişilebilir
-düğümler kaynak sırasına göre bir kez yazılır. Sistem ve araç mesajları günlük dosyasına yazılmaz.
-Mesaj ve konuşma metinleri kısaltılmaz. Aylık sınır dolduğunda konuşmalar atılmak yerine yeni bir
-parça dosyasına geçilir. Tek bir konuşma sınırdan büyükse içerik kaybolmasın diye o parça sınırı
-aşabilir.
+In a ChatGPT export each chat is a `mapping` tree. If there is branching, all reachable
+nodes are written once in source order. System and tool messages are not written to the daily file.
+Message and conversation texts are not truncated. When the monthly limit is reached, conversations move to a new
+part file instead of being dropped. If a single conversation is larger than the limit, that part may exceed
+the limit so that no content is lost.
 
 ```python
 #!/usr/bin/env python3
-"""ChatGPT conversations.json arşivini yerel günlük parça dosyalarına dönüştür."""
+"""Convert a ChatGPT conversations.json archive into local daily part files."""
 
 import argparse
 import datetime as dt
@@ -98,25 +98,25 @@ def iso_date(value):
     try:
         return dt.datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError as exc:
-        raise argparse.ArgumentTypeError("tarih YYYY-MM-DD olmalı: %s" % value) from exc
+        raise argparse.ArgumentTypeError("date must be YYYY-MM-DD: %s" % value) from exc
 
 
 def arguments():
-    parser = argparse.ArgumentParser(description="ChatGPT geçmişini yerelde içe aktar")
-    parser.add_argument("source", help="conversations.json dosyası veya onu içeren klasör")
-    parser.add_argument("--preview", action="store_true", help="yalnızca önizle, dosya yazma")
-    parser.add_argument("--start", type=iso_date, help="dahil başlangıç tarihi, YYYY-MM-DD")
-    parser.add_argument("--end", type=iso_date, help="dahil bitiş tarihi, YYYY-MM-DD")
+    parser = argparse.ArgumentParser(description="Import ChatGPT history locally")
+    parser.add_argument("source", help="conversations.json file or the folder containing it")
+    parser.add_argument("--preview", action="store_true", help="preview only, do not write files")
+    parser.add_argument("--start", type=iso_date, help="inclusive start date, YYYY-MM-DD")
+    parser.add_argument("--end", type=iso_date, help="inclusive end date, YYYY-MM-DD")
     parser.add_argument(
         "--exclude-keyword",
         action="append",
         default=[],
-        help="eşleşen sohbeti atla, birden çok kez kullanılabilir",
+        help="skip matching chats, can be used more than once",
     )
-    parser.add_argument("--out-dir", default="daily", help="çıktı klasörü, varsayılan daily")
+    parser.add_argument("--out-dir", default="daily", help="output folder, default daily")
     args = parser.parse_args()
     if args.start and args.end and args.start > args.end:
-        parser.error("başlangıç tarihi bitiş tarihinden sonra olamaz")
+        parser.error("start date cannot be after end date")
     return args
 
 
@@ -128,7 +128,7 @@ def load_export(path):
     if isinstance(data, dict):
         data = data.get("conversations", [])
     if not isinstance(data, list):
-        raise ValueError("dışa aktarım bir sohbet listesi değil")
+        raise ValueError("export is not a list of chats")
     return path, data
 
 
@@ -264,7 +264,7 @@ def select_conversations(conversations, size, start, end, keywords):
             continue
         selected.append(
             {
-                "title": str(conversation.get("title") or "başlık yok"),
+                "title": str(conversation.get("title") or "untitled"),
                 "moment": moment,
                 "turns": turns,
             }
@@ -276,9 +276,9 @@ def select_conversations(conversations, size, start, end, keywords):
 def conversation_block(record):
     moment = record["moment"]
     title = record["title"].replace("\r", " ").replace("\n", " ").strip()
-    heading = "### Oturum (%s UTC) ChatGPT: %s\n\n" % (
+    heading = "### Session (%s UTC) ChatGPT: %s\n\n" % (
         moment.strftime("%Y-%m-%d %H:%M"),
-        title or "başlık yok",
+        title or "untitled",
     )
     lines = []
     for role, text in record["turns"]:
@@ -289,9 +289,9 @@ def conversation_block(record):
 
 def part_header(month, part_number):
     return (
-        "# Günlük Log: %s (içe aktarım, parça %03d)\n\n"
-        "Kaynak: ChatGPT dışa aktarımı. Bu dosya makine tarafından yazıldı.\n\n"
-        "## Oturumlar\n\n" % (month, part_number)
+        "# Daily Log: %s (import, part %03d)\n\n"
+        "Source: ChatGPT export. This file was written by a machine.\n\n"
+        "## Sessions\n\n" % (month, part_number)
     )
 
 
@@ -358,24 +358,24 @@ def write_exclusive(plans):
 
 def print_selection(selected, stats, automatic_start, effective_start, preview):
     skipped = stats["invalid"] + stats["date"] + stats["keyword"] + stats["empty"]
-    print("ÖNİZLEME" if preview else "İÇE AKTARIM")
-    print("kaynak sohbet: %d" % stats["source"])
-    print("yazılacak sohbet: %d" % len(selected))
+    print("PREVIEW" if preview else "IMPORT")
+    print("source chats: %d" % stats["source"])
+    print("chats to write: %d" % len(selected))
     if selected:
         print(
-            "tarih aralığı: %s .. %s"
+            "date range: %s .. %s"
             % (selected[0]["moment"].date(), selected[-1]["moment"].date())
         )
     else:
-        print("tarih aralığı: yok")
+        print("date range: none")
     print(
-        "atlanan sohbet: %d (tarih: %d, anahtar kelime: %d, boş: %d, geçersiz: %d)"
+        "skipped chats: %d (date: %d, keyword: %d, empty: %d, invalid: %d)"
         % (skipped, stats["date"], stats["keyword"], stats["empty"], stats["invalid"])
     )
     if automatic_start:
-        print("50 MB sınırı: son 12 takvim ayı, otomatik başlangıç %s" % automatic_start)
+        print("50 MB limit: last 12 calendar months, automatic start %s" % automatic_start)
     if effective_start:
-        print("etkin başlangıç tarihi: %s" % effective_start)
+        print("effective start date: %s" % effective_start)
 
 
 def main():
@@ -388,31 +388,31 @@ def main():
         )
         print_selection(selected, stats, automatic_start, effective_start, args.preview)
         if args.preview:
-            print("dosya yazılmadı")
+            print("no files written")
             return 0
         plans = build_parts(selected, args.out_dir)
         if not plans:
-            print("yazılan dosya: 0")
+            print("files written: 0")
             return 0
         os.makedirs(args.out_dir, exist_ok=True)
         try:
             write_exclusive(plans)
         except FileExistsError as exc:
             print(
-                "HATA: mevcut içe aktarım dosyasının üzerine yazılmadı: %s" % exc.filename,
+                "ERROR: existing import file was not overwritten: %s" % exc.filename,
                 file=sys.stderr,
             )
             return 3
-        print("yazılan dosya: %d" % len(plans))
-        print("yazılan sohbet: %d, atlanan sohbet: %d" % (
+        print("files written: %d" % len(plans))
+        print("chats written: %d, chats skipped: %d" % (
             sum(count for _path, _text, count in plans),
             stats["invalid"] + stats["date"] + stats["keyword"] + stats["empty"],
         ))
         for output, text, count in plans:
-            print("  %s  %d sohbet  %d karakter" % (output, count, len(text)))
+            print("  %s  %d chats  %d characters" % (output, count, len(text)))
         return 0
     except (OSError, ValueError, json.JSONDecodeError) as exc:
-        print("HATA: %s" % exc, file=sys.stderr)
+        print("ERROR: %s" % exc, file=sys.stderr)
         return 2
 
 
@@ -420,11 +420,11 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-## Claude betiği
+## Claude script
 
-Claude dışa aktarımının şeması düzdür. Aynı onay kapısını, `--preview`, tarih ve anahtar kelime
-filtrelerini, kayıpsız parça üretimini ve `write_exclusive` yazımını kullan. ChatGPT'e özgü
-`conversation_turns` yerine aşağıdaki çözümleyiciyi çağır. Sistem kayıtlarını yazma.
+The Claude export schema is flat. Use the same approval gate, `--preview`, date and keyword
+filters, lossless part generation and `write_exclusive` writing. Instead of the ChatGPT-specific
+`conversation_turns`, call the parser below. Do not write system records.
 
 ```python
 def claude_turns(conversation):
@@ -447,7 +447,7 @@ def claude_turns(conversation):
     return turns
 ```
 
-Zaman damgasını yalnızca stdlib ile şöyle çöz:
+Resolve the timestamp with the stdlib only, like this:
 
 ```python
 created = str(conversation.get("created_at") or "")
@@ -459,29 +459,29 @@ stamp = moment.timestamp()
 
 ## Gemini Takeout
 
-Takeout arşivinde `My Activity/Gemini Apps/` klasörü vardır. JSON seçildiyse
-`MyActivity.json` bir kayıt listesidir. Bu format sohbet bütünlüğünü korumaz, her kayıt tek bir
-istemdir. Gemini içe aktarımını istem günlüğü gibi yaz: aynı günün kayıtlarını tek bir
-`### Oturum (YYYY-MM-DD) Gemini` bloğunda topla ve her kaydı `**User:**` satırı yap. Aynı onay,
-önizleme, filtre, parça ve çakışma kuralları geçerlidir. Takeout HTML ise kullanıcıdan JSON
-formatında yeniden dışa aktarmasını iste.
+The Takeout archive has a `My Activity/Gemini Apps/` folder. If JSON was chosen,
+`MyActivity.json` is a list of records. This format does not preserve chat integrity; each record is a single
+prompt. Write the Gemini import like a prompt log: gather the records of the same day into a single
+`### Session (YYYY-MM-DD) Gemini` block and make each record a `**User:**` line. The same approval,
+preview, filter, part and collision rules apply. If the Takeout is HTML, ask the user to export again in
+JSON format.
 
-## Sonra ne olur
+## What happens next
 
-İçe aktarım bittiğinde kullanıcıya dürüst özeti ver:
+When the import is done, give the user an honest summary:
 
-- Yazılan ve atlanan sohbet sayılarını ayrı göster. Her parça dosyasının sohbet ve karakter
-  sayısını betik çıktısından aktar.
-- `daily/import-*.md` dosyaları yereldir. Akşam derleyicisi içeriklerini özetleme için
-  kullanıcının kendi Claude aboneliği üzerinden Claude'a gönderir. Başka yere gönderim yapılmaz.
-- Derleyici akşamları bir tur çalışır ve her turda değişen logları işler. Büyük bir arşiv birkaç
-  akşama yayılabilir.
-- Kullanıcı beklemek istemezse önce `python3 .claude/scripts/compile.py --dry-run`, sonra açık
-  onayıyla `python3 .claude/scripts/compile.py` çalıştırılabilir. Her tur abonelik limitinden pay
-  tüketir.
-- Kullanıcı içeriği Claude'a göndermek istemezse derleyiciyi çalıştırmamalı ve ilgili aylık parça
-  dosyalarını akşam derlemesinden önce silmelidir.
-- 50 MB sınırı nedeniyle daha eski arşiv atlandıysa bunu açıkça söyle ve ayrı bir tarih aralığıyla
-  ikinci tur isteyip istemediğini sor.
+- Show the written and skipped chat counts separately. Relay the chat and character
+  count of each part file from the script output.
+- The `daily/import-*.md` files are local. The evening compiler sends their content to Claude through
+  the user's own Claude subscription for summarisation. Nothing is sent anywhere else.
+- The compiler runs one round each evening and processes the changed logs in each round. A large archive may be spread
+  over several evenings.
+- If the user does not want to wait, first `python3 .claude/scripts/compile.py --dry-run`, then with their explicit
+  approval `python3 .claude/scripts/compile.py` can be run. Each round uses up part of the subscription
+  limit.
+- If the user does not want to send the content to Claude, they should not run the compiler and should delete the relevant monthly part
+  files before the evening compilation.
+- If an older archive was skipped because of the 50 MB limit, say so clearly and ask whether they want a
+  second round with a separate date range.
 
-Son adım olarak `beyin-doktor` çalıştırmayı öner. Derleme durumu satırından ilerleme izlenebilir.
+As the last step, suggest running `beyin-doktor`. Progress can be followed from the compile status line.

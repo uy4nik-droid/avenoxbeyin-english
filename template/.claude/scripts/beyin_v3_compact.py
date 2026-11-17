@@ -52,13 +52,15 @@ CONTAINER = {'Last-Session.md': 1, 'Threads.md': 3}
 # A dated line directly under the Active section (or the title) may be a whole thread,
 # not an update of one, so in Threads only updates inside a named thread heading move.
 ACTIVE = re.compile(r'(?i)#{1,2}[ \t]+(?:Active|Aktif|Açık|Acik|Open)|#[ \t]')
-ADDED_HISTORY = {'Last-Session.md': '## Önceki oturumlar', 'Threads.md': '## Kapanan konular'}
+ADDED_HISTORY = {'Last-Session.md': '## Previous sessions', 'Threads.md': '## Closed threads'}
 ARCHIVE_DIRECTORY = 'Arşiv'
-POINTER = 'Arşivlenen metin: `{}`'
-BACKUP = '{} karakter tam metin yedeği (needs_rewrite)'
+POINTER = 'Archived text: `{}`'
+BACKUP = '{} characters full-text backup (needs_rewrite)'
+# Earlier (Turkish) releases wrote this heading above a bare legacy backup payload; both are recognised.
+LEGACY_BACKUP = '{} karakter tam metin yedeği (needs_rewrite)'
 BACKUP_LOOKBACK_MONTHS = 12
 BACKUP_LOOKBACK_BYTES = 8 * 1024 * 1024
-POINTER_LINE = re.compile(r'Arşivlenen metin: `[^`\n]+`[ \t]*\r?\n?$')
+POINTER_LINE = re.compile(r'(?:Archived text|Arşivlenen metin): `[^`\n]+`[ \t]*\r?\n?$')
 LOCK_NAME = '.beyin-compact.lock'
 DECISIONS = 'Kararlar.md'
 DECISION = re.compile(r'[ \t]*(?:[-*+][ \t]+)?\*\*(?:Karar(?:[ \t]+\d+)?(?:[ \t]+\([^*\n)]{1,40}\))?|Decision):[ \t]*\*\*', re.I)
@@ -66,7 +68,7 @@ DECISION_KEY = re.compile(r'<!-- beyin-decision: ([0-9a-f]{64}) -->')
 
 ARCHIVE_RECORD = re.compile(r'<!-- beyin-compact-v1: (\{[^\n]+\}) -->\r?\n')
 RECORD_END = '<!-- /beyin-compact-v1 -->'
-DELTA_BACKUP = '{} karakter fark yedeği (needs_rewrite)'
+DELTA_BACKUP = '{} characters delta backup (needs_rewrite)'
 # A line diff runs under the shared note-writer lock. Beyond this many changed lines a
 # complete copy is written instead; it is larger but never slow and never lossy (#596).
 DELTA_MAX_LINES = 20000
@@ -213,7 +215,7 @@ def _archive_history(target, name, vault, now=None, backup=None, locations=None,
     """
     source = _source(target, name, vault)
     locations = {} if locations is None else locations
-    marker = BACKUP.format(len(backup)) if backup is not None else None
+    markers = (BACKUP.format(len(backup)), LEGACY_BACKUP.format(len(backup))) if backup is not None else ()
     moves, versions = {}, {}
     for path, content in _archive_files(target, name, vault, now, current):
         relative = path.relative_to(vault).as_posix()
@@ -225,7 +227,7 @@ def _archive_history(target, name, vault, now=None, backup=None, locations=None,
             locations.setdefault(identity, relative)
         # Bind a legacy payload to its backup heading; the same text in moved
         # history, inside a record or next to a bare marker is not a snapshot.
-        if marker is not None and any(marker + nl + nl + backup in gap for gap in gaps for nl in ('\n', '\r\n')):
+        if any(marker + nl + nl + backup in gap for gap in gaps for nl in ('\n', '\r\n') for marker in markers):
             locations.setdefault(_hash(backup), relative)
     return moves, versions
 
@@ -552,9 +554,9 @@ def _record_decisions(target, vault, found, archive_relative, newline, source_re
         return 0
     if existing is None:
         existing = newline.join([
-            '---', '{"kind": "note", "visibility": "internal", "remote_allowed": false, "title": "Kararlar"}', '---', '# Kararlar', '',
-            '`beyin.py companion-compact` arşive taşıdığı kartlardaki karar satırlarını buraya, kartın başlığı '
-            've arşiv yoluyla kelimesi kelimesine ekler. Dosya yalnız eklenerek büyür; elle düzenleyebilirsin.', ''])
+            '---', '{"kind": "note", "visibility": "internal", "remote_allowed": false, "title": "Decisions"}', '---', '# Decisions', '',
+            '`beyin.py companion-compact` appends the decision lines from the cards it moves to the archive here, verbatim, '
+            'with the card heading and the archive path. The file only grows by appending; you can edit it by hand.', ''])
     elif not existing.endswith('\n'):
         existing += newline
     added, groups = [], []
@@ -564,7 +566,7 @@ def _record_decisions(target, vault, found, archive_relative, newline, source_re
         groups[-1][1].append((line, key))
     for heading, group in groups:
         added.append(newline + ''.join('<!-- beyin-decision: ' + key + ' -->' + newline for _, key in group))
-        added.append((heading if heading else '## (başlıksız)') + newline + 'Arşiv: `' + archive_relative + '`' + newline)
+        added.append((heading if heading else '## (untitled)') + newline + 'Archive: `' + archive_relative + '`' + newline)
         added.extend(line + newline for line, _ in group)
     _write(path, existing + ''.join(added))
     return len(fresh)
@@ -784,7 +786,7 @@ def _compact_files(vault, target, configured, dry_run=False, now=None):
                               within_limit_after=len(result['live']) <= limit)
                 backup = None if report['within_limit_after'] else result['live']
             else:
-                added.append(newline + heading + str(result['moved_chars']) + ' karakter taşındı' + newline + newline
+                added.append(newline + heading + str(result['moved_chars']) + ' characters moved' + newline + newline
                              + _record('move', source, identity, result['archive'], newline))
         if backup is not None:
             previous_backup = _previous_backup(target, vault, name, now, backup, locations)
@@ -800,11 +802,11 @@ def _compact_files(vault, target, configured, dry_run=False, now=None):
         if added:
             if existing is None:
                 existing = newline.join([
-                    '---', '{"kind": "note", "visibility": "private", "title": "' + name + ' arşivi ' + month + '"}', '---',
-                    '# ' + name + ' arşivi: ' + month, '',
-                    '`beyin.py companion-compact` bu dosyaya yalnız ekleme yapar. Taşınan metin kelimesi kelimesine '
-                    'korunur, hiçbir şey silinmez. `visibility: private` olduğu için otomatik bağlama girmez; '
-                    'gerektiğinde bu dosyayı doğrudan aç.', ''])
+                    '---', '{"kind": "note", "visibility": "private", "title": "' + name + ' archive ' + month + '"}', '---',
+                    '# ' + name + ' archive: ' + month, '',
+                    '`beyin.py companion-compact` only appends to this file. Moved text is kept verbatim; '
+                    'nothing is deleted. Because of `visibility: private` it does not enter the automatic context; '
+                    'open this file directly when you need it.', ''])
             elif not existing.endswith('\n'):
                 existing += newline
             archive_written = existing + ''.join(added)

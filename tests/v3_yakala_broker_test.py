@@ -221,8 +221,8 @@ class BrokerRecoveryTest(unittest.TestCase):
     def test_one_warm_timeout_keeps_listener_and_rewarms(self):
         self.start('warm_timeout', 'normal')
         self.assert_recovered()
-        self.assertIn('asama: warming', self.log())
-        self.assertIn('1/3 gecici hata', self.log())
+        self.assertIn('stage: warming', self.log())
+        self.assertIn('1/3 transient errors', self.log())
         self.press()
         self.assertTrue(wait_until(lambda: any(m['type'] == 'ACTIVATE' for m in self.owners[1].sent), 5))
 
@@ -231,8 +231,8 @@ class BrokerRecoveryTest(unittest.TestCase):
         self.press()
         self.assert_recovered()
         self.assertEqual(self.owners[1].sent, [])
-        self.assertIn('DONE olmadan', self.log())
-        self.assertIn('asama: activating', self.log())
+        self.assertIn('timed out without DONE', self.log())
+        self.assertIn('stage: activating', self.log())
         self.press()
         self.assertTrue(wait_until(lambda: bool(self.owners[1].sent), 5))
         before, after = self.owners[0].sent[0], self.owners[1].sent[0]
@@ -244,14 +244,14 @@ class BrokerRecoveryTest(unittest.TestCase):
     def test_unexpected_warm_exit_keeps_listener_and_rewarms(self):
         self.start('exit_ready', 'normal')
         self.assert_recovered()
-        self.assertIn('beklenmedik bicimde kapandi', self.log())
+        self.assertIn('closed unexpectedly', self.log())
 
     def test_active_exit_without_done_does_not_replay_capture(self):
         self.start('exit_active', 'normal')
         self.press()
         self.assert_recovered()
         self.assertEqual(self.owners[1].sent, [])
-        self.assertIn('DONE olmadan kapandi', self.log())
+        self.assertIn('closed without DONE', self.log())
 
     def test_delayed_done_after_exit_rewarms_without_counting_failures(self):
         self.start('exit_delayed_done', 'exit_delayed_done', 'exit_delayed_done', 'normal')
@@ -264,7 +264,7 @@ class BrokerRecoveryTest(unittest.TestCase):
             self.assertFalse(previous.read_thread.is_alive())
             self.assertEqual(sum(m['type'] == 'ACTIVATE' for m in previous.sent), 1)
             self.assertEqual(self.owners[-1].sent, [])
-        self.assertNotIn('gecici hata', self.log())
+        self.assertNotIn('transient errors', self.log())
         self.assertNotIn('sonucu bilinmiyor', self.log())
 
     def test_final_packets_queued_during_eof_check_preserve_capture_phase(self):
@@ -276,7 +276,7 @@ class BrokerRecoveryTest(unittest.TestCase):
             self.assertTrue(previous.done_seen)
             self.assertTrue(previous.eof_queued)
             self.assertEqual(self.owners[-1].sent, [])
-        self.assertNotIn('gecici hata', self.log())
+        self.assertNotIn('transient errors', self.log())
         self.assertNotIn('sonucu bilinmiyor', self.log())
 
     def test_final_packets_at_activation_deadline_are_drained_before_recovery(self):
@@ -291,7 +291,7 @@ class BrokerRecoveryTest(unittest.TestCase):
         self.assertTrue(previous.done_seen)
         self.assertEqual(sum(m['type'] == 'ACTIVATE' for m in previous.sent), 1)
         self.assertEqual(self.owners[-1].sent, [])
-        self.assertNotIn('gecici hata', self.log())
+        self.assertNotIn('transient errors', self.log())
         self.assertNotIn('sonucu bilinmiyor', self.log())
 
     def test_stuck_reader_after_exit_has_bounded_wait_and_does_not_replay_capture(self):
@@ -301,14 +301,14 @@ class BrokerRecoveryTest(unittest.TestCase):
         self.assertTrue(self.owners[0].read_thread.is_alive())
         self.assertFalse(self.owners[0].done_seen)
         self.assertEqual(self.owners[1].sent, [])
-        self.assertIn('DONE olmadan kapandi', self.log())
-        self.assertIn('1/3 gecici hata', self.log())
+        self.assertIn('closed without DONE', self.log())
+        self.assertIn('1/3 transient errors', self.log())
 
     def test_third_recent_failure_wakes_listener_and_releases_hotkey(self):
         broker = self.start('warm_timeout', 'exit_ready', 'warm_timeout')
         self.listener.join(5)
         self.assertFalse(self.listener.is_alive())
-        self.assertIn('3/3 gecici hata', broker.error)
+        self.assertIn('3/3 transient errors', broker.error)
         self.assertEqual(self.result['code'], broker.error)
         self.assertIn('yakala kur', self.log())
         self.assertEqual(self.session.hotkeys, {})
@@ -349,7 +349,7 @@ class BrokerRecoveryTest(unittest.TestCase):
     def test_stop_interrupts_backoff_without_spawning_again(self):
         with patch.object(self.broker_class, 'RETRY_DELAY', 30):
             self.start('warm_timeout')
-            self.assertTrue(wait_until(lambda: 'yeniden isitilacak' in self.log(), 5))
+            self.assertTrue(wait_until(lambda: 'warmed up again' in self.log(), 5))
             self.stop()
         self.assertEqual(self.result, {'code': 0})
         self.assertEqual(len(self.owners), 1)
@@ -369,7 +369,7 @@ class BrokerRecoveryTest(unittest.TestCase):
         self.assert_recovered()
         self.assertTrue(first.done_seen)
         self.assertNotIn('uyusmazligi', self.log())
-        self.assertNotIn('gecici hata', self.log())
+        self.assertNotIn('transient errors', self.log())
         return first
 
     def test_listener_from_the_3_12_0_release_keeps_working_with_this_popup(self):

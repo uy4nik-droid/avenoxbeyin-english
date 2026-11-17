@@ -1,113 +1,117 @@
-# Yerel Windows portu — ne değişti, neden
+# Native Windows port: what changed, and why
 
-Bu belge `SETUP-WINDOWS.md` yolunun neden var olduğunu ve upstream'den nerede
-ayrıldığını anlatır. Her madde ölçülmüş bir gözleme dayanır; ölçülmemiş olanlar
-en sonda ayrıca listelenir.
+This document explains why the `SETUP-WINDOWS.md` path exists and where it
+diverges from upstream. Every item rests on a measured observation; the things
+that were not measured are listed separately at the end.
 
-## Tek satırlık `beyin.md` girişi artık doğru lane'i seçer
+## The one-line `beyin.md` entry now picks the right lane
 
-Yerel Windows motorunun var olması tek başına yeterli değildi. Public giriş dosyası
-`docs/beyin-v2.md`, platformu ayırmadan `/tmp`, Bash ve `SETUP.md` akışına giriyordu; dolayısıyla
-Sıfırdan izleyicisinin kopyaladığı tek satır Windows kurucusuna hiç ulaşmayabiliyordu.
+Having a native Windows engine was not enough on its own. The public entry file,
+`docs/beyin-v2.md`, went straight into `/tmp`, Bash and the `SETUP.md` flow
+without telling platforms apart, so the single line the from-scratch viewer
+copied might never reach the Windows installer.
 
-Giriş kapısı artık hedef vault'a yazmadan önce üç lane seçer:
+Before writing anything to the target vault, the entry gate now picks one of three lanes:
 
-| Ortam | Seçilen yol | Sınır |
+| Environment | Path chosen | Limit |
 | --- | --- | --- |
-| macOS / Linux | Mevcut `SETUP.md` | macOS akışı değiştirilmedi |
-| Yerel Windows | Fresh temp clone -> `SETUP-WINDOWS.md` -> `install.ps1` | Yalnız temiz kurulum |
-| WSL | `SETUP.md`, tamamen aynı WSL dağıtımı içinde | Vault Linux filesystem'de; karma Windows Obsidian runtime'ı doğrulanmış değil |
+| macOS / Linux | Existing `SETUP.md` | The macOS flow was not changed |
+| Native Windows | Fresh temp clone -> `SETUP-WINDOWS.md` -> `install.ps1` | Clean install only |
+| WSL | `SETUP.md`, entirely inside the same WSL distribution | Vault on the Linux filesystem; a mixed Windows Obsidian runtime is not verified |
 
-Bu ayrım `tests/entrypoint_test.py` ile repo seviyesinde kilitlenir. Yerel Windows kurucusunun
-çalışan davranışı ayrıca Windows CI'daki preflight, temiz kurulum ve motor testleriyle ölçülür.
+This split is pinned at the repo level by `tests/entrypoint_test.py`. The working
+behavior of the native Windows installer is measured separately by the preflight,
+clean-install and engine tests in Windows CI.
 
-## Neden ayrı bir yol var
+## Why there is a separate path
 
-Upstream'in kendi README'si Windows'u boşluk olarak işaretliyor:
+Upstream's own README marks Windows as a gap:
 
-> | Windows | **test edilmedi**, WSL önerilir | WSL içinde Linux yolu geçerli. Yerel Windows için kurulum yolu yok. |
+> | Windows | **not tested**, WSL recommended | The Linux path is valid inside WSL. There is no install path for native Windows. |
 
-`docs/SPEC-V2.md` ise taşınabilirliği hedef sayıyor: *"Portable. macOS + Linux
+`docs/SPEC-V2.md` lists portability as a goal: *"Portable. macOS + Linux
 for all shell code. Windows: documented as WSL-recommended, not silently
-broken."* Bu port o boşluğu doldurur; WSL yolunu değiştirmez.
+broken."* This port fills that gap; it does not change the WSL path.
 
-**macOS ve Linux davranışı değişmedi.** POSIX hook ayarı
-`template/.claude/settings.json` içinde kalır; Windows installer yalnız kurduğu
-vault'ta bunu `scripts/settings.windows.json` ile değiştirir. Aynı kalıp teşhis
-skill'i için de geçerlidir: POSIX `beyin-doktor` şablonda durur, installer
-kurduğu vault'ta onu `scripts/skill.beyin-doktor.windows.md` ile değiştirir.
-`upgrade.sh` ise yeni ortak kilit modülü `_portalock.py`yi iki motor scriptiyle
-birlikte kopyalar.
+**macOS and Linux behavior is unchanged.** The POSIX hook configuration stays in
+`template/.claude/settings.json`; the Windows installer replaces it only in the
+vault it installs, using `scripts/settings.windows.json`. The same pattern
+applies to the diagnostic skill: the POSIX `beyin-doktor` stays in the template,
+and the installer replaces it in the vault it installs with
+`scripts/skill.beyin-doktor.windows.md`. `upgrade.sh`, for its part, copies the
+new shared lock module `_portalock.py` together with the two engine scripts.
 
-## `scripts/upgrade.sh`'i Windows'ta çalıştırmayın
+## Do not run `scripts/upgrade.sh` on Windows
 
-`upgrade.sh` bir POSIX yükselticisidir ve mevcut `.sh` hook adlarını yönetir.
-PowerShell hook'lu bir vault'u güvenle tanıyıp dönüştüren bir yol henüz yoktur;
-yanlış yolu otomatik denemek aynı olayı iki kez bağlayabilir. Bu yüzden yerel
-Windows desteği şimdilik yalnız temiz kurulum içindir; mevcut vault yükseltmesi
-açıkça kapsam dışıdır.
+`upgrade.sh` is a POSIX upgrader and manages the existing `.sh` hook names.
+There is not yet a path that safely recognizes and converts a vault with
+PowerShell hooks; automatically trying the wrong path could wire the same event
+twice. For that reason native Windows support is for clean installs only for now;
+upgrading an existing vault is explicitly out of scope.
 
-## Kırılan katmanlar
+## Layers that break
 
-| Katman | Upstream (POSIX) | Windows'ta | Bu repodaki karşılığı |
+| Layer | Upstream (POSIX) | On Windows | Counterpart in this repo |
 |---|---|---|---|
-| Dosya kilidi | `fcntl.flock` | modül yok, import'ta ölür | `_portalock.py` (`msvcrt.locking`) |
-| Ayrık süreç | `start_new_session=True` | yok sayılır | `DETACHED_PROCESS \| CREATE_NEW_PROCESS_GROUP` |
-| Kancalar | `hooks/*.sh` (bash) | bash yok | `hooks/*.ps1` + `pwsh.exe` |
-| Kanca kaydı | `"$CLAUDE_PROJECT_DIR/.../x.sh"` | `.ps1` doğrudan çalışmaz | shell'siz `pwsh.exe` + `args` exec-form |
-| Çıktı kodlaması | UTF-8 | OEM kod sayfası | `lib.ps1` UTF-8'e sabitler |
-| Satır sonu | LF | Git CRLF'e çevirir | `.gitattributes` LF pinler |
-| Symlink testi | çalışır | `WinError 1314` | `skipUnless` ile açıkça atlanır |
-| Teşhis skill'i | `beyin-doktor` `.sh`, symlink ve `command -v python3` arar | üçü de yok, sağlıklı vault'ta kalıcı kırmızı | `scripts/skill.beyin-doktor.windows.md` (installer takas eder) |
+| File locking | `fcntl.flock` | no such module, dies on import | `_portalock.py` (`msvcrt.locking`) |
+| Detached process | `start_new_session=True` | ignored | `DETACHED_PROCESS \| CREATE_NEW_PROCESS_GROUP` |
+| Hooks | `hooks/*.sh` (bash) | no bash | `hooks/*.ps1` + `pwsh.exe` |
+| Hook registration | `"$CLAUDE_PROJECT_DIR/.../x.sh"` | `.ps1` does not run directly | shell-less `pwsh.exe` + `args` exec-form |
+| Output encoding | UTF-8 | OEM code page | `lib.ps1` pins it to UTF-8 |
+| Line endings | LF | Git converts to CRLF | `.gitattributes` pins LF |
+| Symlink test | works | `WinError 1314` | explicitly skipped with `skipUnless` |
+| Diagnostic skill | `beyin-doktor` looks for `.sh`, symlinks and `command -v python3` | none of the three exist, permanent red in a healthy vault | `scripts/skill.beyin-doktor.windows.md` (the installer swaps it in) |
 
-## Ölçülmüş üç Windows tuzağı
+## Three measured Windows traps
 
-**1. `[Console]::OutputEncoding` OEM'dir.** Türkçe bir makinede cp857. Bu sistem
-baştan sona Türkçe bağlam üretir ve hafıza klasörünün adında emoji vardır.
-Ölçüm: cp857 altında "Türkçe" geçerli UTF-8 olmayan bayta dönüşüyor ve 🔮
-tamamen `?` oluyor — geri dönüşü yok. `lib.ps1` bunu **tek yerde** sabitler;
-kanca başına ayarlamak, bir kancanın unutulma biçimidir.
+**1. `[Console]::OutputEncoding` is the OEM code page.** On a Turkish machine
+that is cp857. This system produces Turkish context from start to finish, and the
+memory folder's name contains an emoji. Measurement: under cp857, "Türkçe"
+turns into bytes that are not valid UTF-8, and 🔮 becomes a plain `?` with no way
+back. `lib.ps1` pins this in **one place**; setting it per hook is how a hook gets
+forgotten.
 
-**2. `WindowsApps\python3.exe` Python kurulu olmasa da vardır.** Microsoft
-Store'u açan bir kısayoldur. `Get-Command` onu bulur, çalıştırmak hiçbir şey
-yapmaz. Varlık kontrolü yapan bir kanca onu Python sanır, motoru "başlattım"
-der ve özetleyici hiç çalışmaz. Bu yüzden hem `lib.ps1` hem `install.ps1`
-Python'u **çalıştırarak** doğrular, ve `Get-Command -All` kullanır çünkü stub
-gerçek kurulumun önünde olabilir.
+**2. `WindowsApps\python3.exe` exists even when Python is not installed.** It is
+a shortcut that opens the Microsoft Store. `Get-Command` finds it, and running it
+does nothing. A hook that only checks for existence takes it for Python, says it
+"started" the engine, and the summarizer never runs. That is why both `lib.ps1`
+and `install.ps1` verify Python by **running** it, and use `Get-Command -All`,
+because the stub can sit in front of the real installation.
 
-**3. PowerShell 5.1 gömülü çift tırnakları soyar.** Native komutlara argüman
-geçerken `print("X")` Python'a `print(X)` olarak ulaşır ve `NameError` fırlatır.
-Ölçüm: tırnak içeren bir probe, Python'u olan bir makinede kapıya "Python yok"
-dedirtiyordu. Probe'lar artık hiç tırnak içermez.
+**3. PowerShell 5.1 strips embedded double quotes.** When passing arguments to
+native commands, `print("X")` reaches Python as `print(X)` and raises a
+`NameError`. Measurement: a probe containing quotes made the gate say "no Python"
+on a machine that had Python. The probes now contain no quotes at all.
 
-## `install.ps1` neden `#requires -Version 7.0` taşımaz
+## Why `install.ps1` does not carry `#requires -Version 7.0`
 
-Taşısaydı kapının hedeflediği kullanıcı — pwsh 7'si olmayan — bizim mesajımızı
-değil çıplak bir PowerShell sürüm hatası görürdü. Ön kontrol 5.1 uyumlu alt
-kümeyle yazılır; kapı geçildikten sonra script kendini `pwsh` altında yeniden
-başlatır.
+If it did, the user the gate is aimed at, someone without pwsh 7, would see a bare
+PowerShell version error instead of our message. The preflight is written in a
+5.1-compatible subset; once the gate is passed, the script relaunches itself
+under `pwsh`.
 
-Kapı dört bağımlılığı da (pwsh 7, Python 3, git, claude) **çalıştırarak**
-doğrular ve biri bile eksikse **diske hiçbir şey yazmadan** durur. Upstream'in
-kendi kuralıyla aynı hizada: *"yarım kurulmuş bir v2'den dürüst bir v1 iyidir."*
+The gate verifies all four dependencies (pwsh 7, Python 3, git, claude) by
+**running** them, and if even one is missing it stops **without writing anything
+to disk**. This matches upstream's own rule: *"an honest v1 beats a half-installed v2."*
 
-## Kancalar kopya değil, çeviridir
+## The hooks are a translation, not a copy
 
-PowerShell kancaları bash'ten satır satır çevrildi. Her fonksiyon karşılığı
-olduğu `.sh` satırını yorumunda adlandırır. Oturum anahtarı bash'inkiyle
-**bayt-aynıdır** (UTF-8 `session_id`'nin SHA-256'sı, küçük harf hex), state
-dosya adları ve düz düzen aynıdır, sayaç kilidi yine `mkdir` tabanlıdır,
-16.000 karakterlik bağlam bütçesi ve kademeli kırpma sırası aynıdır.
+The PowerShell hooks were translated from bash line by line. Each function names
+the `.sh` line it corresponds to in its comment. The session key is
+**byte-identical** to bash's (the SHA-256 of the UTF-8 `session_id`, lowercase
+hex), the state file names and the flat layout are the same, the counter lock is
+still `mkdir`-based, and the 16,000-character context budget and the order of
+progressive truncation are the same.
 
-Üç kasıtlı fark: yukarıdaki UTF-8 sabitlemesi, Python'un çalıştırılarak
-doğrulanması, ve başarısız flush'ın `flush_last_error`'a kalıcı yazılması
-(upstream'in `python3-missing` işareti ve uyarısı ayrıca korunur).
+Three deliberate differences: the UTF-8 pinning above, verifying Python by running
+it, and writing a failed flush persistently to `flush_last_error` (upstream's
+`python3-missing` marker and warning are kept as well).
 
-Bir platform farkı: `lib.sh` SHA-256 ve JSON kaçışı için `python3`'e çıkar;
-PowerShell'de ikisi de yerlidir, dolayısıyla **kanca katmanı Python'a hiç
-ihtiyaç duymaz.** Python yalnız motor için gerekir.
+One platform difference: `lib.sh` shells out to `python3` for SHA-256 and JSON
+escaping; in PowerShell both are native, so **the hook layer needs no Python at
+all.** Python is needed only for the engine.
 
-## Doğrulama
+## Verification
 
 ```
 python tests/scripts_test_windows.py     Ran 25 tests, OK (skipped=1)
@@ -115,21 +119,23 @@ pwsh -File tests/Test-Preflight.ps1      TAMAM: 6 test gecti
 pwsh -File tests/Test-CleanInstall.ps1   TAMAM: 18 kontrol gecti
 ```
 
-`Test-CleanInstall.ps1` sıfırdan bir vault kurar, gerçek `SessionEnd` kancasını
-gerçek bir payload ile sürer ve ayrık motorun `daily/` altına yazmasını bekler.
-Stub'lanan tek şey `claude`'dur; kurulum, kancalar, ayırma ve motor gerçektir.
+`Test-CleanInstall.ps1` installs a vault from scratch, drives the real
+`SessionEnd` hook with a real payload, and expects the detached engine to write
+under `daily/`. The only thing stubbed is `claude`; the installation, the hooks,
+the detaching and the engine are real.
 
-## Ne iddia etmiyoruz
+## What we do not claim
 
-- **Bu port fiziksel bir izleyici Windows makinesinde test edilmedi.** Windows 11 + PowerShell 7 +
-  Python 3 üzerinde CI ve katkıcı doğrulamasıyla ölçüldü, resmî Microsoft/Anthropic desteği değildir.
-- **Symlink güvenlik testi Windows'ta kurulamıyor.** `WinError 1314` yüzünden
-  saldırı sahnelenemediği için `skipUnless` ile atlanır; o yüzeyde upstream'in
-  güvencesine sahip değiliz. Not: junction ve hardlink varyantları ölçüldü ve
-  `compile.py` ikisini de reddediyor (`staging-escape`, `staging-special`) —
-  savunma tek katmanlı değil.
-- **`MAX_PATH` stok bir makinede ölçülmedi.** Uzun yol desteği Windows'ta
-  varsayılan olarak kapalıdır. Ölçülen gerçek bir vault'un en uzun yolu 131
-  karakterdi, 260 sınırına geniş pay var; `install.ps1` yine de vault yolu
-  derinse uyarır.
-- **`upgrade.sh` satır numaraları** o günkü upstream sürümüne aittir.
+- **This port was not tested on a physical viewer's Windows machine.** It was
+  measured with CI and contributor verification on Windows 11 + PowerShell 7 +
+  Python 3, and it is not official Microsoft/Anthropic support.
+- **The symlink security test cannot be set up on Windows.** Because the attack
+  cannot be staged (`WinError 1314`), it is skipped with `skipUnless`; on that
+  surface we do not have upstream's assurance. Note: the junction and hardlink
+  variants were measured and `compile.py` rejects both (`staging-escape`,
+  `staging-special`), so the defense is not single-layered.
+- **`MAX_PATH` was not measured on a stock machine.** Long path support is off by
+  default on Windows. The longest path in a real measured vault was 131
+  characters, well within the 260 limit; `install.ps1` still warns if the vault
+  path is deep.
+- **`upgrade.sh` line numbers** belong to the upstream version of that day.

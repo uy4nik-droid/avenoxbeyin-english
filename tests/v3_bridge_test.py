@@ -821,8 +821,8 @@ class BridgeTest(unittest.TestCase):
         result = self.invoke(dict(self.payload, event_id='second-start'))
         text = result['hookSpecificOutput']['additionalContext']
         self.assertIn('Project context (' + self.project.name + '):', text)
-        self.assertIn('Son kayit: Sprint 12 completed with zero bugs.', text)
-        self.assertIn('Tarihi gelen gorevler:', text)
+        self.assertIn('Last record: Sprint 12 completed with zero bugs.', text)
+        self.assertIn('Due tasks:', text)
         self.assertIn('- Deploy v2: Run ansible', text)
 
     def test_explicit_task_project_id_never_falls_back_to_same_display_name(self):
@@ -889,7 +889,7 @@ class BridgeTest(unittest.TestCase):
         engine.sync()
         text = self.invoke()['hookSpecificOutput']['additionalContext']
         self.assertIn('- Visible Local Task: Fix it', text)
-        self.assertIn('(bu proje disinda 2 tarihi gelmis gorev)', text)
+        self.assertIn('(2 due tasks outside this project)', text)
         self.assertNotIn('SECRET_TITLE_ONE', text)
         self.assertNotIn('SECRET_TITLE_TWO', text)
         self.assertNotIn('Secret action', text)
@@ -912,9 +912,9 @@ class BridgeTest(unittest.TestCase):
         text = self.invoke(dict(self.payload, event_id='read-priv'))['hookSpecificOutput']['additionalContext']
         self.assertNotIn('PRIVATE_RECEIPT_CANARY', text)
         self.assertNotIn('PRIVATE_TASK_CANARY', text)
-        self.assertNotIn('bu proje disinda', text)
+        self.assertNotIn('outside this project', text)
         # A receipt that cites a private source is skipped, not the whole block.
-        self.assertIn('Son kayit: OLDER_PUBLIC_RECEIPT', text)
+        self.assertIn('Last record: OLDER_PUBLIC_RECEIPT', text)
 
     def test_stale_superseded_and_untrusted_tasks_stay_out(self):
         bridge.save_project_context(self.state, True)
@@ -960,7 +960,7 @@ class BridgeTest(unittest.TestCase):
         engine.sync()
         text = self.invoke(dict(self.payload, event_id='read-long'))['hookSpecificOutput']['additionalContext']
         self.assertLessEqual(len(text), 1500)
-        self.assertIn('Son kayit: LONG_SUMMARY', text)
+        self.assertIn('Last record: LONG_SUMMARY', text)
         self.assertIn('...', text)
         self.assertIn('- DUE_NEXT_TO_LONG', text)
 
@@ -978,9 +978,13 @@ class BridgeTest(unittest.TestCase):
         ctx = bridge.project_context(self.vault, self.state, 'test-id', self.project.name, budget=150)
         self.assertLessEqual(len(ctx), 150)
         lines = ctx.splitlines()
-        for line in lines[2:]:
+        # Whole task lines only; dropped tasks are counted in one final note, never cut mid-line.
+        task_lines = lines[2:-1]
+        self.assertTrue(task_lines)
+        for line in task_lines:
             self.assertTrue(line.startswith('- TASK_'))
             self.assertIn(': Action', line)
+        self.assertEqual(lines[-1], f'(+{15 - len(task_lines)} tasks did not fit)')
 
     def test_project_context_handles_legacy_schema_without_project_id_column(self):
         engine = SyncEngine(self.vault, self.state)
@@ -1114,7 +1118,7 @@ class BridgeTest(unittest.TestCase):
         with patch.object(bridge, 'Path') as path:
             path.return_value.resolve.return_value = vault
             content = bridge.gemini_md_content(vault, [project])
-        self.assertIn(r'Vault konumu (veri): "C:\Users\User\Vault"', content)
+        self.assertIn(r'Vault location (data): "C:\Users\User\Vault"', content)
         self.assertIn(r'- "C:\Users\User\Projects\App"', content)
         self.assertNotIn(r'C:\\Users', content)
 

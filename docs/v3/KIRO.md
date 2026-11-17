@@ -1,60 +1,61 @@
-# Kiro (IDE 1.x ve CLI V3)
+# Kiro (IDE 1.x and CLI V3)
 
-Bu kaynak sürümündeki V3 kurucu Kiro için vault içine proje düzeyinde bağlantı kurar.
-Kiro desteği içermeyen eski ZIP paketleri yerine bu kaynak checkout'unu veya
-Kiro adaptörünü içeren daha yeni bir paketi kullan. Kiro hesabı veya programı
-kurucu tarafından kurulmaz.
+The V3 installer in this source version sets up a project-level connection inside the
+vault for Kiro. Instead of old ZIP packages that have no Kiro support, use this source
+checkout or a newer package that includes the Kiro adapter. The installer does not
+install a Kiro account or the program.
 
-## Kurulum
+## Setup
 
-Vault klasörünü seç ve repo kökünden çalıştır:
+Choose the vault folder and run from the repo root:
 
 ```sh
-python3 scripts/install_v3.py --vault "/tam/yol/Beynim"
-python3 "/tam/yol/Beynim/beyin.py" doctor --human
+python3 scripts/install_v3.py --vault "/full/path/Beynim"
+python3 "/full/path/Beynim/beyin.py" doctor --human
 ```
 
-Windows'ta `python3` yerine `py -3` kullan. Kurucu şunları yazar:
+On Windows use `py -3` instead of `python3`. The installer writes:
 
-- `.kiro/hooks/beyin-v3.json`: Kiro'nun `v1` proje hook biçiminde dört komut. Başka
-  `.kiro/hooks/*.json` dosyalarına dokunmaz.
-- `.kiro/skills/{beyin,beyin-doktor,beyin-guncelle,beyin-kontrol}/SKILL.md`: `.agents/skills`
-  ile eşitlenen başlangıç skill'leri.
-- Vault kökündeki `AGENTS.md` içinde yönetilen Beyin bloğu. Kiro bu dosyayı
-  doğrudan okur; ayrı bir `.kiro/steering/` kopyası gerekmez.
+- `.kiro/hooks/beyin-v3.json`: four commands in Kiro's `v1` project hook format. It
+  does not touch other `.kiro/hooks/*.json` files.
+- `.kiro/skills/{beyin,beyin-doktor,beyin-guncelle,beyin-kontrol}/SKILL.md`: starter
+  skills kept in sync with `.agents/skills`.
+- A managed Beyin block in `AGENTS.md` at the vault root. Kiro reads this file
+  directly; a separate `.kiro/steering/` copy is not needed.
 
-Kiro IDE'de vault klasörünü aç, Agent Hooks panelinde Beyin hook'larını incele ve
-yeni bir oturum başlat. Kiro CLI V3'te vault klasöründen yeni oturum açıp `/hooks`
-ile etkin bağlantıları incele. Kiro'nun normal klasör, komut ve hook izinlerini
-inceleyerek ver; kurucu izin kaydı veya onay üretmez. Özel veri içermeyen bir
-deneme notu oluştur, `beyin.py sync` çalıştır ve yeni oturumda bilgiyi yalnız
-otomatik hook bağlamından geri iste. Bu test başarısızsa `beyin.py doctor` ve
-`beyin.py context "konu" --harness kiro` ile kaynağı doğrudan kontrol et.
+In Kiro IDE, open the vault folder, review the Beyin hooks in the Agent Hooks panel and
+start a new session. In Kiro CLI V3, open a new session from the vault folder and review
+the active connections with `/hooks`. Grant Kiro's normal folder, command and hook
+permissions after reviewing them; the installer does not create a permission record or
+an approval. Create a trial note that contains no private data, run `beyin.py sync`, and
+in a new session ask for the information back only from the automatic hook context. If
+this test fails, check the source directly with `beyin.py doctor` and
+`beyin.py context "topic" --harness kiro`.
 
-## Hook davranışı ve sınırlar
+## Hook behavior and limits
 
-`SessionStart` açılış bağlamını, `UserPromptSubmit` ilgili kaynakları getirir;
-`PostToolUse` Kiro'nun `write` araç kategorisinde düzenleme kontrol noktası
-oluşturur. `Stop` tur sonunu kaydeder. `SessionEnd` yalnız CLI V3'te bulunduğu
-için ortak IDE/CLI kurulumunda kullanılmaz; eşitleme `Stop` ile sürer.
-Kiro'da belgelenmiş `PreCompact` olayı yoktur. Kabuk komutlarıyla yapılan dosya
-değişiklikleri `PostToolUse` için `write` eşleşmesini tetiklemez; sonraki istem
-veya `beyin.py sync` kaynağı tazeler.
+`SessionStart` brings the opening context and `UserPromptSubmit` brings the relevant
+sources; `PostToolUse` creates an edit checkpoint in Kiro's `write` tool category.
+`Stop` records the end of the turn. `SessionEnd` exists only in CLI V3, so it is not
+used in the shared IDE/CLI setup; syncing continues with `Stop`. Kiro has no documented
+`PreCompact` event. File changes made through shell commands do not trigger the `write`
+match for `PostToolUse`; the next prompt or `beyin.py sync` refreshes the source.
 
-Kiro başarılı komut hook'unun stdout'unu düz metin olarak bağlama ekler. Kurulu
-`beyin_v3_kiro.py` adaptörü ortak Python hook'unun JSON sonucundan yalnız metni
-çıkarır; boş olaylarda hiçbir şey yazmaz. Hook bir model çağırmaz ve özel sohbet
-transkriptini arşivlemez. İstemci kapalıyken sürekli çalışan servis yoktur.
+Kiro adds the stdout of a successful command hook to the context as plain text. The
+installed `beyin_v3_kiro.py` adapter extracts only the text from the shared Python
+hook's JSON result; it writes nothing for empty events. The hook does not call a model
+and does not archive the private chat transcript. There is no service that runs
+continuously while the client is closed.
 
-Kiro'nun eski IDE 0.x `.kiro.hook` ve CLI 2.x profil hook biçimleri bu kurulumun
-hedefi değildir. Özel Kiro agent profilleri steering ve skill kaynaklarını
-otomatik yüklemeyebilir; böyle bir profil kullanıyorsan kendi `resources`
-ayarında `skill://.kiro/skills/*/SKILL.md` ve gerekirse `file://AGENTS.md` kaynağını açıkça
-ekle. Aynı adlı kullanıcı skill'leri sessizce ezilmez; çakışma `doctor` içinde
-görünür.
+Kiro's old IDE 0.x `.kiro.hook` and CLI 2.x profile hook formats are not the target of
+this setup. Custom Kiro agent profiles may not load steering and skill sources
+automatically; if you use such a profile, explicitly add
+`skill://.kiro/skills/*/SKILL.md` and, if needed, `file://AGENTS.md` to your own
+`resources` setting. User skills with the same name are not silently overwritten; the
+conflict shows up in `doctor`.
 
-Kaynaklar: [Kiro Hooks](https://kiro.dev/docs/hooks/),
-[hook olayları](https://kiro.dev/docs/hooks/types/),
-[hook çıktısı](https://kiro.dev/docs/hooks/actions/),
+Sources: [Kiro Hooks](https://kiro.dev/docs/hooks/),
+[hook events](https://kiro.dev/docs/hooks/types/),
+[hook output](https://kiro.dev/docs/hooks/actions/),
 [AGENTS.md steering](https://kiro.dev/docs/steering/),
 [skills](https://kiro.dev/docs/skills/).

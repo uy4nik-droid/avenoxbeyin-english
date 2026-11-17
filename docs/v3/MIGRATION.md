@@ -168,7 +168,7 @@ older engines rely on it), so receipts are never renamed, and Beyin never edits
 the graph's Search files filter, or add `receipts/` (optionally `daily/v3/`
 and `knowledge/v3/`) under Settings > Files and links > Excluded files, which
 Obsidian hides from Graph view, Search and unlinked mentions. Details:
-[PREFERENCES.md](PREFERENCES.md#obsidian-grafiği-ve-receipt-dosyaları).
+[PREFERENCES.md](PREFERENCES.md#obsidian-graph-and-receipt-files).
 
 These are explicitly generated indexes of agent-authored claims, not automatic
 knowledge distillation or external verification. Existing human daily and

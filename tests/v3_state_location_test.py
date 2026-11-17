@@ -83,7 +83,7 @@ class StateLocationTest(unittest.TestCase):
         report = self.report()
         self.assertTrue(report["pinned_in_package_container"])
         self.assertIn("pinned_in_package_container", self.codes(report))
-        self.assertTrue(any("https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/UPDATE.md" in warning
+        self.assertTrue(any("https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/UPDATE.md" in warning
                             for warning in report["warnings"]))
 
     def test_plain_local_pin_is_not_a_container(self):
@@ -320,17 +320,17 @@ beyin_v3_hook.main()
                                  "pinned_state_not_absolute: x"],
                     "sibling_state_roots": ["A", "B"], "pinned_resolves_here_to": "C"}
         text = entry.human_result({"status": "observed_metadata", "state_location": location}, "doctor", "3.4.0")
-        lines = [line for line in text.splitlines() if line.startswith("State konumu (bilgi): ")]
+        lines = [line for line in text.splitlines() if line.startswith("State location (info): ")]
         self.assertEqual(len(lines), 5)
         self.assertIn("(A, B)", lines[0])
-        self.assertIn("https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/UPDATE.md", lines[0])
-        self.assertIn("https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/UPDATE.md", lines[1])
+        self.assertIn("https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/UPDATE.md", lines[0])
+        self.assertIn("https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/UPDATE.md", lines[1])
         self.assertIn("(C)", lines[2])
-        self.assertIn("https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/MULTI-MACHINE.md", lines[3])
+        self.assertIn("https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/MULTI-MACHINE.md", lines[3])
         self.assertTrue(all(line.isascii() for line in lines))
         quiet = entry.human_result({"status": "observed_metadata",
                                     "state_location": {"status": "unavailable", "warnings": []}}, "doctor", "3.4.0")
-        self.assertNotIn("State konumu", quiet)
+        self.assertNotIn("State location", quiet)
 
 
 # Runs the source CLI in a clean interpreter; BOOM_DRIVER makes the location report fail.

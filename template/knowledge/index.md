@@ -1,8 +1,8 @@
-# Bilgi Tabanı İndeksi
+# Knowledge Base Index
 
-Bu dosya derleyicinin (`.claude/scripts/compile.py`) her akşam güncellediği makine yazımı
-indekstir. Elle de düzenleyebilirsin, derleyici satırları yerinde günceller, tabloyu silmez.
-Her satır `knowledge/concepts/` altındaki bir makaleye karşılık gelir.
+This is the machine-written index that the compiler (`.claude/scripts/compile.py`) updates every
+evening. You can also edit it by hand; the compiler updates rows in place and does not delete the table.
+Each row corresponds to an article under `knowledge/concepts/`.
 
-| Makale | Özet | Kaynak | Güncellendi |
+| Article | Summary | Source | Updated |
 | --- | --- | --- | --- |

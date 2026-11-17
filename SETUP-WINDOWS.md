@@ -3,9 +3,7 @@
 > You are Claude Code or Google Antigravity, run from inside a freshly cloned `avenoxbeyin` repo on
 > **native Windows** — not WSL. The user wants their own AI second brain.
 > The scaffold lives in `./template/`; the mechanical work lives in
-> `./scripts/install.ps1`. Speak **Turkish** to the user. This runbook is in
-> English only so your instructions stay precise; the system you build talks
-> Turkish.
+> `./scripts/install.ps1`. Speak **English** to the user.
 >
 > On macOS or Linux, stop and use `SETUP.md` instead.
 
@@ -21,9 +19,8 @@
 4. **Upgrading an existing v1 vault is out of scope.** Never run
    `scripts/upgrade.sh` here — on Windows it doubles every hook and stamps a
    version onto an engine that cannot load. See `docs/WINDOWS-PORT.md`.
-5. **Be the demo.** Narrate in short Turkish lines as you go: "Bağımlılıkları
-   kontrol ediyorum...", "Vault iskeletini kuruyorum...", "Kancaları
-   bağlıyorum...". Short sentences, no walls of text.
+5. **Be the demo.** Narrate in short lines as you go: "Checking dependencies...",
+   "Setting up the vault skeleton...", "Connecting the hooks...". Short sentences, no walls of text.
 6. **No direct API key.** The summarizer and compiler use the user's existing
    Claude Code or Antigravity login through `claude -p` or `agy -p`.
 
@@ -35,31 +32,31 @@ Run this first. It writes nothing.
 powershell -NoProfile -Command ". .\scripts\install.ps1 -PreflightOnly; Write-BeyinPreflightReport -Report (Invoke-BeyinPreflight)"
 ```
 
-Antigravity içinden kuruyorsan aynı kontrolü şu varyantla çalıştır:
+If you are installing from inside Antigravity, run the same check with this variant:
 
 ```powershell
 powershell -NoProfile -Command ". .\scripts\install.ps1 -PreflightOnly; Write-BeyinPreflightReport -Report (Invoke-BeyinPreflight -Harness Antigravity)"
 ```
 
 It checks four things by **running** each one: PowerShell 7, Python 3, Git,
-seçilen model CLI. Presence is not enough — on Windows `python3.exe` exists as a
+the chosen model CLI. Presence is not enough — on Windows `python3.exe` exists as a
 Microsoft Store shortcut even with Python uninstalled.
 
-Report the result to the user in Turkish.
+Report the result to the user.
 
 - **Gate passed** → go to PHASE 1.
 - **Something missing** → show the `winget` command the report printed, explain
   in one line what it is for, and **ask** before running it. After they agree
   and it installs, run PHASE 0 again. Do not continue on a failed gate.
 
-## PHASE 1: Interview (Turkish, one question at a time)
+## PHASE 1: Interview (one question at a time)
 
 | Ask | Fills |
 | --- | --- |
-| Adın ne? | `{{USER_NAME}}` |
-| Ne iş yapıyorsun? (1-2 cümle) | `{{USER_BIO}}` |
-| AI ortağına ne ad vermek istersin? | `{{COMPANION}}` |
-| Vault nereye kurulsun? | `{{VAULT_PATH}}` |
+| What is your name? | `{{USER_NAME}}` |
+| What do you do for work? (1-2 sentences) | `{{USER_BIO}}` |
+| What name do you want to give your AI partner? | `{{COMPANION}}` |
+| Where should the vault be installed? | `{{VAULT_PATH}}` |
 
 `{{OS_NAME}}` is derived from the machine name and confirmed by the user
 (e.g. `AylinOS`). Default vault path: `~\Documents\<OS_NAME>`.
@@ -94,7 +91,7 @@ Test-Path "<VAULT_PATH>\.agents\hooks.json"
 
 Expected: `True`, `4`, `True`, `True`.
 
-## PHASE 4: First-run report (Turkish)
+## PHASE 4: First-run report
 
 Tell the user, in a few short lines:
 
@@ -107,18 +104,20 @@ Tell the user, in a few short lines:
 
 Then tell them to open the vault in Obsidian and start a session there.
 
-### Arka plan pencereleri ve yerel workaround (#671)
+### Background windows and the local workaround (#671)
 
-V3 hook ve sürüm kontrolü işçileri Windows'ta `CREATE_NEW_PROCESS_GROUP |
-CREATE_NO_WINDOW` ile başlatılır; `DETACHED_PROCESS` kullanılmaz. Standart
-girdi/çıktı kapalı kalır, POSIX yeni oturum davranışı değişmez. Bu, normal
-alt süreçlerin gereksiz konsol penceresi açmasını önlemeyi hedefler; açıkça
-yeni pencere isteyen harici araçları gizleme garantisi değildir.
+On Windows, the V3 hook and version-check workers are started with
+`CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW`; `DETACHED_PROCESS` is not used.
+Standard input/output stays closed, and the POSIX new-session behavior is
+unchanged. This aims to keep ordinary child processes from opening an
+unnecessary console window; it is not a guarantee of hiding external tools that
+explicitly ask for a new window.
 
-Bu iki yönetilen dosyayı eski sürümde elle değiştirdiysen güncelleyici yine
-`content differs` ile durabilir. Düzeltme eski manifestteki hash'i değiştirmez
-ve yerel düzenlemeni otomatik ezmez. Önce değişikliği yedekleyip diff'i incele;
-yalnız bu workaround olduğundan eminsen dosyayı **kurulu sürümün** doğrulanmış
-stok kopyasına geri getirip normal güncellemeyi tekrar çalıştır. Başka
-değişiklikleri koru; manifest hash'lerini değiştirme veya conflict korumasını
-atlama. Ayrıntılar: [güncelleme sözleşmesi](docs/v3/UPDATE.md).
+If you edited these two managed files by hand in an older version, the updater
+may still stop with `content differs`. The fix does not change the hash in the
+old manifest and does not automatically overwrite your local edit. First back
+up your change and review the diff; only if you are sure it was this
+workaround, restore the file to the verified stock copy of the **installed
+version** and run the normal update again. Preserve your other changes; do not
+change the manifest hashes or bypass the conflict protection. Details:
+[update contract](docs/v3/UPDATE.md).

@@ -68,7 +68,7 @@ class PersonNotesTest(unittest.TestCase):
         self.assertNotIn('kind', metadata)  # an empty template must not show up as a person
         self.assertIn('# kind: person', text)
         self.assertEqual(set(metadata['facts']), {'kurum', 'rol', 'iliski', 'son_temas'})
-        for heading in ('## Beyan', '## Çıkarım (onay bekliyor)', '## Temaslar', '## Kaynaklar'):
+        for heading in ('## Statements', '## Inferences (pending confirmation)', '## Interactions', '## Sources'):
             self.assertIn(heading, body)
 
     def test_release_installs_user_owned_template_and_rollback_preserves_edits(self):
@@ -119,7 +119,7 @@ class PersonNotesTest(unittest.TestCase):
 
     def test_skill_example_is_valid_note_create_json(self):
         skill = SKILL.read_text(encoding='utf-8')
-        section = skill.split('## Kişi notları', 1)[1].split('\n## ', 1)[0]
+        section = skill.split('## Person notes', 1)[1].split('\n## ', 1)[0]
         example = json.loads(re.search(r'```json\n(.*?)\n```', section, re.S)[1])
         self.assertEqual(example['metadata']['kind'], 'person')
         self.assertTrue(example['source'].startswith('notes/kisiler/'))

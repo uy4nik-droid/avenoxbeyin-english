@@ -734,7 +734,7 @@ def _generate_moc(vault_root, target_folder="knowledge", moc_filename="MOC.md"):
 
             category = Path(rel_to_folder).parent.as_posix()
             if category == ".":
-                category = "Genel"
+                category = "General"
             else:
                 category = _display_name(category)
 
@@ -750,7 +750,7 @@ def _generate_moc(vault_root, target_folder="knowledge", moc_filename="MOC.md"):
     total_notes = 0
 
     if not notes_by_category:
-        generated_lines.append("_Bu klasörde henüz indekslenecek not bulunmuyor._")
+        generated_lines.append("_There are no notes to index in this folder yet._")
     else:
         for cat in sorted(notes_by_category):
             cat_notes = sorted(notes_by_category[cat], key=lambda x: x["title"].casefold())
@@ -777,9 +777,9 @@ def _generate_moc(vault_root, target_folder="knowledge", moc_filename="MOC.md"):
         folder_display = _display_name(target_folder)
         new_text = f"""# {folder_display} — Map of Content (MOC)
 
-Bu not, `{target_folder}` altındaki notların navigasyon ve içerik haritasıdır.
+This note is the navigation and content map for the notes under `{target_folder}`.
 
-## Belgeler ve Notlar
+## Documents and Notes
 
 {generated_block}
 """

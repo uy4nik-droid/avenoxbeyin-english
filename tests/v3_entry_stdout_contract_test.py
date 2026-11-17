@@ -61,7 +61,7 @@ class EntryStdoutContractTest(unittest.TestCase):
         shutil.copyfile(self.vault / 'beyin.py', stray / 'beyin.py')
         cases = (
             (self.vault / 'beyin.py', ('recap', '--days', '0'), 'recap days must be 1..366 and limit must be 1..100'),
-            (stray / 'beyin.py', ('doctor',), 'Kurulum ayari eksik'),
+            (stray / 'beyin.py', ('doctor',), 'Installation settings are missing'),
         )
         for entry, args, message in cases:
             for mode in ('--json', '--human'):

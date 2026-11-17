@@ -172,7 +172,7 @@ class HookReconcileTest(unittest.TestCase):
         )
         rec_output = rec_res.stdout + rec_res.stderr
         self.assertEqual(rec_res.returncode, 0, rec_res.stderr)
-        self.assertIn("Hook mutabakati tamamlandi", rec_output)
+        self.assertIn("Hook reconciliation finished", rec_output)
         self.assertIn(".claude/settings.local.json", rec_output)
         self.assertIn(".bak", rec_output)
 

@@ -133,11 +133,11 @@ class BatchPreviewTest(BatchFiles):
         _, card = self.card()
         original = self.bulk()
         self.mutate_card(card, baslik='Sonradan duzenlenen baslik')
-        with self.assertRaisesRegex(ValueError, 'plani degisti'):
+        with self.assertRaisesRegex(ValueError, 'preview plan changed'):
             self.submit(expected_plan=original['plan'])
         current = self.bulk()
         yakala.configure_agent(self.vault, self.state, 'claude', network='acik')
-        with self.assertRaisesRegex(ValueError, 'plani degisti'):
+        with self.assertRaisesRegex(ValueError, 'preview plan changed'):
             self.submit(expected_plan=current['plan'])
         self.no_submissions()
 
@@ -145,9 +145,9 @@ class BatchPreviewTest(BatchFiles):
         self.configure()
         _, card = self.card(why='Bu kaynagi incele.')
         before = card['path'].read_bytes()
-        with self.assertRaisesRegex(ValueError, 'once onizleme'):
+        with self.assertRaisesRegex(ValueError, 'needs a preview first'):
             yakala.enqueue_agent_batch(self.vault, self.state, request=None, use_why=True, send=True)
-        with self.assertRaisesRegex(ValueError, 'once onizleme'):
+        with self.assertRaisesRegex(ValueError, 'needs a preview first'):
             yakala.main(['--json', 'ajan-toplu', '--neden', '--gonder'], vault=self.vault, state=self.state)
         self.assertEqual(card['path'].read_bytes(), before)
         self.no_submissions()
@@ -167,7 +167,7 @@ class BatchPreviewTest(BatchFiles):
         self.assertEqual(before, after)
         self.assertFalse(result['gonderilebilir'])
         self.assertEqual(len(result['kayit_sorunlari']), 1)
-        with self.assertRaisesRegex(ValueError, 'kapasitesi dogrulanamadi'):
+        with self.assertRaisesRegex(ValueError, 'capacity could not be verified'):
             self.submit()
 
     def test_one_oversized_or_undecodable_inbox_note_does_not_block_other_cards(self):
@@ -181,7 +181,7 @@ class BatchPreviewTest(BatchFiles):
         self.assertTrue(result['gonderilebilir'])
         skipped = {row['id'] for row in result['atlanan']}
         self.assertEqual(skipped, {'buyuk-not', 'bozuk'})
-        with self.assertRaisesRegex(ValueError, 'okunamadi'):
+        with self.assertRaisesRegex(ValueError, 'Could not read card'):
             self.bulk(ids=['bozuk'], request=None, use_why=True)
         submitted = self.submit(request=None, use_why=True)
         self.assertEqual([member['card_id'] for member in self.members(submitted)], [card['id']])
@@ -211,7 +211,7 @@ class BatchPreviewTest(BatchFiles):
             card['path'].symlink_to(outside)
         except (OSError, NotImplementedError):
             self.skipTest('symlink capability is unavailable for this account')
-        with self.assertRaisesRegex(ValueError, 'sembolik bag'):
+        with self.assertRaisesRegex(ValueError, 'symbolic link'):
             self.bulk()
         self.assertEqual(outside.read_text(encoding='utf-8'), 'PRIVATE OUTSIDE')
         self.assertFalse(self.state.exists())
@@ -238,7 +238,7 @@ class BatchPreviewTest(BatchFiles):
         preview = self.bulk(request=None, use_why=True)
         self.assertEqual(len(preview['kayit_sorunlari']), 1)
         self.assertFalse(preview['gonderilebilir'])
-        with self.assertRaisesRegex(ValueError, 'kapasitesi dogrulanamadi'):
+        with self.assertRaisesRegex(ValueError, 'capacity could not be verified'):
             self.submit(request=None, use_why=True)
 
 
@@ -305,7 +305,7 @@ class BatchSelectedSourceTest(BatchFiles):
         self.mutate_card(first, yakalandi='2026-01-01T00:00:00+00:00')
         self.mutate_card(invalid, yakalandi='2026-01-02T00:00:00+00:00', ek_urller=['file:///private'])
         before = [card['path'].read_bytes() for card in (first, invalid)]
-        with self.assertRaisesRegex(ValueError, 'hicbir is gonderilmedi'):
+        with self.assertRaisesRegex(ValueError, 'no job was sent'):
             self.submit()
         self.assertEqual(before, [card['path'].read_bytes() for card in (first, invalid)])
         self.no_submissions()
@@ -325,14 +325,14 @@ class BatchSelectedSourceTest(BatchFiles):
         result = self.bulk(request='\U0001f642' * yakala.AGENT_MAX_REQUEST)
         self.assertFalse(result['gonderilebilir'])
         self.assertEqual(result['kartlar'][0]['hata'], '')
-        self.assertRegex(result['kartlar'][1]['hata'], 'is kaydi.*buyuk')
+        self.assertRegex(result['kartlar'][1]['hata'], 'job record is too large')
         self.assertEqual(before, [card['path'].read_bytes() for card in cards])
         self.no_submissions()
 
     def test_combined_utf8_size_blocks_the_whole_send_before_manifest_job_or_card_write(self):
         cards = self.oversized_selection()
         before = [card['path'].read_bytes() for card in cards]
-        with self.assertRaisesRegex(ValueError, 'hicbir is gonderilmedi'):
+        with self.assertRaisesRegex(ValueError, 'no job was sent'):
             self.submit(request='\U0001f642' * yakala.AGENT_MAX_REQUEST)
         self.assertEqual(before, [card['path'].read_bytes() for card in cards])
         self.no_submissions()
@@ -368,7 +368,7 @@ class BatchQueueTest(BatchFiles):
         self.configure(max_queue=1)
         originals = [self.card(text='Source ' + str(i))[1] for i in range(2)]
         before = [card['path'].read_bytes() for card in originals]
-        with self.assertRaisesRegex(ValueError, 'kuyruga sigmiyor'):
+        with self.assertRaisesRegex(ValueError, 'does not fit in the queue'):
             self.submit()
         self.assertEqual(before, [card['path'].read_bytes() for card in originals])
         self.no_submissions()
@@ -377,7 +377,7 @@ class BatchQueueTest(BatchFiles):
         self.configure()
         originals = [self.card(text='Has instruction', why='Isle.')[1], self.card(text='Missing instruction', why='')[1]]
         before = [card['path'].read_bytes() for card in originals]
-        with self.assertRaisesRegex(ValueError, 'hicbir is gonderilmedi'):
+        with self.assertRaisesRegex(ValueError, 'no job was sent'):
             self.submit(request=None, use_why=True)
         self.assertEqual(before, [card['path'].read_bytes() for card in originals])
         self.no_submissions()
@@ -385,7 +385,7 @@ class BatchQueueTest(BatchFiles):
     def test_missing_explicit_card_blocks_all_before_any_write(self):
         self.configure()
         _, card = self.card()
-        with self.assertRaisesRegex(ValueError, 'Kart bulunamadi'):
+        with self.assertRaisesRegex(ValueError, 'Card not found'):
             self.submit(ids=[card['id'], 'does-not-exist'])
         self.no_submissions()
 
@@ -406,7 +406,7 @@ class BatchQueueTest(BatchFiles):
         _, card = self.card()
         first = yakala.enqueue_agent(self.vault, self.state, card['id'] + '.md', 'Original request.')
         self.mutate_card(card, durum='bekliyor')  # an unrelated editor does not release a live job
-        with self.assertRaisesRegex(ValueError, 'zaten sirada'):
+        with self.assertRaisesRegex(ValueError, 'already queued'):
             yakala.enqueue_agent(self.vault, self.state, card['id'] + '.md', 'Duplicate request.')
         result = self.submit()
         self.assertEqual(result['status'], 'toplu_bos')
@@ -435,7 +435,7 @@ class BatchQueueTest(BatchFiles):
         on = yakala.agent_settings(self.vault, self.state)
         off = dict(on, client='kapali')
         with patch.object(yakala, 'agent_settings', side_effect=[on, off]):
-            with self.assertRaisesRegex(ValueError, 'Ajan kapali'):
+            with self.assertRaisesRegex(ValueError, 'The agent is off'):
                 yakala.enqueue_agent(self.vault, self.state, saved['id'], 'Do not start after off.')
         self.no_submissions()
 
@@ -577,7 +577,7 @@ class BatchQueueTest(BatchFiles):
         with patch.object(yakala, '_agent_json', side_effect=concurrent_edit):
             result = self.submit()
         self.assertEqual(result['status'], 'toplu_kismi')
-        self.assertIn('Kart gonderim sirasinda degisti', result['submission_error'])
+        self.assertIn('The card changed during sending', result['submission_error'])
         self.assertEqual(result['sayilar']['queued'], 1)
         self.assertEqual(result['sayilar']['kayit_yok'], 1)
         self.assertEqual(len(yakala._agent_jobs(self.vault, self.state)), 1)
@@ -769,7 +769,7 @@ class BatchCancelTest(BatchFiles):
             path.symlink_to(outside)
         except (OSError, NotImplementedError):
             self.skipTest('symlink capability is unavailable for this account')
-        with self.assertRaisesRegex(ValueError, 'sembolik bag'):
+        with self.assertRaisesRegex(ValueError, 'symbolic link'):
             yakala.cancel_agent_batch(self.vault, self.state, result['batch_id'])
         self.assertEqual(yakala.find_card(self.vault, originals[0]['id'], self.state)['meta']['durum'], 'ajanda')
 
@@ -869,8 +869,8 @@ class BatchStatusAndCliTest(BatchFiles):
         self.assertNotIn('\x1b', text)
         result = self.submit()
         text = yakala.human(result, 'ajan-toplu')
-        self.assertIn('tum isler bitti: hayir', text)
-        self.assertIn('[sirada]', text)
+        self.assertIn('all jobs finished: no', text)
+        self.assertIn('[queued]', text)
 
     def test_human_preview_lists_every_skipped_card_with_its_reason(self):
         self.configure()
@@ -882,9 +882,9 @@ class BatchStatusAndCliTest(BatchFiles):
         preview = self.bulk(request=None, use_why=True)
         self.assertEqual({row['id'] for row in preview['atlanan']}, {'buyuk-not', 'yerel-sayfa'})
         text = yakala.human(preview, 'ajan-toplu')
-        self.assertIn('[bekliyor] ' + card['id'], text)
+        self.assertIn('[waiting] ' + card['id'], text)
         for row in preview['atlanan']:
-            self.assertIn('[atlandi] ' + row['id'], text)
+            self.assertIn('[skipped] ' + row['id'], text)
             self.assertIn(row['neden'], text)
 
 

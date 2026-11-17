@@ -372,17 +372,17 @@ class ProjectScopesTest(unittest.TestCase):
         entry = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(entry)
         listed = entry.human_result(report, 'project-scope', '3.12.0')
-        self.assertIn('../Dışarı: project scope folder must be vault-relative (atlandi)', listed)
-        self.assertIn('shared_unscoped: kapali (atlanan girdiler duzeltilene kadar)', listed)
+        self.assertIn('../Dışarı: project scope folder must be vault-relative (skipped)', listed)
+        self.assertIn('shared_unscoped: off (until the skipped entries are fixed)', listed)
         doctor = entry.human_result({'status': 'needs_attention', 'project_scopes': report}, 'doctor', '3.12.0')
-        line = next(line for line in doctor.splitlines() if line.startswith('Proje kapsamlari'))
-        self.assertNotIn('gecersiz: hata', line)
+        line = next(line for line in doctor.splitlines() if line.startswith('Project scopes'))
+        self.assertNotIn('invalid: error', line)
         self.assertIn('../Dışarı', line)
         self.assertIn('Projeler/Alpha (assigned to alpha and beta)', line)
-        self.assertIn('shared_unscoped duzeltilene kadar kapali', line)
+        self.assertIn('shared_unscoped is off until they are fixed', line)
         malformed = entry.human_result({'status': 'needs_attention', 'project_scopes': {
             'status': 'error', 'error': 'invalid JSON: JSONDecodeError'}}, 'doctor', '3.12.0')
-        self.assertIn('Proje kapsamlari (.beyin-projects.json) gecersiz: invalid JSON: JSONDecodeError', malformed)
+        self.assertIn('Project scopes (.beyin-projects.json) are invalid: invalid JSON: JSONDecodeError', malformed)
         # Adding a scope still refuses to rewrite a file with a bad entry, and names it.
         with self.assertRaisesRegex(ValueError, r"'\.\./Dışarı' in \.beyin-projects\.json; fix it or run project-scope prune"):
             projects.manage(self.vault, 'add', folder='Projeler/Alpha', project='alpha')

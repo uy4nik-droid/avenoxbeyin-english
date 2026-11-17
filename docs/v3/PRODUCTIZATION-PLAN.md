@@ -1,62 +1,62 @@
-# V3 kullanıcı paketi ve güncelleme planı
+# V3 user package and update plan
 
-16 Eylül 2026. Aşağıdaki planın kullanıcı paketi, updater ve geçiş kodu uygulandı. İlk tasarım metni karşılaştırma için aşağıda korunur; “önerilen” veya “henüz yok” ifadeleri tasarım anını anlatır.
+16 September 2026. The user package, updater and migration code in the plan below have been implemented. The original design text is kept below for comparison; phrases such as "proposed" or "does not exist yet" describe the moment of the design.
 
-## Tamamlanma durumu
+## Completion status
 
-- Üç çekirdek skill dağıtılıyor: beyin, beyin-doktor, beyin-guncelle.
-- Kurulu `beyin.py`: doctor, runtime komutları, update --check, update, recover, rollback. Özel runtime yolu korunuyor.
-- ZIP builder: sürüm, schema/runtime schema, minimum Python, dosya SHA256 ve tanınan legacy hashleri. Git veya pip gerekmiyor.
-- Updater: stable resmi release keşfi, yerel ZIP, sentetik runtime ön kontrolü, yönetilen dosya conflict kontrolü, yedek/journal/kilit, sürüm en son, tekrar çağrıda no-op.
-- İlk V2 kurulumu dahil rollback; temiz kurulumun geri alınması `uninstalled` olarak raporlanır. Kullanıcı notları silinmez.
-- V2 writer geçişi: aktif/özelleştirilmiş writer engelleri, tanınan stok runner'larda inert shim, kaynak/state koruma kontrolü ve geçiş kaydı.
-- Yeni kaynak bağlantılı sonuçlar için deterministic daily/knowledge bağlantı görünümleri; otomatik model derleyicisinin yerine aktif ajan skill akışı.
-- Yerel işletim sistemine uygun tıklanabilir güncelleme başlatıcıları aynı updater'a bağlı.
+- Three core skills are distributed: beyin, beyin-doktor, beyin-guncelle.
+- The installed `beyin.py`: doctor, runtime commands, update --check, update, recover, rollback. A custom runtime path is preserved.
+- ZIP builder: version, schema/runtime schema, minimum Python, file SHA256 and recognized legacy hashes. Git or pip is not required.
+- Updater: stable official release discovery, local ZIP, synthetic runtime pre-check, managed-file conflict check, backup/journal/lock, version written last, no-op on a repeated call.
+- Rollback including the first V2 install; rolling back a clean install is reported as `uninstalled`. User notes are not deleted.
+- V2 writer migration: active/customized writer blockers, an inert shim on recognized stock runners, a source/state preservation check and a migration record.
+- Deterministic daily/knowledge link views for new source-linked results; the active agent skill flow in place of the automatic model compiler.
+- Clickable update launchers suited to the local operating system are bound to the same updater.
 
-Son platform turunda Windows/macOS/Ubuntu × Python 3.11/3.13: 6/6 iş ve her birinde 114 test geçti. Sürüm paketi V3.0.0 olarak dağıtılır. Kullanıcı akışı [README](../../README.md), komut sözleşmesi [UPDATE.md](UPDATE.md), güncel kanıt [PLATFORM-TESTS.md](PLATFORM-TESTS.md) ve [istemci kapsamı](LIVE-CLIENTS.md).
+In the last platform round, on Windows/macOS/Ubuntu × Python 3.11/3.13: 6/6 jobs, and 114 tests passed in each. The release package is distributed as V3.0.0. The user flow is in the [README](../../README.md), the command contract in [UPDATE.md](UPDATE.md), current evidence in [PLATFORM-TESTS.md](PLATFORM-TESTS.md) and the [client scope](LIVE-CLIENTS.md).
 
-## İlk tasarım kaydı
+## Original design record
 
-## Doğrulanmış mevcut durum
+## Verified current state
 
-V3 runtime ve üç istemci adaptörü hazır. Native CI Windows/macOS/Ubuntu × Python3.11/3.13:6/6, herjob62 V3 testi+semantik değerlendirme. Gerçek model oturumları macOS'ta ayrı doğrulandı. Kod deposundaki candidate standart V2 sürümünün yerini henüz almadı.
+The V3 runtime and three client adapters are ready. Native CI Windows/macOS/Ubuntu × Python3.11/3.13:6/6, each job 62 V3 tests + semantic evaluation. Real model sessions were verified separately on macOS. The candidate in the code repository has not yet replaced the standard V2 release.
 
-Temiz sentetik vault'a install_v3.py uygulandı: installed,5 Python modülü,0 SKILL.md, .beyin-version yok, sürümlü update komutu yok. Yerel kurulum manifesti yalnız files/commands alanlarını içeriyor. Mevcut template'te V2 beyin-doktor ve gecmis-import var; V3 installer bunları dağıtmıyor. V2 doktor Bash/eskihook yollarını kontrol ettiği için V3'e aynen kopyalanmamalı.
+install_v3.py was applied to a clean synthetic vault: installed,5 Python modules,0 SKILL.md, no .beyin-version, no versioned update command. The local installation manifest contains only the files/commands fields. The current template has the V2 beyin-doktor and gecmis-import; the V3 installer does not distribute them. The V2 doctor checks Bash/old-hook paths, so it must not be copied to V3 verbatim.
 
-V2 upgrade.sh check/apply/finalize, yedek ve version stamp akışı sağlıyor; hedef2.3.0 ve Bash tabanlı. V3 installer yeni kodu yerleştirme, kullanıcı ayarı koruma ve geri alma altyapısını sağlıyor, ancak sürüm keşfi/indirme, V2 state geçişi, kesinti sonrası sürümlü upgrade devamı ve release yönetimi eksik.
+V2 upgrade.sh provides check/apply/finalize, backup and version stamp flow; the target is 2.3.0 and Bash-based. The V3 installer provides the infrastructure for placing new code, preserving user settings and rollback, but version discovery/download, V2 state migration, versioned upgrade continuation after an interruption and release management are missing.
 
-V2 zaten varsayılan olarak yerel ve Mem0 gerektirmiyor. V2'nin flush→daily→compiler→knowledge hattı, V3 source/task/receipt indeksinin otomatik eşdeğeri değildir. Kullanıcıların mevcut günlük, companion ve derleme davranışlarını sessizce kaybetmeden geçiş tasarlanmalı.
+V2 is already local by default and does not require Mem0. V2's flush→daily→compiler→knowledge pipeline is not an automatic equivalent of the V3 source/task/receipt index. The migration must be designed without silently losing users' existing daily, companion and compile behavior.
 
-## Minimal paket
+## Minimal package
 
-Üç çekirdek skill: beyin (kaynak bulma, not/görev yazımı, revision, receipt ve gün sonu özeti), beyin-doktor (gerçek worker/istemci kanıtı, tazelik/çakışma, platforma uygun komutlar), beyin-guncelle (tek updater aracını çağırma ve sonucu açıklama). Bunlar sistem tarafından yönetilen .agents/skills girdileridir; Claude ve Antigravity aynı içerikleri görür. Seçilmiş kullanıcı skill'leri korunur. Aynı adlı kullanıcı skill'i varsa sessiz üstüne yazma olmaz; açık çakışma veya farklı sistem adı kullanılır. Kullanıcı özelleştirmeleri ayrıca tutulur.
+Three core skills: beyin (finding sources, writing notes/tasks, revision, receipt and end-of-day summary), beyin-doktor (real worker/client evidence, freshness/conflict, platform-appropriate commands), beyin-guncelle (calling the single updater tool and explaining the result). These are .agents/skills entries managed by the system; Claude and Antigravity see the same contents. Selected user skills are preserved. If a user skill has the same name, there is no silent overwrite; an explicit conflict or a different system name is used. User customizations are kept separately.
 
-AGENTS.md yeni kullanıcıya bu skill'leri yönlendirir. Kurulum sonunda üç kontrol: sentetik notu sonraki oturumda geri bul, görevi değiştirip tekrar oku, skill'i üç istemcide keşfet. Sonuçları tek kısa sağlık raporu gösterir. Geçmiş sohbet importu isteğe bağlı ve ayrı kalır.
+AGENTS.md directs a new user to these skills. At the end of setup, three checks: find a synthetic note again in the next session, change a task and read it back, discover the skill in all three clients. A single short health report shows the results. Importing past chats stays optional and separate.
 
-## Tek güncelleme mekanizması
+## A single update mechanism
 
-Önerilen giriş: vault içinde `python beyin.py update` (Windows: `py -3 beyin.py update`). `doctor`, `update --check` ve `rollback` aynı giriş altında olur. Bunlar henüz mevcut komutlar değildir. Kullanıcı ajana 'beynimi güncelle' dediğinde aynı aracı çağırır; ajan güncellemeyi serbest dosya kopyalama komutlarıyla yeniden tasarlamaz.
+The proposed entry: `python beyin.py update` inside the vault (Windows: `py -3 beyin.py update`). `doctor`, `update --check` and `rollback` are under the same entry. These are not yet existing commands. When the user says "update my brain" ('beynimi güncelle') to the agent, it calls the same tool; the agent does not redesign the update with free-form file copy commands.
 
-Release paketi standart kütüphane ile resmi GitHub HTTPS kaynağından alınır; Git/pip/yeni hesap zorunlu olmaz. Sabit release sürümü, dosya SHA256 listesi, minimum runtime/schema sürümü ve migration kimlikleri içerir. Checksum paket bütünlüğünü denetler; kaynak kimliği doğrulanmış resmi dağıtım adresine dayanır. Stable varsayılan; preview açık tercihtir. Hareket eden geliştirme dalından kendiliğinden güncellenmez.
+The release package is fetched with the standard library from the official GitHub HTTPS source; Git/pip/a new account is not required. It contains a fixed release version, a file SHA256 list, the minimum runtime/schema version and migration IDs. The checksum verifies package integrity; source identity relies on the verified official distribution address. Stable is the default; preview is an explicit choice. It does not update itself from a moving development branch.
 
-Akış: sürümü algıla→planı göster→yerel yedek/journal→paketi geçici alanda doğrula→yalnız izinli sistem dosyalarını değiştir→migration→sağlık ve içerik koruma kontrolü→başarılı sürüm kaydını en son yaz. Kesintide yarım kurulumu başarılı göstermez; önceki sağlam sürüme geri dönme veya işlemi devam ettirme vardır. İkinci aynı update etkisiz ve güvenlidir. Eşzamanlı updater'lar kilitle ayrılır; aktif eski worker tamamlanmadan kesişen yazımlar uygulanmaz.
+Flow: detect the version→show the plan→local backup/journal→verify the package in a temporary area→change only permitted system files→migration→health and content preservation check→write the successful version record last. On an interruption it does not present a half installation as successful; there is rolling back to the previous good version or resuming the operation. A second identical update is harmless and has no effect. Concurrent updaters are separated by a lock; intersecting writes are not applied until an active old worker has finished.
 
-Kullanıcı notları, companion kişiliği, günlükler, knowledge, kullanıcı skill'leri, özel ayarlar ve kimlik bilgileri updater'ın değiştirebileceği dosyalar değildir. Sistem dosyasındaki kullanıcı değişikliği üçlü karşılaştırmayla görünür olur; desteklenen ayar birleştirmesi dışında çakışma korunur. Veritabanı migration'ı sürüm damgasına bağlı, idempotent ve yedekli olur. Eski handler/state geçişinde kayıt sınırı tutulur; eski günler yeniden işlenmez, iki özetleyici aynı olayı yazmaz.
+User notes, the companion personality, journals, knowledge, user skills, private settings and credentials are not files the updater may change. A user change in a system file becomes visible through a three-way comparison; apart from supported settings merging, the conflict is preserved. Database migration is tied to the version stamp, idempotent and backed up. A record boundary is kept in the old handler/state migration; old days are not reprocessed, and two summarizers do not write the same event.
 
-Hook tanımı değişirse istemcinin gerekli güven incelemesi kullanıcıya açıkça bildirilir; güven kayıtları uydurulmaz. Dolayısıyla rutin güncelleme tek komut olur, her olası sürüm için sıfır etkileşim sözü verilmez. Tıklanabilir macOS/Windows/Linux kısayolları aynı komutu çağıran ince bir katman olabilir; önce updater doğrulanır.
+If a hook definition changes, the client's required trust review is stated openly to the user; trust records are not fabricated. So a routine update becomes a single command, and zero interaction is not promised for every possible version. Clickable macOS/Windows/Linux shortcuts can be a thin layer that calls the same command; the updater is verified first.
 
-## Uygulamadan önce sabitlenecek kabul senaryoları
+## Acceptance scenarios to fix before implementation
 
-1. Boş vault: üç çekirdek skill gerçekten kurulur ve keşfedilir; hazır ilk not/görev/receipt akışı tamamlanır.
-2. Standart V2.3: kaynak içerik hashleri korunur; eski daily/knowledge/companion okunur; yeni ve eski writer çift çalışmaz.
-3. Özelleştirilmiş V2: kullanıcı hook'u, skill'i ve ayarları korunur; yönetilen dosya çakışması görünür, sürüm başarılı işaretlenmez.
-4. V3→V3 küçük sürüm: aynı komutla güncellenir; ikinci çağrı no-op; rollback önceki kod/şemayı geri getirir.
-5. İndirme yarıda, bozuk paket, kopyalama arasında kesinti, yetersiz izin ve paralel güncelleme: veri kaybı ve yanlış başarı oluşmaz.
-6. Windows/macOS/Linux: Unicode/boşluk yolları, CRLF/LF, sınırlı PATH ve symlink izni olmaması dahil kurulum+upgrade+rollback çalışır.
-7. Güncelleme sonrası gerçek Codex/Claude/Antigravity oturumu mevcut notu ve skill'i kullanır; Codex Desktop için ayrıca kısa cold-session teslim kontrolü yapılır.
+1. Empty vault: the three core skills are actually installed and discovered; the ready first note/task/receipt flow completes.
+2. Standard V2.3: source content hashes are preserved; the old daily/knowledge/companion are read; the new and old writers do not run together.
+3. Customized V2: the user's hook, skill and settings are preserved; a managed-file conflict is visible, and the version is not marked successful.
+4. V3→V3 minor version: updated with the same command; the second call is a no-op; rollback restores the previous code/schema.
+5. Download interrupted, corrupt package, interruption between copies, insufficient permission and parallel update: no data loss and no false success occurs.
+6. Windows/macOS/Linux: install+upgrade+rollback work, including Unicode/space paths, CRLF/LF, a limited PATH and no symlink permission.
+7. After the update, a real Codex/Claude/Antigravity session uses the existing note and skill; for Codex Desktop a short cold-session delivery check is also done.
 
-## Önerilen sıra
+## Proposed order
 
-Önce core skill paketi ve ilk kullanım; sonra sürüm manifesti/ortak update aracı; ardından V2 migration ve kesinti/rollback matrisi; en son kısayol ve stable release. Mevcut CI başarıları bu yeni kabul senaryolarının geçtiği anlamına gelmez.
+First the core skill package and first use; then the version manifest/shared update tool; then the V2 migration and the interruption/rollback matrix; the shortcuts and the stable release last. Existing CI successes do not mean these new acceptance scenarios have passed.
 
-Desktop ve CLI aynı Codex yapılandırma katmanlarını paylaşır; aynı runtime'ın çalışması beklenir. Ayrı Desktop kontrolü yeni motor geliştirmek değil, açılan workspace/trust/oturum olaylarının gerçek teslimini doğrulayan kısa bir entegrasyon kontrolüdür. Kaynaklar: https://learn.chatgpt.com/guides/best-practices ve https://learn.chatgpt.com/docs/hooks .
+Desktop and CLI share the same Codex configuration layers; the same runtime is expected to work. A separate Desktop check is not about building a new engine; it is a short integration check that verifies real delivery of the opened workspace/trust/session events. Sources: https://learn.chatgpt.com/guides/best-practices and https://learn.chatgpt.com/docs/hooks .

@@ -19,11 +19,11 @@ LIMITS = {'Last-Session.md': 3000, 'Threads.md': 8000}
 LIMIT_RANGE = (1000, 200000)
 DEFAULT_DIRECTORY = '🔮 850-Companion'
 STARTERS = {
-    'Core.md': '# Düşünme ortağı\n\nKullanıcının düşünme ortağı ve ikinci beyniyim. Kimliğimi ve çalışma biçimimi birlikte belirleriz.\n\n## Kullanıcı ve ortak çalışma biçimi\nHenüz kişiselleştirilmedi. Kullanıcının adı, tercih ettiği hitap, çalışma alanı ve beklentilerini konuşarak öğren. Bilinmeyen geçmişi uydurma.\n\n## Kalıcı tercihler\nKullanıcının açıkça belirttiği tercihleri ve dayandıkları kaynağı burada tut.\n',
-    'Kurallar.md': '# Kullanıcının düzeltmeleri\n\nHenüz kaydedilmiş bir düzeltme yok. Açık kullanıcı düzeltmelerini tarihiyle, her kuralı bir iki satırda kaydet; uzun gerekçe ve olayın anlatımı ayrı bir nota gider. Tek bir projeye ya da alana ait kural `projects/<proje>/Kurallar.md` (şablonda `🏰 300-Projects/<proje>/Kurallar.md`) dosyasına gider, burada yalnız `[kapsam: <proje>]` etiketli tek satırlık işaretçi kalır. Geçici istekleri kalıcı kurala dönüştürme.\n',
-    'Last-Session.md': '# Son oturum\n\nHenüz bir çalışma sonucu kaydedilmedi. Anlamlı çalışma sonunda sonuç, gerekçe, açık kalan adım ve kaynak bağlantılarını `## YYYY-MM-DD HH:MM · <etiket> · <session_id[:8]>` başlığıyla buraya yaz. Tarih ve saati kartı yazdığın turdaki hook bağlamının `now=` değerinden al; o turda verilmediyse yerel sistem saatini oku, tahmin etme. Paralel oturumlarda yalnız kendi kartını düzenle, başka oturumların kartlarını ezme.\n',
-    'Threads.md': '# Threads\n\n## Active Threads\nHenüz açık bir konu kaydedilmedi.\n\n## Closed Threads\n',
-    'Journal.md': '# Journal\n\nOrtak çalışmadan doğan gözlemler, öğrenimler ve açık sorular. Çıkarımları kesin kullanıcı bilgisi olarak sunma.\n',
+    'Core.md': '# Thinking partner\n\nI am the user\'s thinking partner and second brain. We shape my identity and way of working together.\n\n## The user and our way of working\nNot personalized yet. Learn the user\'s name, preferred form of address, field of work and expectations through conversation. Do not invent a history you do not know.\n\n## Lasting preferences\nKeep the preferences the user has explicitly stated, and the source they rest on, here.\n',
+    'Kurallar.md': '# The user\'s corrections\n\nNo corrections recorded yet. Record explicit user corrections with their date, each rule in one or two lines; a long rationale and the story of what happened go into a separate note. A rule that belongs to a single project or area goes into `projects/<project>/Kurallar.md` (`🏰 300-Projects/<project>/Kurallar.md` in the template), and only a one-line pointer tagged `[scope: <project>]` stays here. Do not turn temporary requests into lasting rules.\n',
+    'Last-Session.md': '# Last session\n\nNo work outcome recorded yet. At the end of meaningful work, write the outcome, rationale, remaining open step and source links here under a `## YYYY-MM-DD HH:MM · <label> · <session_id[:8]>` heading. Take the date and time from the `now=` value in the hook context of the turn in which you write the card; if none was given in that turn, read the local system clock, do not guess. In parallel sessions edit only your own card; do not overwrite other sessions\' cards.\n',
+    'Threads.md': '# Threads\n\n## Active Threads\nNo open thread recorded yet.\n\n## Closed Threads\n',
+    'Journal.md': '# Journal\n\nObservations, learnings and open questions that come out of our shared work. Do not present inferences as certain facts about the user.\n',
 }
 
 
@@ -709,7 +709,7 @@ def hygiene_notice(report, rules=None, *, parallel=False):
         chars = rules.get('chars', 0)
         lines.append(f'Memory hygiene: Kurallar.md opens clipped (fit ceiling {share} of {chars} chars). '
                      'Shorten each rule to one line and move reasons to a detail note; '
-                     'move project rules to projects/<proje>/Kurallar.md.\n')
+                     'move project rules to projects/<project>/Kurallar.md.\n')
     return ''.join(lines)
 
 

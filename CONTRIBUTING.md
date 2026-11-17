@@ -1,117 +1,117 @@
-# Avenoxbeyin'e Katkı Rehberi
+# Contributing to Avenoxbeyin
 
-Hata bildirimleri, dokümantasyon düzeltmeleri, testler, kod incelemeleri ve yeni fikirler dahil her katkı değerlidir. Bu rehber, insan katkıcılar ve AI ajanlarıyla çalışanlar için ortak bir başlangıç noktasıdır.
+Every contribution is valuable, including bug reports, documentation fixes, tests, code reviews and new ideas. This guide is a shared starting point for human contributors and for people who work with AI agents.
 
-**Temel yaklaşım:** Yalnızca çalışan kod değil; gerçekten gerekli, anlaşılır, doğrulanabilir ve uzun vadede bakımı yapılabilir çözümler üretmek.
+**Core approach:** Produce solutions that are not just working code, but genuinely needed, understandable, verifiable and maintainable in the long run.
 
-## 1. Başlamadan önce
+## 1. Before you start
 
-- [README](README.md) ve ilgili [V3 belgelerini](docs/v3/README.md) inceleyin; benzer [issue](https://github.com/avenoxai/avenoxbeyin/issues), [PR](https://github.com/avenoxai/avenoxbeyin/pulls) veya mevcut çözüm olup olmadığını kontrol edin.
-- Hata düzeltmesinde sorunun nasıl tekrarlandığını, özellik önerisinde hangi ihtiyacın karşılandığını açıklayın.
-- Yeni bağımlılık, büyük mimari değişiklik ve kapsamlı özellikler için **önce issue üzerinde görüş alışverişi yapın**. Aynı konuda koordinasyonsuz paralel PR'lardan kaçının.
-- **Tek PR, tek konu:** İlgisiz refactor veya biçimlendirme değişikliklerini aynı PR'a karıştırmayın. Küçük belge ve test düzeltmeleri için önceden issue açmak şart değildir. Büyük işi bağımlılıkları belirtilmiş, kendi başına doğrulanabilen küçük PR'lara bölün; birbirini bekleyen PR'ları ve çakışan paralel çalışmaları ilgili issue'da ilişkilendirin.
+- Review the [README](README.md) and the relevant [V3 docs](docs/v3/README.md); check whether a similar [issue](https://github.com/avenoxai/avenoxbeyin/issues), [PR](https://github.com/avenoxai/avenoxbeyin/pulls) or existing solution already exists.
+- For a bug fix, explain how the problem is reproduced; for a feature proposal, explain which need it meets.
+- For new dependencies, major architectural changes and broad features, **discuss it on an issue first**. Avoid uncoordinated parallel PRs on the same topic.
+- **One PR, one topic:** Do not mix unrelated refactoring or formatting changes into the same PR. For small documentation and test fixes, opening an issue beforehand is not required. Split large work into small PRs that state their dependencies and can be verified on their own; link PRs that wait on each other and overlapping parallel work in the related issue.
 
-## 2. Projenin temel ilkeleri
+## 2. The project's core principles
 
-| İlke | Beklenti |
+| Principle | Expectation |
 | --- | --- |
-| **Local-first** | Varsayılan akış yerel kalmalı; kullanıcı notları ve hassas veriler izinsiz dışarı gönderilmemeli. |
-| **Markdown kaynak** | Kullanıcı notları asıl kaynaktır; indeks ve önbellek bunların yerini almamalı. |
-| **Az bağımlılık** | Temel V3, **Python 3.11+ standart kütüphanesi** ile çalışmalı; yeni zorunlu paket, hesap, API anahtarı veya arka plan servisi eklenmemeli. |
-| **Veri ve uyumluluk** | Kurulum, güncelleme, migration ve rollback kullanıcı verilerini ve mevcut davranışları korumalı. |
-| **Gizlilik ve güven** | Özel notlar, güvenilmeyen içerikler, dosya yolları ve bağlam sınırları korunmalı. |
-| **İstemci tutarlılığı** | Desteklenen AI istemcilerinin ortak temel davranışları bozulmamalı. |
+| **Local-first** | The default flow must stay local; user notes and sensitive data must not be sent out without permission. |
+| **Markdown source** | User notes are the source of truth; the index and cache must not replace them. |
+| **Few dependencies** | Core V3 must run on the **Python 3.11+ standard library**; no new required package, account, API key or background service may be added. |
+| **Data and compatibility** | Installation, update, migration and rollback must protect user data and existing behavior. |
+| **Privacy and trust** | Private notes, untrusted content, file paths and context boundaries must be protected. |
+| **Client consistency** | The shared core behaviors of the supported AI clients must not be broken. |
 
-Bir değişiklik önermeden önce sorun: **Mevcut yapıyla daha basit çözülebilir mi? Çekirdekte mi olmalı, isteğe bağlı mı? Uzun vadeli bakım maliyeti nedir?**
+Before proposing a change, ask: **Can this be solved more simply with the existing structure? Should it be in the core, or optional? What is the long-term maintenance cost?**
 
-Teknik sözleşmeler: [Runtime](docs/v3/RUNTIME.md) · [Markdown](docs/v3/MARKDOWN.md) · [Güncelleme](docs/v3/UPDATE.md).
+Technical contracts: [Runtime](docs/v3/RUNTIME.md) · [Markdown](docs/v3/MARKDOWN.md) · [Update](docs/v3/UPDATE.md).
 
-## 3. Kod, test ve uyumluluk
+## 3. Code, tests and compatibility
 
-- Mevcut kod düzenini izleyin; tekrarlanan modül, gereksiz soyutlama veya bağımlılık eklemeyin.
-- Refactor öncesinde korunacak davranışı ve kullanım noktalarını belirleyin. Kullanıcıya görünen davranış değişiyorsa testleri ve belgeleri güncelleyin.
-- Hata iddiasını sürüm/commit (`main@<sha>`), yeniden üretim adımları ve **gerçek çıktı** ile destekleyin. Statik analiz veya AI ajanı bulgusu tek başına doğrulama değildir.
-- Davranış düzeltmelerinde, düzeltme olmadan başarısız (`RED`), düzeltmeden sonra başarılı olan regresyon testi beklenir. Teknik olarak mümkün değilse nedenini ve alternatif doğrulamayı PR'da açıklayın; istisnanın kabulü maintainer değerlendirmesindedir.
-- Semantik testlerde [sabit fixture ve holdout beklentilerini](docs/v3/SEMANTIC-TEST-CONTRACT.md) yalnızca puanı yükseltmek için değiştirmeyin. Gerçek kullanıcı vault'u yerine sentetik veriler ve geçici dizinler kullanın.
+- Follow the existing code layout; do not add duplicate modules, needless abstractions or dependencies.
+- Before a refactor, identify the behavior to be preserved and its points of use. If user-visible behavior changes, update the tests and the docs.
+- Support a bug claim with the version/commit (`main@<sha>`), reproduction steps and **real output**. A static analysis or AI agent finding alone is not verification.
+- For behavior fixes, a regression test is expected that fails without the fix (`RED`) and passes after it. If it is technically not possible, explain the reason and the alternative verification in the PR; whether to accept the exception is up to the maintainer's judgment.
+- In semantic tests, do not change the [fixed fixtures and holdout expectations](docs/v3/SEMANTIC-TEST-CONTRACT.md) merely to raise the score. Use synthetic data and temporary directories instead of a real user vault.
 
-### Değişikliğin riskine göre inceleme
+### Review according to the risk of the change
 
-Her katkıya aynı ağırlıkta süreç uygulanmaz:
+The same weight of process is not applied to every contribution:
 
-| Değişiklik | Beklenen hazırlık |
+| Change | Expected preparation |
 | --- | --- |
-| **Doküman, test veya küçük, yalıtılmış düzeltme** | Dar kapsam ve ilgili doğrulama yeterlidir; sırf küçük bir düzeltme için RFC ya da kapsamlı mimari rapor gerekmez. |
-| **Davranış koruyan refactor** | Önce dış import/CLI/JSON, dosya biçimi ve test patch noktaları gibi korunacak sözleşmeleri belirleyin; aynı girdilerle önce/sonra karakterizasyon ve regresyon testleri çalıştırın. |
-| **Mimari, güvenlik, state, installer veya release değişikliği** | Kodlamadan önce issue üzerinde kısa bir RFC/ADR veya tasarım özetiyle seçenekleri, riskleri, kapsam dışını, bağımlılıkları, ilgili uzman/maintainer incelemesini ve uygulanabilen upgrade/rollback test planını tartışın. |
+| **Documentation, tests or a small, isolated fix** | A narrow scope and the relevant verification are enough; an RFC or a comprehensive architecture report is not needed just for a small fix. |
+| **Behavior-preserving refactor** | First identify the contracts to preserve, such as external imports/CLI/JSON, file format and test patch points; run characterization and regression tests before/after with the same inputs. |
+| **Architecture, security, state, installer or release change** | Before coding, discuss on an issue, in a short RFC/ADR or design summary, the options, risks, out-of-scope items, dependencies, the relevant expert/maintainer review and an applicable upgrade/rollback test plan. |
 
-**Geriye dönük uyumluluk:** Mevcut public API/CLI, kullanıcı verisi, yapılandırma, dosya yolu, hook ve paket sözleşmelerini mümkün olduğunca koruyun. Gerçekten uyumsuz bir değişiklik gerekiyorsa etkilenen kullanıcıları, geçiş/migration yolunu, uygun bir deprecation/uyumluluk katmanı ihtiyacını ve geri dönüş sınırlarını önceden açıklayın; iç refactor için gereksiz deprecation başlatmayın. Gerektiğinde önce uyumluluk katmanını, sonra iç taşıma işini ayrı PR'lara bölün.
+**Backward compatibility:** Preserve the existing public API/CLI, user data, configuration, file paths, hooks and package contracts as far as possible. If a truly incompatible change is needed, explain in advance the affected users, the transition/migration path, the need for an appropriate deprecation/compatibility layer and the limits of going back; do not start unnecessary deprecation for an internal refactor. When needed, split the compatibility layer first and the internal move afterwards into separate PRs.
 
-Kurulu `beyin.py` girişinin `--human` çıktısı pipe veya dosyaya yönlendirildiğinde UTF-8 olarak yazılır; etkileşimli terminalin kodlaması korunur.
+The `--human` output of the installed `beyin.py` entry is written as UTF-8 when redirected to a pipe or a file; the encoding of an interactive terminal is preserved.
 
-**Temel V3 kontrolleri** (repo kökünde):
+**Core V3 checks** (at the repo root):
 
 ```bash
 python -m unittest discover -s tests -p "v3_*test.py"
 python scripts/evaluate_v3.py
 ```
 
-Windows'ta gerekirse `python` yerine `py -3` kullanın. V3 test keşfi `tests/v3_*test.py` desenini kullanır. Subprocess açan testlerde `tests/v3_package_helpers.inherited_env()` kullanın; aksi halde ajan ortamından gelen `BEYIN_V3_SKIP` testleri yanıltıcı biçimde başarılı gösterebilir.
+On Windows, use `py -3` instead of `python` if needed. V3 test discovery uses the `tests/v3_*test.py` pattern. In tests that spawn subprocesses, use `tests/v3_package_helpers.inherited_env()`; otherwise `BEYIN_V3_SKIP` coming from an agent environment can misleadingly make tests look successful.
 
-| Değişiklik alanı | Ek kontrol |
+| Area of change | Additional check |
 | --- | --- |
-| Windows motor/adaptör | `python tests/scripts_test_windows.py` ve `python tests/antigravity_test.py` |
-| POSIX motor/graf | `python3 tests/scripts_test.py` |
-| Windows kurulum | `pwsh -NoProfile -File tests/Test-Preflight.ps1` ve ilgili kurulum testleri |
-| Paket/güncelleme | [Güncelleme sözleşmesi](docs/v3/UPDATE.md) ve [release workflow](.github/workflows/release.yml) |
+| Windows engine/adapter | `python tests/scripts_test_windows.py` and `python tests/antigravity_test.py` |
+| POSIX engine/graph | `python3 tests/scripts_test.py` |
+| Windows installation | `pwsh -NoProfile -File tests/Test-Preflight.ps1` and the related installation tests |
+| Package/update | [Update contract](docs/v3/UPDATE.md) and [release workflow](.github/workflows/release.yml) |
 
-GitHub Actions bazı işleri yalnız ilgili dosyalar değiştiğinde çalıştırır. **Workflow'un tetiklenmemesi testin geçtiği anlamına gelmez.** PR'da yalnız gerçekten çalıştırdığınız komutları, ortamı ve sonuçları belirtin.
+GitHub Actions runs some jobs only when the relevant files change. **A workflow not being triggered does not mean the test passed.** In the PR, state only the commands you actually ran, the environment and the results.
 
-**Rollback:** Kalıcı ayar, yeni istemci adı veya kurulum bileşeni ekleyen PR'larda önceki sürüme dönüş mutlaka test edilmelidir. Eski `validate()` sürümleri bilinmeyen anahtarları **ve desteklenen aralığın dışındaki değerleri** reddedebilir. Yeni kalıcı ayarlar, `.beyin-preferences.json` yerine `state/` altında ayrı bir dosyada tutulmalıdır.
+**Rollback:** In PRs that add a persistent setting, a new client name or an installation component, going back to the previous version must be tested. Old `validate()` versions may reject unknown keys **and values outside the supported range**. New persistent settings should be kept in a separate file under `state/` instead of `.beyin-preferences.json`.
 
-## 4. AI ajanlarıyla geliştirme
+## 4. Developing with AI agents
 
-AI araçları kullanılabilir; ancak **kodun, testlerin ve açıklamaların doğruluğundan katkıcı sorumludur.** Ajanın beyanı test veya review kanıtı değildir.
+You may use AI tools; however, **the contributor is responsible for the correctness of the code, the tests and the explanations.** An agent's statement is not test or review evidence.
 
-Önerilen iş akışı:
+Recommended workflow:
 
-1. **İncele:** İlgili issue'yu, mevcut kodu, testleri ve bu rehberi ajana incelet.
-2. **Sınırla:** Çözülecek problemi ve kapsam dışındaki işleri netleştir.
-3. **Denetle:** Üretilen değişiklikleri incele; ilgisiz refactor, gereksiz soyutlama, uydurulmuş API ve zayıflatılmış testleri ayıkla.
-4. **Doğrula:** Testleri gerçekten çalıştır; riskleri, eksikleri ve doğrulanmayan iddiaları PR'da açıkla.
+1. **Review:** Have the agent review the related issue, the existing code, the tests and this guide.
+2. **Bound it:** Make clear the problem to be solved and the work that is out of scope.
+3. **Audit:** Review the generated changes; weed out unrelated refactors, needless abstractions, invented APIs and weakened tests.
+4. **Verify:** Actually run the tests; explain the risks, the gaps and the unverified claims in the PR.
 
-Testleri gevşeterek sonuç elde etmeyin, kullanıcı dosyalarını izinsiz değiştirmeyin ve bir issue'yu geniş kapsamlı yeniden yazım izni saymayın. Repository ayarları, yetkilendirme, merge ve release kararları maintainer sorumluluğundadır.
+Do not get results by loosening tests, do not modify user files without permission, and do not treat an issue as permission for a broad rewrite. Repository settings, authorization, merge and release decisions are the maintainer's responsibility.
 
-## 5. Issue ve Pull Request
+## 5. Issues and Pull Requests
 
-**Hata bildirimi:** Sürüm/commit, işletim sistemi, Python sürümü, istemci, beklenen/gerçek davranış, tekrar adımları ve hassas bilgilerden arındırılmış hata çıktısı paylaşın. [Hata şablonunu](.github/ISSUE_TEMPLATE/bug_report.md) kullanabilirsiniz.
+**Bug report:** Share the version/commit, operating system, Python version, client, expected/actual behavior, reproduction steps and error output cleaned of sensitive information. You can use the [bug template](.github/ISSUE_TEMPLATE/bug_report.md).
 
-**Özellik önerisi:** Kullanım senaryosunu, mevcut alternatifleri, olası yan etkileri ve bakım maliyetini anlatın. [Özellik şablonu](.github/ISSUE_TEMPLATE/feature_request.md) kullanılabilir.
+**Feature proposal:** Describe the use case, existing alternatives, possible side effects and maintenance cost. The [feature template](.github/ISSUE_TEMPLATE/feature_request.md) can be used.
 
-**PR:** Fork/branch adı için zorunlu bir yöntem yoktur. [PR şablonunda](.github/PULL_REQUEST_TEMPLATE.md) neyin neden değiştiğini, önceki/yeni davranışı, uygulanan testleri ve gerçek sonuçlarını belirtin. Gizlilik, kullanıcı verileri, istemci/platform farklılıkları, denenmeyen platformlar ve gerekiyorsa kurulum/rollback risklerini açıklayın.
+**PR:** There is no mandatory convention for the fork/branch name. In the [PR template](.github/PULL_REQUEST_TEMPLATE.md), state what changed and why, the previous/new behavior, the tests applied and their real results. Explain privacy, user data, client/platform differences, platforms not tried and, if needed, installation/rollback risks.
 
-- **`Fixes #N`:** Issue tamamen çözülüyorsa; merge edildiğinde issue otomatik kapanır.
-- **`Refs #N`:** Kısmi çalışma veya ilgili tartışma için.
+- **`Fixes #N`:** If the issue is fully resolved; the issue closes automatically when merged.
+- **`Refs #N`:** For partial work or related discussion.
 
-Review geri bildirimlerini değerlendirin. **Yeşil CI tek başına merge onayı değildir; `main`'e merge de otomatik release anlamına gelmez.**
+Take review feedback into account. **Green CI alone is not merge approval; merging to `main` does not automatically mean a release either.**
 
-## 6. Maintainer inceleme ve bakım süreci
+## 6. Maintainer review and maintenance process
 
-Bu bölüm, katkıcıya ek zorunluluk koymak yerine PR'ların nasıl değerlendirildiğini açıklar:
+Instead of placing extra obligations on contributors, this section explains how PRs are evaluated:
 
-- Açık PR ve issue'lar bakım turlarında incelenir. Her PR ayrı `git worktree` üzerinde değerlendirilir; iddialar güncel `main` üzerinde gerçek kurulum, dosya veya veritabanı satırıyla doğrulanır. Mock veri tek başına kanıt değildir; regresyonun `RED` aşaması da kontrol edilir.
-- Katkıcı commit'leri yeniden yazılmaz (rebase/squash/force-push yapılmaz). Gerekli küçük maintainer düzeltmeleri ayrı commit olarak eklenir ve PR'da açıklanır. PR'lar **merge commit** ile alınır, yazarlık korunur.
-- Birden fazla PR aynı turda birleşik ağaçta denenir; çakışmalar çözülür, Python **3.11 ve 3.14** testleri ile `scripts/evaluate_v3.py` çalıştırılır. PR'lar sırayla merge edilir ve son `main` test edilen ağaçla karşılaştırılır.
-- CI Linux, macOS ve Windows'ta çalışır; ilk kez katkı verenlerin fork kaynaklı CI koşuları onaydan sonra başlar. PR'sı olmayan yeniden üretilebilir hatalar maintainer tarafından düzeltilebilir ve raporlayan `Reported-by` ile anılabilir. Tasarım ve öneri issue'larına durum notu yazılır. Ürün yönü, merge ve yayın kararları maintainer'a aittir.
-- Kritik modüller için alanı bilen reviewer'ların sürece katılması yararlıdır. Katkı hacmi gerektirirse `CODEOWNERS` veya branch rulesets gibi denetimler ayrıca değerlendirilebilir; bunların devreye alınması repo yöneticisinin kararıdır ve bu rehber tek başına yeni bir merge engeli oluşturmaz.
+- Open PRs and issues are reviewed in maintenance rounds. Each PR is evaluated in a separate `git worktree`; claims are verified on current `main` with a real installation, file or database row. Mock data alone is not proof; the `RED` stage of a regression is also checked.
+- Contributor commits are not rewritten (no rebase/squash/force-push). Necessary small maintainer fixes are added as separate commits and explained in the PR. PRs are taken with a **merge commit**, preserving authorship.
+- Several PRs are tried together in a combined tree in the same round; conflicts are resolved, and the Python **3.11 and 3.14** tests and `scripts/evaluate_v3.py` are run. PRs are merged in order, and the final `main` is compared with the tree that was tested.
+- CI runs on Linux, macOS and Windows; for first-time contributors, fork-originated CI runs start after approval. Reproducible bugs without a PR can be fixed by the maintainer and credited to the reporter with `Reported-by`. A status note is written on design and proposal issues. Product direction, merge and publication decisions belong to the maintainer.
+- For critical modules it is helpful for reviewers who know the area to take part in the process. If contribution volume requires it, controls such as `CODEOWNERS` or branch rulesets may be evaluated separately; enabling them is the repo administrator's decision, and this guide alone does not create a new merge blocker.
 
-## 7. Gizlilik ve güvenlik
+## 7. Privacy and security
 
-Gerçek notları, sohbet kayıtlarını, kişisel dosya yollarını, özel çalışma alanlarını, token veya API anahtarlarını issue, PR, test fixture'ı ya da loglara eklemeyin. Sentetik veri kullanın ve paylaşılan çıktılardaki hassas bilgileri temizleyin.
+Do not include real notes, chat records, personal file paths, private workspaces, tokens or API keys in issues, PRs, test fixtures or logs. Use synthetic data and clean sensitive information out of shared output.
 
-Ciddi bir güvenlik açığını herkese açık issue'da ayrıntılandırmak yerine, **kullanılabilir durumdaysa** GitHub'ın özel güvenlik bildirim kanalını veya maintainer ile özel iletişimi tercih edin. Özel kanalın etkinleştirilmesi maintainer kararıdır.
+Instead of detailing a serious security vulnerability in a public issue, prefer GitHub's private security reporting channel **if it is available**, or private contact with the maintainer. Enabling the private channel is the maintainer's decision.
 
 ---
 
-Amaç geliştirme hızını gereksiz yere sınırlamak değil, proje büyürken katkı kalitesini ve uzun vadeli bakım kolaylığını korumaktır.
+The goal is not to limit development speed needlessly, but to protect contribution quality and long-term maintainability as the project grows.
 
-**Küçük ama güvenilir bir katkı, büyük ve bakımı zor bir özellikten daha değerlidir.**
+**A small but reliable contribution is more valuable than a large feature that is hard to maintain.**

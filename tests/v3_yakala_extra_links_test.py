@@ -33,7 +33,7 @@ class LocalExtraLinkTest(unittest.TestCase):
         self.assertEqual(card['meta']['visibility'], 'private')
         self.assertEqual(card['meta']['ek_urller'], ['https://example.org/kaynak'])
         self.assertEqual(card['meta']['ek_urller_yerel'], local)
-        self.assertIn('## Yerel ağ bağlantıları\n\n' + yakala.LOCAL_LINKS_NOTE, card['body'])
+        self.assertIn('## Local network links\n\n' + yakala.LOCAL_LINKS_NOTE, card['body'])
         fetched = []
 
         def fetch(url, *args, **kwargs):
@@ -84,11 +84,11 @@ class LocalExtraLinkTest(unittest.TestCase):
         card = yakala.find_card(self.vault, again['id'])
         self.assertEqual((again['status'], card['meta']['visibility'], card['meta']['ek_urller_yerel']),
                          ('mevcut_karta_eklendi', 'private', ['http://10.1.2.3/ic-belge']))
-        self.assertEqual(card['body'].count('## Yerel ağ bağlantıları'), 1)
+        self.assertEqual(card['body'].count('## Local network links'), 1)
         yakala.capture(self.vault, url='https://example.com/makale', extra_urls=['http://10.1.2.4/ikinci'])
         card = yakala.find_card(self.vault, again['id'])
         self.assertEqual(card['meta']['ek_urller_yerel'], ['http://10.1.2.3/ic-belge', 'http://10.1.2.4/ikinci'])
-        self.assertEqual(card['body'].count('## Yerel ağ bağlantıları'), 1)
+        self.assertEqual(card['body'].count('## Local network links'), 1)
 
     def test_edited_or_synced_extras_never_block_a_new_capture(self):
         first = yakala.capture(self.vault, url='https://example.com/makale', extra_urls=['https://example.org/a'])
@@ -123,9 +123,9 @@ class LocalExtraLinkTest(unittest.TestCase):
                 self.assertNotIn('ek_urller', card['meta'])
                 self.assertEqual(card['meta']['ek_urller_yerel'], ['http://127.0.0.1/elle'] + extra)
                 self.assertEqual(card['meta']['visibility'], 'private')
-                self.assertNotIn('## Ek bağlantılar', card['body'])
+                self.assertNotIn('## Additional links', card['body'])
                 self.assertEqual(card['body'].count('## ' + yakala.LOCAL_LINKS), 1)
-                self.assertIn('## Neden', card['body'])
+                self.assertIn('## Why', card['body'])
                 self.assertIn('ikinci', card['body'])
 
     def test_an_edited_url_field_does_not_stop_the_queue(self):
@@ -154,7 +154,7 @@ class LocalExtraLinkTest(unittest.TestCase):
                 with patch.object(yakala, 'tools', return_value=NO_TOOLS):
                     entries = yakala.process(vault, [broken['id'], note['id']])['kartlar']
                 self.assertEqual([entry['durum'] for entry in entries], ['hata', 'cikarildi'])
-                self.assertIn('Yakala URL hatali', entries[0]['not'])
+                self.assertIn('Yakala URL is malformed', entries[0]['not'])
                 self.assertEqual(entries[0]['ek_urller_yerel'], ['http://10.0.0.9/x'])
                 other = yakala.capture(vault, url='https://example.org/b')  # the broken card never matches
                 self.assertEqual(other['status'], 'yakalandi')

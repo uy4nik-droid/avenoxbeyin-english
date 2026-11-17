@@ -102,8 +102,8 @@ def career(example):
             label='Görüşme tarihi', editable=True)]) for source in (evening, daytime)])
     assert example.cli('homepage-create', request)['status'] == 'written'
     block = example.read(home)['content'].split('### [Mavi Pusula — Gündüz]', 1)[0]
-    example.edit(home, block, block.replace('**Kişisel notum:**',
-        '**Kişisel notum:** yol süresini ve adresi sor'))
+    example.edit(home, block, block.replace('**My note:**',
+        '**My note:** yol süresini ve adresi sor'))
     example.save('career-created.md', home)
     untouched = (example.vault / daytime).read_bytes()
     original_invitation = invitation.read_bytes()

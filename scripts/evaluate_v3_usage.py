@@ -458,13 +458,13 @@ def build(vault, projects_dir=None, days=14, names=False, now=None):
 
 
 def percent(value):
-    return '-' if value is None else f'%{value * 100:.1f}'.replace('.', ',')
+    return '-' if value is None else f'{value * 100:.1f}%'
 
 
 def human(report):
-    window = f"son {report['window_days']} gün" if report['window_days'] else 'tüm geçmiş'
-    lines = [f"Pencere: {window} | proje klasörü: {report['project_folders']} | süre: {report['elapsed_seconds']} sn",
-             'Atlanan: ' + ', '.join(f'{k}={v}' for k, v in report['skipped'].items())]
+    window = f"last {report['window_days']} days" if report['window_days'] else 'all history'
+    lines = [f"Window: {window} | project folder: {report['project_folders']} | time: {report['elapsed_seconds']} s",
+             'Skipped: ' + ', '.join(f'{k}={v}' for k, v in report['skipped'].items())]
 
     def table_row(label, data):
         return (f"  {label:<40} {data['suggested']:>7} {data['opened_read_grep']:>7} {percent(data['rate_read_grep']):>7}"
@@ -472,30 +472,30 @@ def human(report):
 
     for name in ('main', 'subagent'):
         scope = report[name]
-        lines += ['', f"[{'Ana oturumlar' if name == 'main' else 'Alt ajanlar'}] transkript {scope['transcripts']}, "
-                      f"V3 bağlamlı {scope['transcripts_with_v3_context']}",
-                  '  Bağlam: ' + ', '.join(f'{k}={v}' for k, v in scope['contexts'].items()),
-                  f"  {'satır':<40} {'öneri':>7} {'Read':>7} {'oran':>7} {'+kabuk':>7} {'oran':>7}",
-                  table_row('sıralı kaynaklar (toplam)', scope['ranked']['all'])]
-        lines += [table_row('  tür ' + event, data) for event, data in scope['ranked']['by_event'].items()]
-        lines += [table_row('  sıra ' + rank, data) for rank, data in scope['ranked']['by_rank'].items()]
-        for detail, label in (('full', 'tam basılan'), ('clipped', 'kırpılan')):
+        lines += ['', f"[{'Main sessions' if name == 'main' else 'Subagents'}] transcripts {scope['transcripts']}, "
+                      f"with V3 context {scope['transcripts_with_v3_context']}",
+                  '  Context: ' + ', '.join(f'{k}={v}' for k, v in scope['contexts'].items()),
+                  f"  {'row':<40} {'suggest':>7} {'Read':>7} {'rate':>7} {'+shell':>7} {'rate':>7}",
+                  table_row('ranked sources (total)', scope['ranked']['all'])]
+        lines += [table_row('  event ' + event, data) for event, data in scope['ranked']['by_event'].items()]
+        lines += [table_row('  rank ' + rank, data) for rank, data in scope['ranked']['by_rank'].items()]
+        for detail, label in (('full', 'printed in full'), ('clipped', 'clipped')):
             lines += [table_row(f'companion {label}' + ('' if key == 'all' else ' ' + key), data)
                       for key, data in scope['companion'][detail].items()]
-        lines += [table_row('bilgi haritası (index)', scope['knowledge_map']),
-                  table_row('son receipt', scope['latest_receipt']),
-                  table_row('sentetik turlar (ayrı)', scope['synthetic_turns'])]
+        lines += [table_row('knowledge map (index)', scope['knowledge_map']),
+                  table_row('latest receipt', scope['latest_receipt']),
+                  table_row('synthetic turns (separate)', scope['synthetic_turns'])]
         rev = scope['unsuggested_opened']
-        lines.append(f"  Önerilmeden açılan notlar: Read/Grep {rev['read_grep']['opens']} açılış / "
-                     f"{rev['read_grep']['distinct_notes']} not; kabuk dahil {rev['with_shell']['opens']} / "
+        lines.append(f"  Notes opened without a suggestion: Read/Grep {rev['read_grep']['opens']} opens / "
+                     f"{rev['read_grep']['distinct_notes']} notes; including shell {rev['with_shell']['opens']} / "
                      f"{rev['with_shell']['distinct_notes']}")
-        lines.append(f"  Kabuk komutu {scope['shell_commands']}, yazma sayılıp dışarıda bırakılan "
+        lines.append(f"  Shell commands {scope['shell_commands']}, excluded as writes "
                      f"{scope['shell_commands_write_excluded']}")
         for item in scope.get('names', {}).get('suggested', []):
-            lines.append(f"    öneri {item['source']}: {item['suggested']} / Read {item['opened_read_grep']} / "
-                         f"kabuk {item['opened_with_shell']}")
+            lines.append(f"    suggested {item['source']}: {item['suggested']} / Read {item['opened_read_grep']} / "
+                         f"shell {item['opened_with_shell']}")
         for item in scope.get('names', {}).get('unsuggested_opened', []):
-            lines.append(f"    önerilmeden {item['source']}: Read {item['opens_read_grep']} / kabuk {item['opens_with_shell']}")
+            lines.append(f"    unsuggested {item['source']}: Read {item['opens_read_grep']} / shell {item['opens_with_shell']}")
     return '\n'.join(lines)
 
 

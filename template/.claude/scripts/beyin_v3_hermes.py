@@ -47,7 +47,7 @@ SETTINGS_FILE = "hermes-platforms.json"
 VAULT_SETTINGS_FILE = ".beyin-hermes.json"
 # Same cadence as the V2 nudge: remind a long interactive session to write a receipt.
 REMINDER_EVERY = 15
-REMINDER = "[Hafıza] {n}. mesaj. Anlamlı iş bittiyse `beyin.py receipt --harness hermes` ile kaynak bağlantılı makbuz yaz."
+REMINDER = "[Memory] Message {n}. If meaningful work is done, write a source-linked receipt with `beyin.py receipt --harness hermes`."
 
 
 def _clean_platforms(items):

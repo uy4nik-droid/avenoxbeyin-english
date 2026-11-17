@@ -600,7 +600,7 @@ class DailyLayoutTest(unittest.TestCase):
         human = subprocess.run([sys.executable, str(self.vault / 'beyin.py'), 'preferences', '--human'],
                                capture_output=True, text=True, encoding='utf-8', env=inherited_env(), timeout=60)
         self.assertEqual(human.returncode, 0, human.stderr)
-        self.assertIn('Daily duzeni: flat (daily/YYYY-MM-DD.md)', human.stdout)
+        self.assertIn('Daily layout: flat (daily/YYYY-MM-DD.md)', human.stdout)
 
     def test_malformed_shared_layout_keeps_sync_and_freezes_views(self):
         # .beyin-daily-layout.json travels through git; a merge conflict must not stop

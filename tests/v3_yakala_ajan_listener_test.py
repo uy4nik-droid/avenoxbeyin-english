@@ -26,10 +26,10 @@ class AgentBreakawayRefusalTest(AgentFiles):
         denied.winerror = 5
         result, card, job = self.enqueue_with(denied)
         self.assertEqual(result['status'], 'ajan_baslatilamadi')
-        self.assertIn('yakala kur ile dinleyiciyi yenile', result['hata'])
+        self.assertIn('refresh the listener with yakala kur', result['hata'])
         self.assertEqual(job['state'], 'failed')
         self.assertEqual(card['meta']['durum'], 'hata')
-        self.assertIn('yakala kur ile dinleyiciyi yenile', card['meta']['ajan_notu'])
+        self.assertIn('refresh the listener with yakala kur', card['meta']['ajan_notu'])
         # The saved capture itself is untouched.
         self.assertIn('İncelenecek metin', card['body'])
 
@@ -54,7 +54,7 @@ class AgentDisabledShortcutTest(AgentFiles):
                                    ('key', '<Control-Return>'), ('key', '<Escape>')])
         self.assertEqual(result['status'], 'vazgecildi')
         self.assertEqual(root.key_results['<Control-Return>'], 'break')
-        self.assertIn('Ajan kapalı · kaydetmek için Enter', self.texts(root))
+        self.assertIn('Agent is off · Enter to save', self.texts(root))
         self.assertEqual(yakala.pending(self.vault, self.state), 0)
         self.spawned.assert_not_called()
 
@@ -62,7 +62,7 @@ class AgentDisabledShortcutTest(AgentFiles):
         result, root = self.popup([('type', 'İptal edilen metin.'),
                                    ('key', '<Escape>'), ('key', '<Control-Return>')])
         self.assertEqual(result['status'], 'vazgecildi')
-        self.assertNotIn('Ajan kapalı · kaydetmek için Enter', self.texts(root))
+        self.assertNotIn('Agent is off · Enter to save', self.texts(root))
 
 
 if __name__ == '__main__':

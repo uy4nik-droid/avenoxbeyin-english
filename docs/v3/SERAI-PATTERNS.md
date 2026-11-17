@@ -1,27 +1,27 @@
-# Serai tasarım incelemesinden taşınabilir desenler
+# Patterns that can be carried over from the Serai design review
 
-İlk bağımsız kaynak incelemesi gpt-5.6-sol ile yapıldı. Yalnız teknik tasarım özeti aktarılır; kaynak kod, özel veri ve ortam yapılandırması kopyalanmadı. Serai servisi veya Mem0 bu projeye bağımlılık olarak eklenmez.
+The first independent source review was done with gpt-5.6-sol. Only a technical design summary is carried over; source code, private data and environment configuration were not copied. The Serai service or Mem0 is not added to this project as a dependency.
 
-## V3 temelinde uygulanacak küçük parça
+## The small piece to apply on the V3 foundation
 
-Bir nesnenin yeni durumu ile o değişimin olay kaydını aynı SQLite transaction içinde yazmak. Başarısız expected-revision kontrolü hiçbir olay üretmez; aynı ingest yeniden gönderilirse geçmiş çoğalmaz. Sıralı snapshot geçmişi, daha sonra denetlenebilir restore ve indeks yeniden oluşturma için temel sağlar. Bu aşama tüm çıktı dosyaları için crash-recovery worker anlamına gelmez.
+Writing an object's new state and the event record of that change in the same SQLite transaction. A failed expected-revision check produces no event; if the same ingest is resent, the history does not multiply. The ordered snapshot history provides a foundation for later auditable restore and index rebuild. This stage does not mean a crash-recovery worker for all output files.
 
-## Korunan diğer ilkeler
+## Other principles kept
 
-- Idempotency anahtarının farklı içerikle tekrar kullanılması hata olmalı.
-- Arama çıktısının kaynak yolu ve kaynak sürümü/hash bilgisi korunmalı; değişen kaynağın eski indeksi güncelmiş gibi sunulmamalı.
-- Revision conflict, otomatik aynı yazıyı yeniden deneme sebebi değildir; yeni durum okunur.
-- Dış etki varsa önce niyet, sonra sonuç kaydı gerekir. Sonucu bilinmeyen dış etki otomatik tekrarlanmamalı. V3 temelinde dış etki çalıştırıcısı yok.
-- Çok kullanıcılı politika, bulut backend, onay rezervasyonu ve dağıtık kontrol katmanları küçük yerel ürüne taşınmaz.
+- Reusing an idempotency key with different content must be an error.
+- The source path and the source version/hash of the search output must be preserved; the old index of a changed source must not be presented as current.
+- A revision conflict is not a reason to automatically retry the same write; the new state is read.
+- If there is an external effect, an intent record is needed first, then a result record. An external effect with an unknown result must not be repeated automatically. There is no external-effect executor in the V3 foundation.
+- Multi-user policy, cloud backend, approval reservation and distributed control layers are not carried into the small local product.
 
-## İnceleme kanıt sınırı
+## Evidence limit of the review
 
-İlk ajan kaynak kodu okudu, gerçek Serai testi çalıştırmadı. Hub bootstrap ve kapanış bu ortamda başarılı olmadığından Serai tarafından doğrulanmış oturum receipt'i iddiası yok. Yerel V3 doğrulaması ayrıca sentetik testlerle yapılır.
+The first agent read the source code and did not run a real Serai test. Because the hub bootstrap and close did not succeed in this environment, there is no claim of a session receipt verified by Serai. Local V3 verification is done separately with synthetic tests.
 
-## İkinci Sol incelemesi: kaynak ve bağlam doğruluğu
+## Second Sol review: source and context accuracy
 
-İkinci gpt-5.6-sol ajanı kaynak kimliği/sınırı, içerik sürümü, bağlam bütçesi, cevap vermekten kaçınma ve seçim telemetrisi desenlerini ayrı inceledi. Kaynak hash değişince eski kaydın dışlanması, kaynak/vault ayrımı, deterministik bütçe ve aynı bağlamı üreten iki harness arayüzü bu temel için uygun parçalardır.
+The second gpt-5.6-sol agent separately reviewed the patterns of source identity/boundary, content version, context budget, abstaining from answering and selection telemetry. Excluding the old record when the source hash changes, the source/vault distinction, a deterministic budget and two harness interfaces that produce the same context are suitable pieces for this foundation.
 
-İnceleme ayrıca kopyalanmaması gereken iki riski işaretledi: belirsiz alias'ın ilk kaydı seçmesi ve çıktı bütçesi değiştiği halde cache anahtarının değişmemesi. V3 temelinde alias çözümleyici veya retrieval cache yok; eklendiklerinde bu durumlar ayrı kabul testleri olmalı. Büyük kaydın küçük ve uygun sonraki kayıtları engellememesi de korunmalı.
+The review also flagged two risks that should not be copied: an ambiguous alias selecting the first record, and the cache key not changing even though the output budget changed. There is no alias resolver or retrieval cache in the V3 foundation; when they are added, these cases should have separate acceptance tests. A large record not blocking small, suitable following records should also be preserved.
 
-İki Sol süreci de exit 0 ile rapor üretti. Bulgular statik kaynak incelemesidir; gerçek Serai testleri veya hub oturum doğrulaması değildir. İkinci ajan da bootstrap/kapanış kapsamı oluşturamadığını bildirdi. Özel kaynak kodu kopyalanmadı ve Serai'de değişiklik yapılmadı.
+Both Sol processes produced reports with exit 0. The findings are a static source review; they are not real Serai tests or hub session verification. The second agent also reported that it could not create a bootstrap/close scope. Private source code was not copied and no change was made in Serai.

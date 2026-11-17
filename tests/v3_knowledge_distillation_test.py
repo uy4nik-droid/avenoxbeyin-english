@@ -44,7 +44,7 @@ class KnowledgeDistillationTest(unittest.TestCase):
 
         # Human rendering check
         text = beyin_entry.human_result({'knowledge_freshness': freshness}, 'doctor')
-        self.assertIn('Son bilgi damitmasi: henuz kavram notu damitilmadi (toplam 0 makbuz)', text)
+        self.assertIn('Last knowledge distillation: no concept note distilled yet (0 receipts in total)', text)
 
     def test_knowledge_freshness_counts_receipts_since_last_knowledge_update(self):
         """Knowledge freshness calculates days ago and counts only receipts created since."""
@@ -79,7 +79,7 @@ class KnowledgeDistillationTest(unittest.TestCase):
         self.assertEqual(freshness['latest_source'], 'knowledge/concepts/sqlite-wal.md')
 
         text = beyin_entry.human_result({'knowledge_freshness': freshness}, 'doctor')
-        self.assertIn('Son bilgi damitmasi: 5 gun once (o tarihten beri 2 makbuz)', text)
+        self.assertIn('Last knowledge distillation: 5 days ago (2 receipts since then)', text)
 
     def test_knowledge_freshness_ignores_generated_projections_and_gitkeep(self):
         """knowledge/v3/outcomes.md (generated receipt view) and .gitkeep must not count as knowledge distillation."""
@@ -110,8 +110,8 @@ class KnowledgeDistillationTest(unittest.TestCase):
             freshness = knowledge_freshness(self.vault, db)
         self.assertIsNone(freshness['last_distilled_at'])
         text = beyin_entry.human_result({'knowledge_freshness': freshness}, 'doctor')
-        self.assertIn('henuz kavram notu damitilmadi', text)
-        self.assertNotIn('bugun', text)
+        self.assertIn('no concept note distilled yet', text)
+        self.assertNotIn('today', text)
 
     def test_knowledge_freshness_prefers_frontmatter_date_over_checkout_mtime(self):
         """git checkout and iCloud restore reset mtime; the recorded updated/modified date wins."""
@@ -139,7 +139,7 @@ class KnowledgeDistillationTest(unittest.TestCase):
         self.assertIsNotNone(freshness['last_distilled_at'])
         self.assertEqual(freshness['latest_source'], '🧠 500-Knowledge/Araştırmalar/wal.md')
         text = beyin_entry.human_result({'knowledge_freshness': freshness}, 'doctor')
-        self.assertIn('Son bilgi damitmasi: bugun', text)
+        self.assertIn('Last knowledge distillation: today', text)
 
     def test_knowledge_freshness_still_skips_generated_views_with_all_roots(self):
         engine = SyncEngine(self.vault, self.state)
@@ -220,8 +220,8 @@ class KnowledgeDistillationTest(unittest.TestCase):
     def test_doctor_renders_unavailable_freshness_as_unmeasured(self):
         text = beyin_entry.human_result(
             {'knowledge_freshness': {'status': 'unavailable', 'error': 'OperationalError'}}, 'doctor')
-        self.assertIn('Son bilgi damitmasi: olculemedi (OperationalError)', text)
-        self.assertNotIn('henuz kavram notu damitilmadi', text)
+        self.assertIn('Last knowledge distillation: not measurable (OperationalError)', text)
+        self.assertNotIn('no concept note distilled yet', text)
 
     def test_doctor_keeps_conflicts_when_freshness_fails(self):
         (self.vault / 'AGENTS.md').write_text('- `knowledge/` (elle düzenleme, derleyici yönetir)\n', encoding='utf-8')
@@ -256,7 +256,7 @@ class KnowledgeDistillationTest(unittest.TestCase):
 
         # Doctor output test
         text = beyin_entry.human_result({'instruction_conflicts': conflicts}, 'doctor')
-        self.assertIn('Talimat celiskisi: AGENTS.md icinde V2 derleyici ifadesi var', text)
+        self.assertIn('Instruction conflict: AGENTS.md contains a V2 compiler statement', text)
 
     def test_instruction_conflicts_clean_managed_vault(self):
         """Standard clean V3 vaults without legacy compiler warnings produce no conflicts."""

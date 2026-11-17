@@ -312,7 +312,7 @@ class HarnessGateTest(unittest.TestCase):
 
     def test_only_verified_adapters_receive_the_warning(self):
         for harness in ('claude', 'codex', 'pi'):
-            self.assertIn('Bolum SINYALI', hygiene.hook_cap_warning(self.vault, self.payload, harness=harness))
+            self.assertIn('split SIGNAL', hygiene.hook_cap_warning(self.vault, self.payload, harness=harness))
         for harness in ('antigravity', 'opencode', 'omp', 'hermes'):
             self.assertEqual(hygiene.hook_cap_warning(self.vault, self.payload, harness=harness), '')
 
@@ -362,7 +362,7 @@ class RealLayoutTest(unittest.TestCase):
     def test_quiet_template_archive_kasa_and_code_folders_are_never_asked(self):
         questions = hygiene.folder_questions(self.vault, self.state, cooldown_days=14)
         self.assertEqual(len(questions), 1)
-        self.assertTrue(questions[0].startswith('Makaleler/ klasoru 60 gundur bos.'), questions[0])
+        self.assertTrue(questions[0].startswith('Makaleler/ folder has been empty for 60 days.'), questions[0])
         cold = [entry['folder'] for entry in hygiene.promotion(self.vault, self.state)['cold']]
         self.assertEqual(cold, ['Makaleler'])
 
@@ -544,15 +544,15 @@ class InboxReportTest(unittest.TestCase):
                               {'folder': 'Gone', 'notes': 0, 'oldest_days': None, 'attention': False,
                                'error': 'not_found'}], 'attention': True}
         text = entry.human_result({'status': 'observed_metadata', 'inbox': report}, 'doctor', '3.8.1')
-        self.assertIn('Gelen kutusunda bekleyen (bilgi, isleme karari senin): 📥 000-Inbox (14 not, en eskisi 12 gun), '
-                      'Gone (okunamadi: not_found).', text)
+        self.assertIn('Waiting in inbox folders (info, processing is your call): 📥 000-Inbox (14 notes, oldest 12 days), '
+                      'Gone (unreadable: not_found).', text)
         quiet = entry.human_result({'status': 'observed_metadata', 'inbox': {'enabled': False}}, 'doctor', '3.8.1')
-        self.assertNotIn('Gelen kutusu', quiet)
+        self.assertNotIn('Waiting in inbox folders', quiet)
         prefs = {'auto_sync': True, 'interval_minutes': 0, 'context_mode': 'auto', 'context_chars': 6000,
                  'secret_filter': True}
         shown = entry.human_result({'preferences': prefs, 'inbox_report': {
             'enabled': True, 'max_items': 10, 'max_days': 7, 'folders': ['Yakalama']}}, 'preferences')
-        self.assertIn('Gelen kutusu raporu (varsayilan kapali): acik (10 not / 7 gun; klasorler: Yakalama)', shown)
+        self.assertIn('Inbox report (off by default): on (10 notes / 7 days; folders: Yakalama)', shown)
 
 
 if __name__ == '__main__':

@@ -146,7 +146,7 @@ class ConsoleOutputTest(unittest.TestCase):
             process.stderr.close()
             process.wait(60)
         self.assertEqual(process.returncode, 0, error)
-        self.assertIn(b'Beyne atildi: ? 000-Inbox/Yakala/', shown)
+        self.assertIn(b'Saved to Beyin: ? 000-Inbox/Yakala/', shown)
         self.assertEqual(len(list((self.vault / INBOX).glob('*.md'))), 1)
 
 
@@ -760,7 +760,7 @@ class ListenerFlowTest(unittest.TestCase):
         self.assertFalse(yakala._windows_listener_running(self.vault))
         self.assertEqual((self.session.objects, self.session.handles), ({}, {}))  # the session lock is free again
         log = (self.state / 'yakala/dinleyici.log').read_text(encoding='utf-8')
-        self.assertIn('ctrl+alt+b (Windows hata 1409)', log)
+        self.assertIn('ctrl+alt+b (Windows error 1409)', log)
         process = Mock()
         process.poll.return_value = 1
         started = time.monotonic()
@@ -984,9 +984,9 @@ class InstallFlowTest(unittest.TestCase):
         self.session.hotkeys[(0x4003, ord('B'))] = -1  # another application owns the combination
         installed = yakala.install(vault, state)
         self.assertEqual((installed['kisayol'], installed['kisayol_calisiyor']), ('Ctrl+Alt+B', False))
-        self.assertIn('UYARI', yakala.human(installed, 'kur'))
+        self.assertIn('WARNING', yakala.human(installed, 'kur'))
         self.assertIs(self.running(vault, state), False)  # installed for this vault, and not running
-        self.assertIn('durmus', yakala.human(yakala.status(vault, state), 'durum'))
+        self.assertIn('stopped', yakala.human(yakala.status(vault, state), 'durum'))
 
     def test_a_3_9_0_install_keeps_state_without_an_owner(self):
         vault, state = self.vault('Örnek Beyin')
@@ -1204,7 +1204,7 @@ class WindowsListenerTest(unittest.TestCase):
             self.assertFalse(yakala._windows_listener_ok(self.vault, process, timeout=30))
         finally:
             user32.UnregisterHotKey(None, 78)
-        self.assertIn(KEY + ' (Windows hata 1409)', (self.state / 'yakala/dinleyici.log').read_text(encoding='utf-8'))
+        self.assertIn(KEY + ' (Windows error 1409)', (self.state / 'yakala/dinleyici.log').read_text(encoding='utf-8'))
         # The failed start left no session lock behind: the next one can run.
         process = self.listener(self.vault)
         self.assertTrue(wait_until(lambda: yakala._windows_listener_running(self.vault) or process.poll() is not None))

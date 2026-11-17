@@ -301,8 +301,8 @@ class ContextRefreshTest(unittest.TestCase):
         entry = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(entry)
         text = entry.human_result(report, 'doctor', '3.8.1')
-        self.assertIn('Yeniden bakma tarihi gelen not (review_at, bilgi): notes/seed-old.md (', text)
-        self.assertIn('Gercek tarih olmayan review_at (bilgi): notes/seed-number.md, notes/seed-typo.md.', text)
+        self.assertIn('Notes due for review (review_at, info): notes/seed-old.md (', text)
+        self.assertIn('review_at values that are not real dates (info): notes/seed-number.md, notes/seed-typo.md.', text)
 
     def test_review_report_skips_empty_and_superseded_and_uses_the_date_grammar(self):
         notes = self.vault / 'notes'

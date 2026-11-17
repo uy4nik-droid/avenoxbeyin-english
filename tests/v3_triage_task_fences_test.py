@@ -95,7 +95,7 @@ class TaskFenceTriageTest(unittest.TestCase):
                                         text=True, encoding='utf-8', timeout=60)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 if output == '--human':
-                    self.assertIn('Acik gorev: 1, Hareketsiz: 1', result.stdout)
+                    self.assertIn('Open tasks: 1, Inactive: 1', result.stdout)
                     self.assertIn('tasks/open-task.md: Real task', result.stdout)
                 else:
                     report = json.loads(result.stdout)

@@ -48,15 +48,15 @@ try {
     # uymak zorunda: ASCII'ye sadelestirilmis bir baslik reddedilir ve daily/
     # altina hicbir sey yazilmaz.
     $summary = @(
-        '## Bağlam'
+        '## Context'
         'Test bağlamı.'
-        '## Önemli Konuşmalar'
+        '## Important Conversations'
         '- Test konuşması.'
-        '## Alınan Kararlar'
+        '## Decisions Made'
         '- Test kararı.'
-        '## Öğrenilenler'
+        '## Learnings'
         '- Test öğrenimi.'
-        '## Yapılacaklar'
+        '## To Do'
         '- Test işi.'
     )
     Set-Content -LiteralPath (Join-Path $binDir 'summary.txt') -Value $summary -Encoding utf8NoBOM
@@ -192,8 +192,8 @@ python "%~dp0claude_stub.py" %*
             $log = @(Get-ChildItem -LiteralPath (Join-Path $vault 'daily') -Filter '*.md')[0]
             $body = Get-Content -LiteralPath $log.FullName -Raw
             Assert 'gunluk_log_bes_baslik_iceriyor' `
-                ($body -match 'Bağlam' -and $body -match 'Alınan Kararlar' -and $body -match 'Yapılacaklar') `
-                'log govdesi beklenen Turkce basliklari tasimiyor'
+                ($body -match 'Context' -and $body -match 'Decisions Made' -and $body -match 'To Do') `
+                'log govdesi beklenen bes basligi tasimiyor'
         }
 
         $errFile = Join-Path $vault '.claude\scripts\.state\flush_last_error'

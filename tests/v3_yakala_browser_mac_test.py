@@ -423,10 +423,10 @@ class MacNativeFallbackTest(unittest.TestCase):
         self.assertEqual(save.call_args.kwargs['url'], displayed)
         self.assertEqual(save.call_args.kwargs['title'], 'Page')
         self.assertEqual(save.call_args.kwargs['why'], '')
-        self.assertIn('yalniz bu sayfa', argv[4])
-        self.assertIn('imlec linki secilemez', argv[4])
+        self.assertIn('Only this page', argv[4])
+        self.assertIn('the link under the pointer cannot be chosen', argv[4])
         self.assertNotIn(LINK, argv[4])
-        self.assertIn('cancel button "Vazgec"', argv[2])
+        self.assertIn('cancel button "Cancel"', argv[2])
         self.assertFalse(run.call_args.kwargs.get('shell', False))
 
     def test_script_and_argument_boundaries_are_fixed_for_hostile_data(self):

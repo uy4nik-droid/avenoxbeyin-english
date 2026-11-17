@@ -9,7 +9,7 @@ import unittest
 from v3_package_helpers import inherited_env
 
 ROOT = Path(os.environ.get('BEYIN_TEST_REPO', Path(__file__).resolve().parents[1]))
-GUIDANCE = 'Dış proje kurulum hedefi'
+GUIDANCE = 'External project install target'
 
 
 class ExternalProjectBoundaryTest(unittest.TestCase):
@@ -35,8 +35,8 @@ class ExternalProjectBoundaryTest(unittest.TestCase):
                     with self.subTest(side=side):
                         skill = (vault / side / 'skills/beyin/SKILL.md').read_text(encoding='utf-8')
                         self.assertIn(GUIDANCE, skill)
-                        self.assertIn('sandbox garantisi değildir', skill)
-                        self.assertIn('yönetilen runtime/skill', skill)
+                        self.assertIn('not a technical sandbox guarantee', skill)
+                        self.assertIn('managed runtime/skill', skill)
 
 
 if __name__ == '__main__':

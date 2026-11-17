@@ -195,7 +195,7 @@ class TriageTest(unittest.TestCase):
         self.assertEqual(report['threads']['stale_count'], 1)
         human = subprocess.run(command + ['--human'], cwd=vault, env=env, capture_output=True, text=True, timeout=30)
         self.assertEqual(human.returncode, 0, human.stderr)
-        self.assertIn('[Acik Konular / Threads]', human.stdout)
+        self.assertIn('[Open Threads]', human.stdout)
         self.assertIn('Undated', human.stdout)
         self.assertEqual(before, {p.relative_to(vault): p.read_bytes() for p in vault.rglob('*') if p.is_file()})
 
@@ -352,7 +352,7 @@ class TriageTest(unittest.TestCase):
         self.assertEqual(report['count'], 2)
         titles = [item['title'] for item in report['items']]
         self.assertIn('SQLite Onbellek', titles)
-        self.assertIn('Kazanimlar ve Sonuclar', titles)
+        self.assertIn('Gains and Outcomes', titles)
         self.assertNotIn('Eski DB', titles)
 
     def test_companion_status_parsing_and_active_threads_from_headings(self):
@@ -403,10 +403,10 @@ class TriageTest(unittest.TestCase):
         self.assertEqual(full_report['inbox']['count'], 1)
 
         human_text = triage_module.format_human(full_report)
-        self.assertIn("=== Ikinci Beyin Sindirim ve Durum Raporu (Triage) ===", human_text)
-        self.assertIn("[Gelen Kutusu / Yakalananlar]", human_text)
-        self.assertIn("Bekleyen kaynak: 1", human_text)
-        self.assertIn("[Sindirim Onerileri]", human_text)
+        self.assertIn("=== Second Brain Digest and Status Report (Triage) ===", human_text)
+        self.assertIn("[Inbox / Captures]", human_text)
+        self.assertIn("Waiting sources: 1", human_text)
+        self.assertIn("[Digest Recommendations]", human_text)
 
     def test_cli_triage_json_output(self):
         cmd = [sys.executable, str(ROOT / 'scripts/beyin_v3.py'),
@@ -426,7 +426,7 @@ class TriageTest(unittest.TestCase):
         cmd = [sys.executable, str(self.vault / 'beyin.py'), 'triage', '--human']
         result = subprocess.run(cmd, cwd=str(self.vault), env=env, capture_output=True, text=True, encoding='utf-8', errors='replace')
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("=== Ikinci Beyin Sindirim ve Durum Raporu (Triage) ===", result.stdout)
+        self.assertIn("=== Second Brain Digest and Status Report (Triage) ===", result.stdout)
 
 
     def test_inbox_index_file_not_counted_as_pending_capture(self):
@@ -496,7 +496,7 @@ class TriageTest(unittest.TestCase):
         self.assertEqual(digest['mtime_count'], 1)
         report = triage_module.triage(self.vault, now=self.now)
         human = triage_module.format_human(report)
-        self.assertIn('Tarih onceligi: created, yoksa updated, yoksa mtime', human)
+        self.assertIn('Date priority: created, else updated, else mtime', human)
         self.assertNotIn('Uretilen/guncellenen', human)
         self.assertFalse(any('uretildi/guncellendi' in item for item in report['recommendations']))
 

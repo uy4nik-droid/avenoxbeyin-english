@@ -40,7 +40,7 @@ class InboxFileErrorsTest(unittest.TestCase):
         self.assertEqual(summary.get('status'), 'partial', summary)
         self.assertEqual(summary['count'], 1)
         human = triage.format_human({'inbox': summary})
-        self.assertIn('Taranabilen bekleyen kaynak: 1 (eksik tarama)', human)
+        self.assertIn('Waiting sources that could be scanned: 1 (incomplete scan)', human)
         self.assertNotIn('PRIVATE-CANARY', json.dumps(report) + json.dumps(summary) + human)
 
     def test_open_failure_does_not_guess_pending_state_from_mtime(self):
@@ -132,12 +132,12 @@ class InstalledInboxFileErrorsTest(unittest.TestCase):
                             self.assertEqual(report['count'], 1)
                             self.assertEqual(report['folders'][0]['error'], 'PermissionError')
                             self.assertNotIn('PRIVATE-CANARY', json.dumps(report))
-                        self.assertIn('Taranabilen bekleyen kaynak: 1 (eksik tarama)', cli('triage', '--human'))
+                        self.assertIn('Waiting sources that could be scanned: 1 (incomplete scan)', cli('triage', '--human'))
                         doctor = json.loads(cli('doctor'))['inbox']
                         self.assertEqual(doctor['folders'][0]['notes'], 1)
                         self.assertEqual(doctor['folders'][0]['error'], 'PermissionError')
                         self.assertTrue(doctor['attention'])
-                        self.assertIn('inbox (okunamadi: PermissionError)', cli('doctor', '--human'))
+                        self.assertIn('inbox (unreadable: PermissionError)', cli('doctor', '--human'))
                     finally:
                         blocked.chmod(0o600)
                     self.assertEqual(snapshot(vault), before_vault)

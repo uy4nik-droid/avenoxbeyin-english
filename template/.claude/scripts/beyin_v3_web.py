@@ -81,7 +81,7 @@ def load_cli():
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             return module
-    raise RuntimeError('Beyin CLI bulunamadı')
+    raise RuntimeError('Beyin CLI not found')
 
 
 def _line(value, limit):
@@ -89,14 +89,14 @@ def _line(value, limit):
     if value is None:
         return ''
     if not isinstance(value, str):
-        raise WebError(400, 'Metin alanı bekleniyordu')
+        raise WebError(400, 'A text field was expected')
     return unicodedata.normalize('NFC', ' '.join(value.split()))[:limit]
 
 
 def _slug(text):
     folded = unicodedata.normalize('NFKD', text.replace('ı', 'i').replace('İ', 'I'))
     folded = ''.join(char for char in folded if not unicodedata.combining(char)).lower()
-    return re.sub(r'[^a-z0-9]+', '-', folded).strip('-')[:48].strip('-') or 'gorev'
+    return re.sub(r'[^a-z0-9]+', '-', folded).strip('-')[:48].strip('-') or 'task'
 
 
 def _title(record):
@@ -181,7 +181,7 @@ class Core:
             os.environ.update(sessions)
         if code:
             error = result if isinstance(result, dict) else {}
-            name, message = str(error.get('error') or ''), str(error.get('message') or 'işlem tamamlanamadı')
+            name, message = str(error.get('error') or ''), str(error.get('message') or 'the operation could not be completed')
             status = 409 if 'Conflict' in name else 400 if name in ('ValueError', 'KeyError', 'SystemExit') else 500
             raise WebError(status, message[:400])
         return result
@@ -205,7 +205,7 @@ class Core:
         try:
             return self.engine.MemoryStore(self.state, self.vault, read_only=True)
         except ValueError:
-            raise WebError(503, 'Dizin henüz hazır değil; önce Eşitle düğmesini kullan ya da beyin.py sync çalıştır.')
+            raise WebError(503, 'The index is not ready yet; first use the Sync button or run beyin.py sync.')
 
     @staticmethod
     def _row(store, ident):
@@ -248,7 +248,7 @@ class Core:
         record = self._row(store, ident) if isinstance(ident, str) and ident else None
         eligible, _ = store._eligible('internal', records=[record]) if record else ([], 0)
         if not eligible or record['id'] in store._superseded_ids():
-            raise WebError(404, 'Kayıt bulunamadı ya da bu görünümde gösterilmiyor')
+            raise WebError(404, 'Record not found or not shown in this view')
         text = str(eligible[0].get('text') or '')
         return {'id': record['id'], 'baslik': _title(record), 'kaynak': record.get('source'),
                 'tur': _text(record.get('kind')), 'metin': text[:MAX_RECORD_CHARS],
@@ -291,15 +291,15 @@ class Core:
         project = _line(data.get('proje'), 80)
         body = data.get('aciklama')
         if body is not None and not isinstance(body, str):
-            raise WebError(400, 'Açıklama metin olmalı')
+            raise WebError(400, 'The description must be text')
         body = unicodedata.normalize('NFC', (body or '').strip())[:4000] or title
         status = data.get('durum') or 'inbox'
         if not title or not owner:
-            raise WebError(400, 'Başlık ve sorumlu gerekli')
+            raise WebError(400, 'A title and an owner are required')
         if status not in self.statuses:
-            raise WebError(400, 'Geçersiz durum')
+            raise WebError(400, 'Invalid status')
         if body.lstrip().startswith('---'):
-            raise WebError(400, 'Açıklama --- ile başlayamaz')
+            raise WebError(400, 'The description cannot start with ---')
         stamp = time.strftime('%Y%m%d')
         suffix = secrets.token_hex(3)
         metadata = {'id': f'web-{stamp}-{suffix}', 'title': title, 'status': status, 'owner': owner}
@@ -312,9 +312,9 @@ class Core:
     def set_status(self, data):
         ident, revision, status = data.get('id'), data.get('revizyon'), data.get('durum')
         if type(revision) is not int or status not in self.statuses:
-            raise WebError(400, 'Görev, revizyon ve geçerli durum gerekli')
+            raise WebError(400, 'A task, a revision and a valid status are required')
         if not self.visible_task(ident):
-            raise WebError(404, 'Görev bulunamadı ya da bu görünümde gösterilmiyor')
+            raise WebError(404, 'Task not found or not shown in this view')
         record = self.run_json('task-update', {'id': ident, 'expected_revision': revision, 'changes': {'status': status}})
         return {'durum': 'guncellendi', 'gorev': task_view(record)}
 
@@ -415,15 +415,15 @@ class Handler(BaseHTTPRequestHandler):
         """Host, Origin and Sec-Fetch-Site must all name this listener; checked before anything else."""
         hosts = self.headers.get_all('Host') or []
         if len(hosts) != 1 or hosts[0].strip().lower() not in self._authorities():
-            self._fail(403, 'Bu sunucu yalnız kendi yerel adresinden kullanılabilir')
+            self._fail(403, 'This server can only be used from its own local address')
             return False
         origin = self.headers.get('Origin')
         if origin is not None and origin.strip().lower() not in {'http://' + a for a in self._authorities()}:
-            self._fail(403, 'Başka bir siteden gelen istek reddedildi')
+            self._fail(403, 'A request from another site was rejected')
             return False
         site = self.headers.get('Sec-Fetch-Site')
         if site is not None and site.strip().lower() not in ('same-origin', 'none'):
-            self._fail(403, 'Başka bir siteden gelen istek reddedildi')
+            self._fail(403, 'A request from another site was rejected')
             return False
         return True
 
@@ -442,8 +442,8 @@ class Handler(BaseHTTPRequestHandler):
         """Never serve the CLI and engine of one version against another version's files."""
         if not self.server.core.runtime_changed():
             return False
-        self._fail(409, 'Beyin güncellendi ya da geri alındı; web görünümü kapanıyor. '
-                        'Yeniden açmak için: beyin.py web ac')
+        self._fail(409, 'Beyin was updated or rolled back; the web view is closing. '
+                        'To reopen it: beyin.py web ac')
         self.server.stop_soon()
         return True
 
@@ -456,16 +456,16 @@ class Handler(BaseHTTPRequestHandler):
         length = self.headers.get('Content-Length')
         if self.headers.get('Transfer-Encoding') or length is None or not length.isdecimal():
             self.close_connection = True
-            self._fail(411 if length is None else 400, 'Geçersiz istek gövdesi')
+            self._fail(411 if length is None else 400, 'Invalid request body')
             return None
         if int(length) > MAX_BODY:
             self.close_connection = True
-            self._fail(413, 'İstek gövdesi çok büyük')
+            self._fail(413, 'Request body too large')
             return None
         body = self.rfile.read(int(length)) if int(length) else b''
         if len(body) != int(length):
             self.close_connection = True
-            self._fail(400, 'Eksik istek gövdesi')
+            self._fail(400, 'Incomplete request body')
             return None
         return body
 
@@ -482,11 +482,11 @@ class Handler(BaseHTTPRequestHandler):
             self._page(urllib.parse.parse_qs(url.query).get('token', [''])[0])
             return
         if not url.path.startswith('/api/'):
-            self._fail(404, 'Bulunamadı')
+            self._fail(404, 'Not found')
             return
         session = self._session()
         if not (session or self._bearer()):
-            self._fail(401, 'Oturum yok; beyin.py web ac ile yeniden aç')
+            self._fail(401, 'No session; reopen with beyin.py web ac')
             return
         if self._runtime_changed():
             return
@@ -529,7 +529,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _route(self, handler, *arguments):
         if handler is None:
-            self._fail(404, 'Bulunamadı')
+            self._fail(404, 'Not found')
             return
         try:
             self._json(200, handler(*arguments))
@@ -554,23 +554,23 @@ class Handler(BaseHTTPRequestHandler):
                 return
         session = self._session()
         if not session:
-            self._fail(401, 'Oturum yok; beyin.py web ac ile yeniden aç')
+            self._fail(401, 'No session; reopen with beyin.py web ac')
             return
         if self.headers.get('Origin') is None:
-            self._fail(403, 'Yazma isteği kaynak (Origin) başlığı taşımalı')
+            self._fail(403, 'A write request must carry an Origin header')
             return
         if self.headers.get('Content-Type', '').split(';')[0].strip().lower() != 'application/json':
-            self._fail(415, 'Yazma isteği JSON olmalı')
+            self._fail(415, 'A write request must be JSON')
             return
         if not hmac.compare_digest(self.headers.get('X-Beyin-CSRF', '').encode(), self.server.sessions[session].encode()):
-            self._fail(403, 'CSRF belirteci geçersiz; sayfayı yenile')
+            self._fail(403, 'Invalid CSRF token; reload the page')
             return
         try:
             data = json.loads(body.decode('utf-8') or '{}')
         except (UnicodeDecodeError, ValueError):
             data = None
         if not isinstance(data, dict):
-            self._fail(400, 'İstek gövdesi bir JSON nesnesi olmalı')
+            self._fail(400, 'The request body must be a JSON object')
             return
         self.server.touch()
         if path == '/api/etkinlik':
@@ -586,7 +586,7 @@ class Handler(BaseHTTPRequestHandler):
         routes = {'/api/gorev': core.create_task, '/api/gorev/durum': core.set_status,
                   '/api/esitle': lambda _: core.sync(), '/api/hafiza/sikistir': lambda _: core.compact()}
         if path in routes and self.server.read_only:
-            self._fail(403, 'Sunucu salt okunur modda; yazma kapalı')
+            self._fail(403, 'The server is in read-only mode; writing is off')
             return
         self._route(routes.get(path), data)
 
@@ -658,13 +658,13 @@ def alive(running):
 def launch_url(running):
     status, body = _request(running, 'POST', '/api/ac')
     if status != 200:
-        raise WebError(status, 'Web görünümü için yeni açılış bağlantısı alınamadı')
+        raise WebError(status, 'Could not get a new launch link for the web view')
     try:
         token = json.loads(body).get('token')
     except (ValueError, TypeError):
         token = None
     if not isinstance(token, str) or not token:
-        raise WebError(502, 'Web görünümü geçersiz açılış bağlantısı döndürdü')
+        raise WebError(502, 'The web view returned an invalid launch link')
     return f"http://127.0.0.1:{running['port']}/?token={token}"
 
 
@@ -676,12 +676,12 @@ def bind(core, port=None, read_only=False):
             return WebServer(candidate, core, read_only=read_only)
         except OSError as exc:
             last = exc
-    raise WebError(409, f'Port kullanılamıyor: {port}' if port else 'Boş port bulunamadı') from last
+    raise WebError(409, f'Port unavailable: {port}' if port else 'No free port found') from last
 
 
 def _manual_launch_help():
-    return ('Yeni oturum için ayrı bir terminalde beyin.py web ac --no-browser --json çalıştırın. '
-            'JSON adres alanı tek kullanımlık giriş bağlantısı içerir; paylaşmayın veya kaydetmeyin.')
+    return ('For a new session, run beyin.py web ac --no-browser --json in a separate terminal. '
+            'The JSON address field contains a single-use login link; do not share or save it.')
 
 
 def serve(core, port=None, read_only=False, open_browser=True, as_json=False):
@@ -691,7 +691,7 @@ def serve(core, port=None, read_only=False, open_browser=True, as_json=False):
         # Don't expose launch token in human output (#691.1)
         display_url = f'http://127.0.0.1:{running["port"]}/'
         _say(as_json, {'durum': 'zaten_calisiyor', 'adres': url, 'salt_okunur': bool(running.get('read_only'))},
-             'Web görünümü zaten çalışıyor: ' + display_url + ('' if open_browser else '\n' + _manual_launch_help()))
+             'The web view is already running: ' + display_url + ('' if open_browser else '\n' + _manual_launch_help()))
         if open_browser:
             webbrowser.open(url)
         return 0
@@ -702,11 +702,11 @@ def serve(core, port=None, read_only=False, open_browser=True, as_json=False):
         # Don't expose launch token in human output (#691.1); it's single-use and consumed on first browser visit
         display_url = f'http://127.0.0.1:{server.port}/'
         _say(as_json, {'durum': 'basladi', 'adres': url, 'salt_okunur': server.read_only},
-             '\n'.join(('Beyin web görünümü açıldı (yalnız bu bilgisayar).',
-                         ('Tarayıcıda açılıyor: ' + display_url + ' (tek kullanımlık bağlantı, terminallerde gösterilmiyor)'
-                          if open_browser else 'Tarayıcı açılmadı: ' + display_url + '\n' + _manual_launch_help()),
-                         'Mod: ' + ('salt okunur' if server.read_only else 'yazma açık (görev, eşitleme, sıkıştırma)'),
-                         f'{IDLE_SECONDS // 60} dakika kullanılmazsa kapanır. Kapatmak için Ctrl+C ya da beyin.py web durdur.')))
+             '\n'.join(('Beyin web view opened (this computer only).',
+                         ('Opening in the browser: ' + display_url + ' (single-use link, not shown in terminals)'
+                          if open_browser else 'Browser not opened: ' + display_url + '\n' + _manual_launch_help()),
+                         'Mode: ' + ('read-only' if server.read_only else 'writing on (tasks, sync, compaction)'),
+                         f'Closes after {IDLE_SECONDS // 60} minutes without use. To close it: Ctrl+C or beyin.py web durdur.')))
     except BaseException:
         # A server that never got announced never serves: no open port, no stale running record.
         server.server_close()
@@ -731,7 +731,7 @@ def serve(core, port=None, read_only=False, open_browser=True, as_json=False):
         server.server_close()
         clear_running(core.state, server.token)
     if not as_json:
-        _say(False, None, 'Web görünümü kapandı.')
+        _say(False, None, 'Web view closed.')
     return 0
 
 
@@ -766,12 +766,12 @@ def stop(state):
 def _human(result):
     state = result['durum']
     if state == 'calisiyor':
-        return 'Web görünümü çalışıyor: ' + result['adres'] + (' (salt okunur)' if result.get('salt_okunur') else '')
+        return 'Web view is running: ' + result['adres'] + (' (read-only)' if result.get('salt_okunur') else '')
     if state == 'durduruldu':
-        return 'Web görünümü durduruldu.'
+        return 'Web view stopped.'
     if state == 'durdurulamadi':
-        return 'Web görünümü durdurulamadı (port ' + str(result['port']) + '); terminalindeki sunucuyu Ctrl+C ile kapat.'
-    return 'Web görünümü çalışmıyor.' + (' Eski çalışma kaydı temizlendi.' if result.get('eski_kayit_temizlendi') else '')
+        return 'Could not stop the web view (port ' + str(result['port']) + '); close the server in its terminal with Ctrl+C.'
+    return 'Web view is not running.' + (' The stale running record was cleared.' if result.get('eski_kayit_temizlendi') else '')
 
 
 def _say(as_json, data, text):
@@ -799,25 +799,25 @@ def _state_for(vault, cli):
 
 
 def main(argv=None, vault=None, state=None, cli=None):
-    _replace_unprintable(sys.stdout)  # before argparse too: its --help text is Turkish
-    parser = argparse.ArgumentParser(prog='beyin.py web', description='İsteğe bağlı yerel web görünümü (yalnız 127.0.0.1)')
+    _replace_unprintable(sys.stdout)  # before argparse too: its --help text may carry non-ASCII
+    parser = argparse.ArgumentParser(prog='beyin.py web', description='Optional local web view (127.0.0.1 only)')
     parser.add_argument('--json', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--vault', type=Path, help=argparse.SUPPRESS)
     parser.add_argument('--state', type=Path, help=argparse.SUPPRESS)
     sub = parser.add_subparsers(dest='komut')
-    start = sub.add_parser('ac', help='Sunucuyu başlat ve tarayıcıda aç')
-    start.add_argument('--port', type=int, help='Tercih edilen port (varsayılan 7373-7393 arası ilk boş port)')
-    start.add_argument('--read-only', action='store_true', help='Salt okunur: görev, eşitleme ve sıkıştırma kapalı')
-    start.add_argument('--no-browser', action='store_true', help='Tarayıcıyı açma; manuel tek kullanımlık giriş bağlantısı için --json ekle')
-    sub.add_parser('durum', help='Çalışıyor mu?')
-    sub.add_parser('durdur', help='Çalışan sunucuyu kapat')
+    start = sub.add_parser('ac', help='Start the server and open it in the browser')
+    start.add_argument('--port', type=int, help='Preferred port (default: first free port in 7373-7393)')
+    start.add_argument('--read-only', action='store_true', help='Read-only: tasks, sync and compaction are off')
+    start.add_argument('--no-browser', action='store_true', help='Do not open the browser; add --json for a manual single-use login link')
+    sub.add_parser('durum', help='Is it running?')
+    sub.add_parser('durdur', help='Stop the running server')
     args = parser.parse_args(list(sys.argv[1:] if argv is None else argv))
     port = getattr(args, 'port', None)
     if port is not None and not 1024 <= port <= 65535:
-        parser.error('--port 1024 ile 65535 arasında olmalı')
+        parser.error('--port must be between 1024 and 65535')
     vault = vault or args.vault
     if vault is None or not Path(vault).expanduser().is_dir():
-        parser.error('--vault mevcut bir klasör olmalı')
+        parser.error('--vault must be an existing folder')
     vault = Path(vault).expanduser().resolve()
     try:
         if (args.komut or 'ac') != 'ac':
@@ -830,12 +830,12 @@ def main(argv=None, vault=None, state=None, cli=None):
         cli = cli or load_cli()
         state = Path(state or args.state or _state_for(vault, cli)).resolve()
         if state == vault or vault in state.parents:
-            raise WebError(400, 'state klasörü vault dışında olmalı')
+            raise WebError(400, 'the state folder must be outside the vault')
         core = Core(vault, state, cli)
         return serve(core, port=port, read_only=getattr(args, 'read_only', False),
                      open_browser=not getattr(args, 'no_browser', False), as_json=args.json)
     except WebError as exc:
-        _say(args.json, {'durum': 'hata', 'mesaj': exc.message}, 'Hata: ' + exc.message)
+        _say(args.json, {'durum': 'hata', 'mesaj': exc.message}, 'Error: ' + exc.message)
         return 1
 
 

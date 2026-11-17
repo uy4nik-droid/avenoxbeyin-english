@@ -43,12 +43,12 @@ class TaskScanErrorsTest(unittest.TestCase):
         self.assertEqual(report['open_count'], expected)
         self.assertEqual(report['stale_count'], expected)
         human = triage.format_human({'tasks': report})
-        self.assertIn('Gorev taramasi eksik', human)
-        self.assertIn('Taranabilen acik gorev:', human)
-        self.assertNotIn('Acik gorev: 0, Hareketsiz: 0', human)
+        self.assertIn('Task scan incomplete', human)
+        self.assertIn('Open tasks that could be scanned:', human)
+        self.assertNotIn('Open tasks: 0, Inactive: 0', human)
         self.assertNotIn('SECRET-PATH', json.dumps(report) + human)
         recs = triage.generate_recommendations({}, report, {'digest_days': 7}, {})
-        self.assertIn('Gorev taramasi eksik', ' '.join(recs))
+        self.assertIn('Task scan incomplete', ' '.join(recs))
 
     def test_healthy_and_absent_task_shape_is_unchanged(self):
         expected = {'open_count': 0, 'stale_count': 0, 'undated_count': 0,
@@ -252,8 +252,8 @@ class InstalledTaskScanErrorsTest(unittest.TestCase):
                         self.assertEqual(result.returncode, 0, result.stderr)
                         self.assertEqual(result.stderr, '')
                         if mode == ['--human']:
-                            self.assertIn('Gorev taramasi eksik', result.stdout)
-                            self.assertIn(f'Taranabilen acik gorev: {expected}', result.stdout)
+                            self.assertIn('Task scan incomplete', result.stdout)
+                            self.assertIn(f'Open tasks that could be scanned: {expected}', result.stdout)
                         else:
                             report = json.loads(result.stdout)['tasks']
                             self.assert_partial(report, expected)

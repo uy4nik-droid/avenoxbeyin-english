@@ -25,7 +25,7 @@ class EntryPresentationTest(unittest.TestCase):
             self.assertEqual(human.returncode,0,human.stderr)
             text=human.stdout.decode('utf-8')
             self.assertIn('3.0.0',text)
-            self.assertIn('oturum',text.lower())
+            self.assertIn('session',text.lower())
             self.assertNotIn('"hook-health.json"',text)
             self.assertNotIn(str(state),text)
 
@@ -64,16 +64,16 @@ class EntryPresentationTest(unittest.TestCase):
         updated = {'status': 'updated', 'from_version': '3.10.0', 'version': '3.11.0', 'trust_review_required': True}
         kiro = entry.human_result(dict(updated, trust_review_files=['.kiro/hooks/beyin-v3.json']), 'update')
         self.assertIn('.kiro/hooks/beyin-v3.json', kiro)
-        self.assertIn('Kiro: Agent Hooks', kiro)
+        self.assertIn('Kiro: review in the Agent Hooks panel', kiro)
         self.assertNotIn('Codex', kiro)
         both = entry.human_result(dict(updated, trust_review_files=['.kiro/hooks/beyin-v3.json', '.codex/hooks.json']),
                                   'update')
-        self.assertLess(both.index('Codex: /hooks'), both.index('Kiro: Agent Hooks'))
+        self.assertLess(both.index('Codex: /hooks'), both.index('Kiro: review in the Agent Hooks panel'))
         # An updater from before the file list names no client rather than a wrong one.
         older = entry.human_result(updated, 'update')
-        self.assertIn('kullandigin istemcide guven incelemesini', older)
+        self.assertIn('complete the trust review in the client you use', older)
         self.assertNotIn('Codex', older)
-        self.assertNotIn('Hook tanimi', entry.human_result(dict(updated, trust_review_required=False), 'update'))
+        self.assertNotIn('Hook definitions', entry.human_result(dict(updated, trust_review_required=False), 'update'))
 
 
 # The installer pins a resolved absolute path; this is one another OS wrote into a synced vault (#249).
@@ -123,7 +123,7 @@ class CrossPlatformPinTest(unittest.TestCase):
         self.assertEqual(list(elsewhere.iterdir()), [])
         human = run_python(self.vault / 'beyin.py', ['doctor', '--human'], elsewhere, self.env)
         self.assertEqual(human.returncode, 0, human.stderr)
-        self.assertIn('mutlak bir yol degil', human.stdout.decode('utf-8'))
+        self.assertIn('is not an absolute path on this machine', human.stdout.decode('utf-8'))
 
     def test_every_command_says_it_on_stderr_and_stdout_stays_the_result(self):
         # #205: the fallback was visible only in doctor; sync, context and receipt changed state silently.
@@ -137,9 +137,9 @@ class CrossPlatformPinTest(unittest.TestCase):
                 self.assertEqual(done.returncode, 0, done.stderr)
                 stderr = done.stderr.decode('utf-8')
                 self.assertEqual(stderr.count('\n'), 1, stderr)
-                self.assertIn('mutlak bir yol degil', stderr)
+                self.assertIn('is not an absolute path on this machine', stderr)
                 self.assertIn('install_v3.py', stderr)
-                self.assertNotIn(b'mutlak bir yol degil', done.stdout)
+                self.assertNotIn(b'is not an absolute path on this machine', done.stdout)
                 if '--human' not in argv:
                     json.loads(done.stdout)  # the JSON contract holds
 

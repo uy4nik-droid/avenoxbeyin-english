@@ -253,7 +253,7 @@ def state_location(vault: Path, state: Path, windows=None) -> dict:
             "machine. The installer pins an absolute path, so this one was written by another OS "
             "through a synced vault or edited by hand (#249); the installed beyin.py reads this "
             "machine's default state instead. Installation files are per machine and stay out of "
-            "the sync; see https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/MULTI-MACHINE.md.")
+            "the sync; see https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/MULTI-MACHINE.md.")
     elif resolve_state(vault, Path(pinned)) != resolved:
         report['warnings'].append('foreign_default_state: the synced default state belongs to another user or OS; '
                                   'this machine uses its local default. Reinstall here to bind lifecycle commands.')
@@ -268,7 +268,7 @@ def state_location(vault: Path, state: Path, windows=None) -> dict:
             "container (Packages\\...\\LocalCache). That path carries the package "
             "identity and goes away when the package is reset or reinstalled under another "
             "identity. Moving the state to a plain local directory is the durable fix; "
-            "see https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/UPDATE.md.")
+            "see https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/UPDATE.md.")
     if report["pin_resolves_elsewhere"] and windows:
         report["warnings"].append(
             "pin_resolves_elsewhere: this process resolves the pinned path to " + str(resolved) +
@@ -289,14 +289,14 @@ def state_location(vault: Path, state: Path, windows=None) -> dict:
             "state_split: this vault has an installed state root on both sides of the package "
             "redirect (" + ", ".join(report["sibling_state_roots"]) + "). Each one carries its own "
             "database, so which half a session reads depends on whether it runs inside the "
-            "package. Keep one and move it out of the container; see https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/UPDATE.md.")
+            "package. Keep one and move it out of the container; see https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/UPDATE.md.")
     return report
 
 
 def backup_advisory(vault: Path) -> dict:
     """Local configuration hint only; never contacts remotes or asserts a backup exists."""
     report = {'status': 'unknown', 'backup_verified': False, 'remote_configured': False,
-              'guide': 'https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/BACKUP.md'}
+              'guide': 'https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/BACKUP.md'}
     env = {key: value for key, value in os.environ.items() if not key.upper().startswith('GIT_')}
     env.update(GIT_OPTIONAL_LOCKS='0', GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull,
                GIT_TERMINAL_PROMPT='0', GIT_NO_LAZY_FETCH='1', GIT_ALLOW_PROTOCOL='', LC_ALL='C')
@@ -353,7 +353,7 @@ def receipt_line_endings(vault: Path) -> dict:
                 "warning": "line_endings: core.autocrlf=true and receipts/ is not pinned, so a receipt synced "
                            "from another machine can be checked out as CRLF. Current receipt identity accepts "
                            "newline-only changes; older clients may report collisions. Add 'receipts/** -text' to the "
-                           "vault's .gitattributes and check the receipts out again; see https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/MULTI-MACHINE.md."}
+                           "vault's .gitattributes and check the receipts out again; see https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/MULTI-MACHINE.md."}
     except Exception as exc:  # no git, a hung git or a broken config must never hide the rest of doctor
         return {"status": "unavailable", "error": type(exc).__name__}
 
@@ -401,15 +401,15 @@ JEV_NOTICE_LAYA = ("auto_context is on: every turn sends the prompt plus the tit
 JEV_WARNING = "TYPESAFE_API_KEY is not set; calls degrade to local results."
 LAYA_NOTICE = ("provider laya: calls go only to the local laya-serve at {base_url}; start it with LAYA_HOST=127.0.0.1. "
                "Laya is shadow-only: scores are logged for measurement and never change results.")
-# Coded refusals that deserve a next step. ASCII Turkish, like the other human lines.
+# Coded refusals that deserve a next step. Plain ASCII, like the other human lines.
 ERROR_HINTS = {
-    "laya_shadow_only": ("Laya yalniz golge modda calisir: puanlari olcum icin kaydedilir, gordugun sonucu degistirmez. "
-                         "Laya icin: jev shadow --provider laya. Acik mod icin: jev on --provider typesafe."),
+    "laya_shadow_only": ("Laya runs in shadow mode only: its scores are logged for measurement and do not change the results you see. "
+                         "For Laya: jev shadow --provider laya. For on mode: jev on --provider typesafe."),
     # #593: the index names the folder it was built for. A moved vault reaches it through the pin.
     "runtime belongs to another vault": (
-        "Bu state baska bir vault yoluna bagli. Vault tasindiysa ya da adi degistiyse paketteki kurucuyu "
-        "yeni vault yolu, ayni --state ve --rebind-state ile calistir; eski yol hala duruyorsa kurucu reddeder. "
-        "Ayrinti: https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/MULTI-MACHINE.md"),
+        "This state is bound to another vault path. If the vault was moved or renamed, run the installer in the package "
+        "with the new vault path, the same --state and --rebind-state; the installer refuses while the old path still exists. "
+        "Details: https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/MULTI-MACHINE.md"),
 }
 
 
@@ -607,7 +607,7 @@ def hook_paths(vault: Path) -> dict:
                           "from another machine). Run the installer again on this machine with this vault; if the "
                           "vault moved from another account or folder, pass the old state folder (or a copy) with "
                           "--state, and --rebind-state when the installer asks for it. Keep hook files out of sync: "
-                          "https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/MULTI-MACHINE.md")
+                          "https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/MULTI-MACHINE.md")
     return result
 
 
@@ -1619,13 +1619,13 @@ def main(argv=None, return_result=False):
                 current_excluded.update(exclude_args)
                 current_excluded.difference_update(include_args)
                 result_excluded = exclusions.save_exclusions(vault, current_excluded)
-                exclusion_notice = 'Haric tutma tercihleri kaydedildi; bir sonraki kurulum ya da guncellemede uygulanir.'
+                exclusion_notice = 'Exclusion preferences saved; they apply at the next install or update.'
             else:
                 # A hand-edited typo must not block unrelated preference changes.
                 try:
                     result_excluded = exclusions.read_exclusions(vault)
                 except (ValueError, OSError) as exc:
-                    result_excluded, exclusion_notice = [], 'Haric tutma dosyasi gecersiz: ' + str(exc)
+                    result_excluded, exclusion_notice = [], 'Exclusion file is invalid: ' + str(exc)
             settings = preferences.save(vault, changes, args.profile) if changes or args.profile else preferences.read(vault)
             result = {'status': 'saved' if changes or args.profile or (args.exclude_component or args.include_component) else 'current',
                       'preferences': settings, 'excluded_components': result_excluded,
@@ -1647,12 +1647,12 @@ def main(argv=None, return_result=False):
             else:
                 result['companion_context'], context_valid = companion.read_context(state)
                 if not context_valid:
-                    result['companion_context_notice'] = companion.CONTEXT_FILE + ' gecersiz; oturum basi baglami context_chars ile sinirli.'
+                    result['companion_context_notice'] = companion.CONTEXT_FILE + ' is invalid; session-start context is limited by context_chars.'
             widest = max(result['companion_context']['context_chars'], settings['context_chars'])
             if companion.client_budget('claude', widest) < widest:  # #175: say so instead of silently using less
-                result['client_context_notice'] = (f"Claude Code ve Codex oturumlarinda otomatik baglam {companion.client_budget('claude', widest)} "
-                                                   'karakterde tutulur: Claude Code 10.000 karakteri, Codex yaklasik 10.000 bayti '
-                                                   'asan hook baglamini dosyaya tasiyip modele yalniz bir onizleme gosterir.')
+                result['client_context_notice'] = (f"In Claude Code and Codex sessions automatic context is held to {companion.client_budget('claude', widest)} "
+                                                   'characters: hook context over 10,000 characters in Claude Code, or about 10,000 bytes in Codex, '
+                                                   'is moved to a file and the model sees only a preview.')
             import beyin_v3_releases as releases
             result['update_notifications'] = releases.preferences(state, None if args.update_notifications is None else args.update_notifications == 'on')
             if args.update_notifications is not None:
@@ -1669,19 +1669,19 @@ def main(argv=None, return_result=False):
             else:
                 result['hygiene'], hygiene_valid = hygiene.read_settings(state)
                 if not hygiene_valid:
-                    result['hygiene_notice'] = 'hygiene.json gecersiz; tum hijyen sinyalleri kapali sayiliyor.'
+                    result['hygiene_notice'] = 'hygiene.json is invalid; all hygiene signals are treated as off.'
             if inbox_changes:
                 result['inbox_report'] = hygiene.save_inbox_settings(state, inbox_changes)
                 result['status'] = 'saved'
             else:
                 result['inbox_report'], inbox_valid = hygiene.read_inbox_settings(state)
                 if not inbox_valid:
-                    result['inbox_report_notice'] = 'inbox-report.json gecersiz; gelen kutusu raporu kapali sayiliyor.'
+                    result['inbox_report_notice'] = 'inbox-report.json is invalid; the inbox report is treated as off.'
             # Machine-local index setting (state/index.json); a release before it ignores the file.
             if index_changes:
                 result['index_exclusions'] = {'excluded_dirs': index_settings.save(
                     state, vault, args.index_exclude_dir, args.index_include_dir)}
-                result['index_exclusions_notice'] = 'Klasor haric tutma listesi kaydedildi; bir sonraki sync ile uygulanir.'
+                result['index_exclusions_notice'] = 'Folder exclusion list saved; it applies at the next sync.'
                 result['status'] = 'saved'
             else:
                 excluded_names, index_error, index_present = index_settings.read(state, vault)
@@ -1689,8 +1689,8 @@ def main(argv=None, return_result=False):
                     result['index_exclusions'] = {'excluded_dirs': excluded_names}
                 if index_error is not None:
                     result['index_exclusions']['error'] = index_error
-                    result['index_exclusions_notice'] = ('index.json gecersiz; klasor haric tutma listesi uygulanmiyor, '
-                                                         'her sey indeksleniyor.')
+                    result['index_exclusions_notice'] = ('index.json is invalid; the folder exclusion list is not applied, '
+                                                         'everything is indexed.')
             # Machine-local (#170): an older release would reject a new .beyin-preferences.json key.
             import beyin_v3_parallel as parallel
             if args.parallel_sessions is not None:
@@ -1699,7 +1699,7 @@ def main(argv=None, return_result=False):
             parallel_on, parallel_valid = parallel.read_settings(state)
             result['parallel_sessions'] = 'on' if parallel_on else 'off'
             if not parallel_valid:
-                result['parallel_sessions_notice'] = 'parallel-sessions.json gecersiz; paralel oturum bildirimi kapali sayiliyor.'
+                result['parallel_sessions_notice'] = 'parallel-sessions.json is invalid; the parallel session notice is treated as off.'
             # Machine-local context deduplication (#363)
             import beyin_v3_dedupe as dedupe
             if args.context_dedupe is not None:
@@ -1708,7 +1708,7 @@ def main(argv=None, return_result=False):
             dedupe_on, dedupe_valid = dedupe.read_settings(state)
             result['context_dedupe'] = 'on' if dedupe_on else 'off'
             if not dedupe_valid:
-                result['context_dedupe_notice'] = 'context-dedupe.json gecersiz; oturum ici tekrar onleme kapali sayiliyor.'
+                result['context_dedupe_notice'] = 'context-dedupe.json is invalid; in-session repeat prevention is treated as off.'
             # Machine-local Hermes platform settings (state/hermes-platforms.json, #350)
             try:
                 import beyin_v3_hermes as hermes_settings
@@ -1725,7 +1725,7 @@ def main(argv=None, return_result=False):
                     effective = sorted(hermes_settings.resolve_unattended_platforms(vault, state))
                     result['hermes_platforms'] = {**h_conf, 'effective_unattended': effective}
                     if not h_valid:
-                        result['hermes_platforms_notice'] = 'hermes-platforms.json gecersiz; varsayilan platformlar kullaniliyor.'
+                        result['hermes_platforms_notice'] = 'hermes-platforms.json is invalid; the default platforms are used.'
             except ImportError:
                 if args.hermes_attended_platform or args.hermes_unattended_platform or args.hermes_reset_platforms:
                     raise ValueError("Hermes platform settings module is unavailable; reinstall the vault")

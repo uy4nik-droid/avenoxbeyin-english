@@ -304,7 +304,7 @@ class InstalledEntryErrorTest(unittest.TestCase):
                 self.assertEqual(done.returncode, 1, done.stderr)
                 self.assertEqual(done.stdout, b'')
                 stderr = done.stderr.decode('utf-8')
-                self.assertIn('.beyin-runtime.json gecerli JSON degil (Expecting value: line 1 column 11', stderr)
+                self.assertIn('.beyin-runtime.json is not valid JSON (Expecting value: line 1 column 11', stderr)
                 if mode == '--json':
                     self.assertEqual(json.loads(stderr)['error'], 'ValueError')
 

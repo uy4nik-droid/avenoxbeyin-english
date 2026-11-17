@@ -83,14 +83,14 @@ class BackupAdvisoryTest(unittest.TestCase):
             return result.stdout
         initial = json.loads(doctor())
         self.assertEqual(initial['backup']['status'], 'unknown')
-        self.assertIn('Yedek (bilgi)', doctor('--human'))
+        self.assertIn('Backup (info)', doctor('--human'))
         self.git('init')
         self.git('remote', 'add', 'origin', 'https://example.invalid/private.git')
         before = snapshot(self.vault)
         later = json.loads(doctor())
         self.assertEqual(later['status'], initial['status'])
         self.assertFalse(later['backup']['backup_verified'])
-        self.assertIn('dogrulanmadi', doctor('--human'))
+        self.assertIn('was not verified', doctor('--human'))
         self.assertEqual(snapshot(self.vault), before)
 
 

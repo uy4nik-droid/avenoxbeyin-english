@@ -11,7 +11,7 @@ import unicodedata
 from urllib.parse import unquote
 
 
-# --- AYAR ---------------------------------------------------------------------
+# --- SETTINGS -----------------------------------------------------------------
 ATLA_KLASOR = {
     ".git",
     ".claude",
@@ -200,23 +200,23 @@ def main() -> None:
     full = "--tam" in sys.argv
     total, broken, orphans = tara(Path("."))
     print(
-        f"taranan: {total} not | kirik baglanti: {len(broken)} | "
-        f"yetim not: {len(orphans)}"
+        f"scanned: {total} notes | broken links: {len(broken)} | "
+        f"orphan notes: {len(orphans)}"
     )
 
     if broken:
-        print("\nKIRIK BAGLANTILAR:")
+        print("\nBROKEN LINKS:")
         shown = broken if full else broken[:KIRP]
         for source, target in shown:
             print(f"  {source} -> [[{target}]]")
         if len(broken) > len(shown):
             print(
-                f"  ... +{len(broken) - len(shown)} tane daha "
-                "(--tam ile hepsi)"
+                f"  ... +{len(broken) - len(shown)} more "
+                "(all with --tam)"
             )
 
     if orphans:
-        print("\nYETIM NOTLAR (hicbir not buraya baglanmiyor):")
+        print("\nORPHAN NOTES (no note links here):")
         if full:
             for orphan in orphans:
                 print(f"  {orphan}")
@@ -224,14 +224,14 @@ def main() -> None:
             counts: dict[str, int] = {}
             for orphan in orphans:
                 directory = (
-                    orphan.parts[0] if len(orphan.parts) > 1 else "(kok)"
+                    orphan.parts[0] if len(orphan.parts) > 1 else "(root)"
                 )
                 counts[directory] = counts.get(directory, 0) + 1
             for directory, count in sorted(
                 counts.items(), key=lambda item: (-item[1], item[0].casefold())
             ):
                 print(f"  {count:3d}  {directory}")
-            print("  (--tam ile dosya listesi)")
+            print("  (file list with --tam)")
 
 
 def _selftest() -> None:
@@ -254,7 +254,7 @@ def _selftest() -> None:
             "a.md",
             "c.md",
         ], orphans
-    print("selftest: gecti")
+    print("selftest: passed")
 
 
 if __name__ == "__main__":

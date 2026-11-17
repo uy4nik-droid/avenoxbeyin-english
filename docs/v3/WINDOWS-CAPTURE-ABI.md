@@ -1,19 +1,20 @@
-# Windows yakalama: ABI haritası ve kabul testi
+# Windows capture: ABI map and acceptance test
 
-İncelenen kaynak tarihi: **13 Ekim 2026**. GUID'ler ve sıfır tabanlı slotlar Microsoft'un
-Windows SDK header'larından karşılaştırıldı. Bağlantılardaki `main` hareketli daldır;
-bu belgeyi bir SDK dosyasının SHA-256 sabitlemesi olarak yorumlamayın.
-Gerçek WGC/GPU/masaüstü testi Linux'ta yapılmış değildir. Saf ABI ve yaşam döngüsü modelleri,
-Windows sürücüsünün başarıyla kare ürettiğini kanıtlamaz.
+Source review date: **13 October 2026**. The GUIDs and zero-based slots were compared against
+Microsoft's Windows SDK headers. The `main` in the links is a moving branch; do not read this
+document as a SHA-256 pin of an SDK file.
+No real WGC/GPU/desktop test has been done on Linux. Pure ABI and lifecycle models do not
+prove that a Windows driver successfully produces frames.
 
-19.10.2026 tarayici eklemesi: Firefox/Zen MSAA ve Yandex renderer yolu asagida ayri
-belgelenmistir. Bu yeni yollar gercek Windows masaustunde denenmedi. UIA/IA2/MSAA arayuzunun
-resmi belgede bulunmasi, her tarayici surumunun bu okuyucuya beklenen agaci verdigi anlami
-tasimaz. WGC/PrintWindow davranisi bu eklemeyle degistirilmedi.
+Browser addition of 19.10.2026: the Firefox/Zen MSAA and Yandex renderer paths are documented
+separately below. These new paths have not been tried on a real Windows desktop. The fact that
+the UIA/IA2/MSAA interface appears in the official documentation does not mean every browser
+version gives this reader the expected tree. WGC/PrintWindow behavior was not changed by this
+addition.
 
-## Kullanılan tüm IID'ler
+## All IIDs used
 
-| Arayüz | GUID | Kaynak |
+| Interface | GUID | Source |
 |---|---|---|
 | `IGraphicsCaptureItemInterop` | `3628e81b-3cac-4c60-b7f4-23ce0e0c3356` | [S02](https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/um/Windows.Graphics.Capture.Interop.h) |
 | `IGraphicsCaptureItem` | `79c3f95b-31f7-4ec2-a464-632ef5d30760` | [S01](https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/winrt/windows.graphics.capture.h) |
@@ -30,25 +31,25 @@ tasimaz. WGC/PrintWindow davranisi bu eklemeyle degistirilmedi.
 | `ID3D11Texture2D` | `6f15aaf2-d208-4e89-9ab4-489535d34f9c` | [S05](https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/um/d3d11.h) |
 | `IClosable` | `30d5a829-7fa4-4026-83bb-d75bae4ea99e` | [S07](https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/winrt/windows.foundation.h) |
 
-`ID3D11Device` ve `ID3D11DeviceContext` adresleri `D3D11CreateDevice` çıkışlarından alınır;
-IID'leri haritada denetim için bulunur, bu iki IID ile ek QI yapılmaz. Frame/session/pool
-adresleri de kendi tipli WinRT metodunun çıkışıdır. IUnknown/IInspectable için ayrı GUID
-uydurulmaz; bunların miras alınmış slotları kullanılır.
+The `ID3D11Device` and `ID3D11DeviceContext` addresses come from the `D3D11CreateDevice`
+outputs; their IIDs are present in the map for auditing, and no extra QI is done with these
+two IIDs. The frame/session/pool addresses are likewise the output of their own typed WinRT
+method. No separate GUID is invented for IUnknown/IInspectable; their inherited slots are used.
 
-## Çağrılan vtable slotları
+## Vtable slots called
 
-Bütün sayılar **0 tabanlı**, miras alınan slotlar dahil. IUnknown: QueryInterface=0,
-AddRef=1, Release=2. IInspectable ayrıca GetIids=3, GetRuntimeClassName=4,
-GetTrustLevel=5 içerir; bu yüzden ilk WinRT metodu genellikle 6'dır.
+All numbers are **0-based**, including inherited slots. IUnknown: QueryInterface=0,
+AddRef=1, Release=2. IInspectable additionally contains GetIids=3, GetRuntimeClassName=4,
+GetTrustLevel=5; that is why the first WinRT method is usually 6.
 
-| Arayüz | Slot | Metot | Dönüş / kritik argüman | Kaynak |
+| Interface | Slot | Method | Return / critical argument | Source |
 |---|---:|---|---|---|
-| IUnknown / bütün arayüzler | 0 | QueryInterface | HRESULT; GUID*, void** | SDK arayüzleri |
-| IUnknown / bütün arayüzler | 2 | Release | ULONG (32 bit); HRESULT değil | SDK arayüzleri |
+| IUnknown / all interfaces | 0 | QueryInterface | HRESULT; GUID*, void** | SDK interfaces |
+| IUnknown / all interfaces | 2 | Release | ULONG (32-bit); not HRESULT | SDK interfaces |
 | IGraphicsCaptureItemInterop | 3 | CreateForWindow | HRESULT; HWND, REFIID, void** | S02 |
-| IGraphicsCaptureSessionStatics | 6 | IsSupported | HRESULT; WinRT boolean* (8 bit) | S01 |
+| IGraphicsCaptureSessionStatics | 6 | IsSupported | HRESULT; WinRT boolean* (8-bit) | S01 |
 | IGraphicsCaptureItem | 7 | get_Size | HRESULT; SizeInt32* | S01 |
-| IDirect3D11CaptureFramePoolStatics2 | 6 | CreateFreeThreaded | HRESULT; device*, pixel format, buffer count, SizeInt32 **değer**, pool** | S01 |
+| IDirect3D11CaptureFramePoolStatics2 | 6 | CreateFreeThreaded | HRESULT; device*, pixel format, buffer count, SizeInt32 **value**, pool** | S01 |
 | IDirect3D11CaptureFramePool | 7 | TryGetNextFrame | HRESULT; frame** | S01 |
 | IDirect3D11CaptureFramePool | 10 | CreateCaptureSession | HRESULT; item*, session** | S01 |
 | IGraphicsCaptureSession | 6 | StartCapture | HRESULT | S01 |
@@ -62,60 +63,61 @@ GetTrustLevel=5 içerir; bu yüzden ilk WinRT metodu genellikle 6'dır.
 | ID3D11DeviceContext | 15 | Unmap | **void**; resource*, subresource | S05 |
 | IClosable | 6 | Close | HRESULT | S07 |
 
-Slot tuzakları: `ID3D11Texture2D`, IUnknown + ID3D11DeviceChild + ID3D11Resource
-metotlarını miras alır. `ID3D11DeviceContext` de ID3D11DeviceChild'dan türediği için
-Map/CopyResource sayıları doğrudan metodun görünen sıra numarası değildir.
-FramePool'un Recreate=6, TryGetNextFrame=7, add/remove_FrameArrived=8/9,
-CreateCaptureSession=10 sırası korunur. Bu uygulama 8/9'u **çağırmaz**; free-threaded
-pool'u kısa aralıklı `TryGetNextFrame` ile okur. Dolayısıyla event delegate GUID'i veya
-DispatcherQueue gerekmez; olmayan callback API'si kullanılmaz. [S01, S09]
+Slot traps: `ID3D11Texture2D` inherits the IUnknown + ID3D11DeviceChild + ID3D11Resource
+methods. `ID3D11DeviceContext` also derives from ID3D11DeviceChild, so the Map/CopyResource
+numbers are not simply the method's visible position in the declaration. The FramePool order
+Recreate=6, TryGetNextFrame=7, add/remove_FrameArrived=8/9,
+CreateCaptureSession=10 is preserved. This implementation does **not** call 8/9; it reads the
+free-threaded pool with short-interval `TryGetNextFrame`. So no event delegate GUID or
+DispatcherQueue is needed; no nonexistent callback API is used. [S01, S09]
 
-## Export fonksiyonlar ve veri düzeni
+## Exported functions and data layout
 
 `combase.dll`: RoInitialize(uint32)->HRESULT, RoUninitialize()->void,
 WindowsCreateString(wchar*,uint32,HSTRING*)->HRESULT,
 WindowsDeleteString(HSTRING)->HRESULT,
 RoGetActivationFactory(HSTRING,GUID*,void**)->HRESULT. [S23, S24]
 
-`d3d11.dll`: D3D11CreateDevice ve CreateDirect3D11DeviceFromDXGIDevice.
-İkincisi IDXGIDevice* alıp **IInspectable*** verir; IDirect3DDevice ile QI bundan sonra yapılır.
-D3D11 device/context, HRESULT/out parametreleriyle alınır. [S03, S22]
+`d3d11.dll`: D3D11CreateDevice and CreateDirect3D11DeviceFromDXGIDevice.
+The latter takes an IDXGIDevice* and returns an **IInspectable***; QI to IDirect3DDevice is
+done after that. The D3D11 device/context are obtained through HRESULT/out parameters. [S03, S22]
 
-| Düzen | Boyut / sözleşme |
+| Layout | Size / contract |
 |---|---|
-| GUID | 16 byte; ilk üç alan little-endian, kalan 8 byte olduğu gibi |
-| HRESULT / ULONG | signed int32 / unsigned int32; Linux `c_long` genişliği kopyalanmaz |
-| HWND / COM / HSTRING | pointer genişliği |
-| SizeInt32 | 8 byte; iki signed int32 |
-| D3D11_TEXTURE2D_DESC | 44 byte; DXGI_SAMPLE_DESC dahil |
-| D3D11_MAPPED_SUBRESOURCE | x64'te 16, x86'da 12 byte; pointer + iki uint32 |
+| GUID | 16 bytes; the first three fields little-endian, the remaining 8 bytes as is |
+| HRESULT / ULONG | signed int32 / unsigned int32; the Linux `c_long` width is not copied |
+| HWND / COM / HSTRING | pointer width |
+| SizeInt32 | 8 bytes; two signed int32 |
+| D3D11_TEXTURE2D_DESC | 44 bytes; including DXGI_SAMPLE_DESC |
+| D3D11_MAPPED_SUBRESOURCE | 16 bytes on x64, 12 on x86; pointer + two uint32 |
 
-D3D ayarları: hardware driver=1, BGRA_SUPPORT=0x20, SDK_VERSION=7,
-DXGI_FORMAT_B8G8R8A8_UNORM=87, iki frame buffer. Staging texture: Usage=3,
+D3D settings: hardware driver=1, BGRA_SUPPORT=0x20, SDK_VERSION=7,
+DXGI_FORMAT_B8G8R8A8_UNORM=87, two frame buffers. Staging texture: Usage=3,
 BindFlags=0, CPUAccessFlags=0x20000, MiscFlags=0. Map type READ=1, flags=0.
-Texture ve frame ContentSize ayrı denetlenir; gerçek `RowPitch` kullanılır. [S01, S05, S17]
+The texture and frame ContentSize are checked separately; the real `RowPitch` is used. [S01, S05, S17]
 
-## Yaşam döngüsü / başarısızlık
+## Lifecycle / failure
 
-`_WGCSession` yalnız sonlandırılabilir yardımcı süreçte çalışır. MTA RoInitialize(1)
-başarılıysa (S_FALSE dahil) bir RoUninitialize ile dengelenir. Çıkış pointer'ları çağrıdan
-**önce** scope'a kaydolur; kısmi oluşturma hatasında da elde edilmiş referanslar bırakılır.
-Frame'de staging/texture/access/surface bırakılır, frame Close/Release yapılır. Sonra
-session, pool, item/factory ve device zinciri ters sırada temizlenir. Map başarılıysa CPU
-kopyası hata verse bile Unmap çalışır. Bir Close hatası diğer Release çağrılarını atlatmaz.
+`_WGCSession` runs only in a terminable helper process. If MTA RoInitialize(1) succeeds
+(including S_FALSE), it is balanced with one RoUninitialize. Output pointers are registered in
+scope **before** the call; even on a partial-creation failure, the references already obtained
+are released. For a frame, the staging/texture/access/surface are released and the frame is
+Closed/Released. Then the session, pool, item/factory and device chain are cleaned up in
+reverse order. If Map succeeded, Unmap runs even if the CPU copy fails. A Close failure does
+not skip the other Release calls.
 
-Takılan native çağrı normal `finally` akışına dönmeyebilir. Dış deadline'da child/job
-sonlandırılır; bu durumda Python'un tek tek Release çalıştırdığı **iddia edilmez**.
-Süreç ölümüyle kaynakların işletim sistemine geri dönmesi ayrı güvenlik sınırıdır. [S16]
+A stuck native call may not return to the normal `finally` flow. At the outer deadline the
+child/job is terminated; in that case it is **not claimed** that Python ran each Release.
+The operating system reclaiming resources when the process dies is a separate safety boundary. [S16]
 
-WGC dış bütçesi 2,5 saniye; iç frame bekleme bütçesi 1,5 saniye. WGC başarısızsa bağımsız
-PrintWindow child'ına 1,2 saniye verilir. Sonlandırma/başlatma giderleri bu rakamlara eklenir;
-bunlar uçtan uca gerçek-zamanlı garanti değildir. PrintWindow senkrondur, bu yüzden o da
-Tk/dinleyici thread'inde çağrılmaz. [S15]
+The outer WGC budget is 2.5 seconds; the inner frame-wait budget is 1.5 seconds. If WGC
+fails, an independent PrintWindow child gets 1.2 seconds. Termination/startup costs are added
+to these figures; they are not an end-to-end real-time guarantee. PrintWindow is synchronous,
+so it too is not called on the Tk/listener thread. [S15]
 
-## Gerçek Windows doğrulaması
+## Real Windows verification
 
-Tam repoda, önce güncel dosyaları PR dalına yerleştirip testleri çalıştırın:
+In the full repo, first place the current files on the PR branch and run the tests:
 
 ```powershell
 py -3.12 -m unittest discover -s tests -p "v3_yakala_*.py" -v
@@ -124,12 +126,13 @@ py -3.12 -m unittest discover -s tests -p "v3_yakala_wgc_test.py" -v
 Remove-Item Env:BEYIN_TEST_WGC
 ```
 
-WGC testi yalnız kendi çizdiği pencereye erişir. Masaüstü kilitliyse, foreground reddedilirse
-veya WGC kare vermezse bu testi geçmiş saymayın. Diğer mevcut gerçek Win32 testlerine yeni
-`BEYIN_TEST_DESKTOP` engeli eklenmemiştir. Tam repo dışında installer/build/hygiene
-bağımlılığı isteyen testler eksik dosya nedeniyle başarısız olabilir; bunlar başarı değildir.
+The WGC test accesses only the window it draws itself. If the desktop is locked, foreground is
+refused, or WGC gives no frame, do not count this test as passed. The new `BEYIN_TEST_DESKTOP`
+guard has not been added to the other existing real Win32 tests. Outside the full repo, tests
+that need installer/build/hygiene dependencies may fail because of missing files; those are
+not successes.
 
-PowerShell'de her komutu çalıştırdıktan sonra geri sayım sırasında hedef pencereye geçin:
+In PowerShell, after running each command, switch to the target window during the countdown:
 
 ```powershell
 py -3.12 tests/manual_windows_capture.py --backend wgc --delay 5 --output .\wgc-game.png
@@ -138,164 +141,179 @@ py -3.12 tests/manual_windows_capture.py --backend auto --delay 5 --output .\aut
 py -3.12 tests/manual_windows_capture.py --url --delay 5
 ```
 
-`--backend wgc` hiçbir fallback yapmaz. Başarılı JSON'da `method: WGC` ve beklenen boyut
-bulunmalı; dosyayı açıp doğru pencereyi/güncel kareyi kontrol edin. Yanlış/siyah görüntüyü
-sırf PNG oluştu diye başarı saymayın. `--backend auto` iki denemeyi ve seçilen yöntemi yazar.
-URL komutu adresi konsola yazdığı için özel/token'lı adreslerin çıktısını paylaşmayın.
-Bu araç vault'a kart yazmaz; yalnız açıkça istenen PNG dosyasını yazar.
+`--backend wgc` does no fallback. The successful JSON must contain `method: WGC` and the
+expected size; open the file and check that it is the right window/current frame. Do not
+count a wrong/black image as a success just because a PNG was created. `--backend auto` writes
+the two attempts and the selected method. The URL command writes the address to the console,
+so do not share the output of private/tokenized addresses.
+This tool does not write a card to the vault; it writes only the explicitly requested PNG file.
 
-Ardından kurulu vault'ta yeni script yerleştirildikten sonra:
+Then, in an installed vault, after the new script has been placed:
 
 ```powershell
 py -3.12 .\beyin.py yakala kur
 py -3.12 .\beyin.py yakala durum
 ```
 
-Chrome normal sayfası; Chrome adres çubuğuna yazılmış fakat Enter verilmemiş başka adres;
-Opera Air; Notepad; GPU oyununda pencere/kenarlıksız/exclusive-fullscreen; ikinci monitör;
-%100/%150/%200 DPI; kaynak değişimi; yükseltilmiş uygulama; Alt+Tab; hızlı iki Enter ve
-10 ardışık hotkey senaryolarını karşılaştırın. Tek popup kalmalı; tekrar hotkey eski notu/
-kaynakları koruyup öne getirmeli; Esc veya Kapat kayıt yapmadan kapatmalı.
+Compare these scenarios: a normal Chrome page; another address typed into the Chrome address
+bar but without pressing Enter; Opera Air; Notepad; a window/borderless/exclusive-fullscreen
+GPU game; a second monitor; %100/%150/%200 DPI; source change; an elevated application;
+Alt+Tab; two quick Enters and 10 consecutive hotkeys. A single popup must remain; pressing the
+hotkey again must keep the old note/sources and bring it to the front; Esc or Close must close
+without saving.
 
-Tam ekran oyunlar, DRM/korumalı pencere, güvenli UAC masaüstü, UIPI/yetki farkı, ekran
-kilidi ve HDR renk doğruluğu evrensel başarı kapsamı değildir. WGC yolu SDR BGRA8 üretir;
-HDR ton eşleme eklenmemiştir. Koruma aşılmaz, hata halinde ekran BitBlt'a dönülmez. [S08, S21]
+Fullscreen games, DRM/protected windows, the secure UAC desktop, UIPI/privilege differences,
+screen lock and HDR color accuracy are not within the scope of universal success. The WGC path
+produces SDR BGRA8; HDR tone mapping has not been added. The protection is not bypassed, and
+on failure the screen does not fall back to BitBlt. [S08, S21]
 
-## Opera Air: renderer ve MSAA okuma
+## Opera Air: renderer and MSAA reading
 
-15 Ekim 2026 eklemesi. Opera'nın üst pencere UIA ağacı sayfa bağlantılarını göstermese de
-`EnumChildWindows` ile bulunan `Chrome_RenderWidgetHostHWND` kendi erişilebilirlik
-sağlayıcısını sunabilir. Görünür tek aday, `IsChild`, `GetAncestor(GA_ROOT)` ve pencere
-PID'si ile sınırlandırılır; foreground ve renderer kimliği okumadan sonra yeniden doğrulanır.
+Addition of 15 October 2026. Even though Opera's top-level window UIA tree does not show page
+links, the `Chrome_RenderWidgetHostHWND` found with `EnumChildWindows` can present its own
+accessibility provider. The single visible candidate is constrained by `IsChild`,
+`GetAncestor(GA_ROOT)` and the window PID; the foreground and renderer identity are verified
+again after reading.
 
 `AccessibleObjectFromWindow(HWND, OBJID_CLIENT=0xfffffffc, IID_IAccessible, void**)`;
-IID `618736e0-3c3d-11cf-810c-00aa00389b71`. `IAccessible`, IDispatch'i miras alır:
+IID `618736e0-3c3d-11cf-810c-00aa00389b71`. `IAccessible` inherits IDispatch:
 
-| Slot | Metot | Argüman/sonuç |
+| Slot | Method | Argument/result |
 |---|---|---|
 | 10 | get_accName | CHILDID_SELF (`VARIANT VT_I4=0`), BSTR* |
-| 11 | get_accValue | CHILDID_SELF, BSTR*; açık HTTP(S) URL |
+| 11 | get_accValue | CHILDID_SELF, BSTR*; explicit HTTP(S) URL |
 | 13 | get_accRole | CHILDID_SELF, VARIANT*; VT_I4, ROLE_SYSTEM_DOCUMENT=15 |
-| 14 | get_accState | CHILDID_SELF, VARIANT*; INVISIBLE=0x8000 / OFFSCREEN=0x10000 reddedilir |
+| 14 | get_accState | CHILDID_SELF, VARIANT*; INVISIBLE=0x8000 / OFFSCREEN=0x10000 are rejected |
 
-VT_I4 yalnız alt 32 bitten okunur; BSTR `SysFreeString`, VARIANT `VariantClear`, nesne
-`Release` ile bırakılır. Başarılı CoInitializeEx/S_FALSE, CoUninitialize ile dengelenir.
-API ve slot kaynağı: [Microsoft Windows SDK oleacc.h](https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/um/oleacc.h).
+VT_I4 is read only from the low 32 bits; the BSTR is released with `SysFreeString`, the VARIANT
+with `VariantClear`, the object with `Release`. A successful CoInitializeEx/S_FALSE is balanced
+with CoUninitialize. API and slot source: [Microsoft Windows SDK oleacc.h](https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/um/oleacc.h).
 
-Opera sayfa+imleç okuması aynı sonlandırılabilir `opera` yardımcı sürecinde, 1,8 saniyelik
-bütçede (`OPERA_TIMEOUT`) yapılır. İlk MSAA okuması `Chrome Legacy Window` yer tutucusu
-(ROLE_SYSTEM_CLIENT) dönerse renderer'a bir kez UI Automation isteği (`_uia_touch`: öğe +
-Document araması, hiçbir şey okunmaz) yapılır ve belge en fazla 0,8 saniye (`OPERA_WARMUP`)
-beklenir; renderer değişirse vazgeçilir. İmleç fiziksel koordinatı üst pencereye karşı doğrulanır; bağlantı araması
-renderer HWND'sinin UIA ağacında yapılır. Belge değeri iki okumada, bulunan bağlantı da iki
-okumada doğrulanır. Başka sekmenin/iframe'in URL'sini bulmak için belge ağacı taranmaz.
+The Opera page+cursor read is done in the same terminable `opera` helper process, within a
+1.8-second budget (`OPERA_TIMEOUT`). If the first MSAA read returns the `Chrome Legacy Window`
+placeholder (ROLE_SYSTEM_CLIENT), one UI Automation request is made to the renderer
+(`_uia_touch`: element + Document search, nothing is read) and the document is awaited for at
+most 0.8 seconds (`OPERA_WARMUP`); if the renderer changes, it gives up. The cursor's physical
+coordinate is verified against the top-level window; the link search is done in the UIA tree
+of the renderer HWND. The document value is verified in two reads, and the link found is also
+verified in two reads. The document tree is not scanned to find the URL of another tab/iframe.
 
-Birim model testleri: `tests/v3_yakala_opera_test.py`. Canlı kabul: Opera Air'de YouTube
-ana sayfasındaki gerçek video bağlantısı, önizleme açıkken aynı kart, Instagram gönderi
-bağlantısı, adres çubuğu taslağı, pencere/sekme değişimi ve iki monitör. Hiçbir test History
-veritabanından tahmin üretmemelidir; belirsizlikte bağlantı yerine mevcut görüntü yolu kalır.
+Unit model tests: `tests/v3_yakala_opera_test.py`. Live acceptance: a real video link on the
+YouTube home page in Opera Air, the same card while the preview is open, an Instagram post
+link, an address bar draft, window/tab switching and two monitors. No test should produce a
+guess from the History database; when uncertain, the existing image path remains instead of a
+link.
 
-## Firefox ve Zen: MSAA Document / Link
+## Firefox and Zen: MSAA Document / Link
 
-19.10.2026 eklemesi; taban `d9aa301`. Windows icin yeni `browser_document` protokol istegi
-`_windows_read` ve mevcut sonlandirilabilir `_process_packet` uzerinden calisir. Native
-cagrilar Tk veya hotkey thread'inde yapilmaz. HWND pozitif tamsayi, uygulama acik izin
-listesinde, istege bagli imlec tam iki signed-int32 olmalidir. Nominal butce 1 saniyedir;
-surec baslatma/oldurme/temizleme giderleri eklenir. Iptalde veya deadline'da cocuk sonlandirilir.
+Addition of 19.10.2026; base `d9aa301`. The new `browser_document` protocol request for
+Windows runs through `_windows_read` and the existing terminable `_process_packet`. Native
+calls are not made on the Tk or hotkey thread. The HWND must be a positive integer, the
+application must be on the explicit allow list, and the optional cursor must be exactly two
+signed int32. The nominal budget is 1 second; process start/kill/cleanup costs are added. On
+cancellation or at the deadline, the child is terminated.
 
-`_win_document_identity`, foreground/IsWindow/IsHungAppWindow, PID, process handle ve
-`QueryFullProcessImageNameW` ile canli kimligi alir. Firefox/Zen icin tam exe adi ve
-`MozillaWindowClass` gerekir; yalniz pencere basligina bakilmaz. Okuma sonunda kimlik tekrar
-eslesmelidir. Process handle `CloseHandle` ile temizlenir.
+`_win_document_identity` obtains the live identity with foreground/IsWindow/IsHungAppWindow,
+the PID, a process handle and `QueryFullProcessImageNameW`. For Firefox/Zen, the full exe name
+and `MozillaWindowClass` are required; the window title alone is not looked at. The identity
+must match again at the end of the read. The process handle is cleaned up with `CloseHandle`.
 
-Firefox'un chrome kabugu Document ile karistirilmaz. Resmi `DocAccessible::NativeRole`,
-typeChrome icin CHROME_WINDOW uretir; `RoleMap.inc` bunu `ROLE_SYSTEM_APPLICATION=14`'e
-esler. Web icerigi `ROLE_SYSTEM_DOCUMENT=15`'tir. Bu nedenle `chrome://` metnini taniyip
-atlanacak ozel bir URL istisnasi yoktur. Guncel Mozilla mimarisi Windows'ta MSAA, IA2 ve
-`uiaRawElmProvider` arayuzlerini birlikte listeler. Bu uygulama stdlib/ctypes ile dogrudan
-MSAA belge/link sozlesmesini secer; Firefox UIA desteklemiyor iddiasinda bulunmaz. [B01-B05]
+Firefox's chrome shell is not confused with a Document. The official `DocAccessible::NativeRole`
+produces CHROME_WINDOW for typeChrome; `RoleMap.inc` maps this to `ROLE_SYSTEM_APPLICATION=14`.
+Web content is `ROLE_SYSTEM_DOCUMENT=15`. For this reason there is no special URL exception
+that recognizes and skips `chrome://` text. Current Mozilla architecture lists MSAA, IA2 and
+`uiaRawElmProvider` interfaces together on Windows. This implementation chooses the direct MSAA
+document/link contract with stdlib/ctypes; it does not claim that Firefox does not support
+UIA. [B01-B05]
 
-`_WindowsMSAA` icin ABI:
+ABI for `_WindowsMSAA`:
 
-| Tur / export | Sozlesme |
+| Type / export | Contract |
 |---|---|
-| GUID | 16 byte |
-| HRESULT / LONG / ULONG | int32 / int32 / uint32; host Linux `long` boyutu kullanilmaz |
-| POINT | Iki int32, 8 byte; fiziksel ekran koordinati |
-| VARIANT | 8 byte header; 64-bit scalar ve iki pointer VT_RECORD iceren union; Win32 16, Win64 24 byte, 8 byte hizalama |
-| CoInitializeEx | MTA; S_OK ve S_FALSE bir CoUninitialize ile dengelenir |
+| GUID | 16 bytes |
+| HRESULT / LONG / ULONG | int32 / int32 / uint32; the host Linux `long` size is not used |
+| POINT | Two int32, 8 bytes; physical screen coordinate |
+| VARIANT | 8-byte header; a union containing a 64-bit scalar and two VT_RECORD pointers; Win32 16, Win64 24 bytes, 8-byte alignment |
+| CoInitializeEx | MTA; S_OK and S_FALSE are balanced with one CoUninitialize |
 | AccessibleObjectFromWindow | HWND, OBJID_CLIENT, IID_IAccessible, void** |
-| AccessibleObjectFromPoint | POINT deger olarak, IAccessible**, VARIANT* child |
-| AccessibleChildren | IAccessible*, LONG baslangic/adet, VARIANT*, LONG* gercek adet |
-| SysStringLen / SysFreeString | BSTR kopyasi oncesi 32768 UTF-16 code-unit siniri; her BSTR serbest birakilir |
-| VariantClear | Donen role/state/children VARIANT'lari hata akisinda da temizlenir |
+| AccessibleObjectFromPoint | POINT by value, IAccessible**, VARIANT* child |
+| AccessibleChildren | IAccessible*, LONG start/count, VARIANT*, LONG* actual count |
+| SysStringLen / SysFreeString | 32768 UTF-16 code-unit limit before copying a BSTR; every BSTR is freed |
+| VariantClear | The returned role/state/children VARIANTs are cleared on the error path too |
 
 IAccessible IID: `618736e0-3c3d-11cf-810c-00aa00389b71`.
-Kimlik karsilastirmasi icin IUnknown IID: `00000000-0000-0000-c000-000000000046`.
-Slotlar IUnknown + IDispatch mirasi dahil sifir tabanlidir. [B06-B09]
+IUnknown IID for identity comparison: `00000000-0000-0000-c000-000000000046`.
+Slots are zero-based, including the IUnknown + IDispatch inheritance. [B06-B09]
 
-| Slot | Metot | Kritik arguman / sonuc |
+| Slot | Method | Critical argument / result |
 |---:|---|---|
-| 0 | QueryInterface | GUID*, void**; kimlik/AddRef |
-| 2 | Release | uint32, HRESULT degil |
-| 7 | get_accParent | IDispatch**; IAccessible icin ayrica QI gerekir |
+| 0 | QueryInterface | GUID*, void**; identity/AddRef |
+| 2 | Release | uint32, not HRESULT |
+| 7 | get_accParent | IDispatch**; a separate QI is needed for IAccessible |
 | 8 | get_accChildCount | int32* |
-| 10 | get_accName | VARIANT child deger olarak, BSTR* |
-| 11 | get_accValue | VARIANT child deger olarak, BSTR*; Document/Link tam URL |
-| 13 | get_accRole | VARIANT child deger olarak, VARIANT*; VT_I4 |
-| 14 | get_accState | VARIANT child deger olarak, VARIANT*; VT_I4 |
-| 22 | accLocation | Dort int32* x/y/width/height, VARIANT child deger olarak |
+| 10 | get_accName | VARIANT child by value, BSTR* |
+| 11 | get_accValue | VARIANT child by value, BSTR*; Document/Link full URL |
+| 13 | get_accRole | VARIANT child by value, VARIANT*; VT_I4 |
+| 14 | get_accState | VARIANT child by value, VARIANT*; VT_I4 |
+| 22 | accLocation | Four int32* x/y/width/height, VARIANT child by value |
 
-Her COM cikis pointer'i cagridan once owned listesine girer. IDispatch pointer'i cast edilmez,
-IAccessible QueryInterface kullanilir. QI ile alinan IUnknown referanslari snapshot sonuna
-kadar yasatilir; yeniden kullanilmis adresin ayni nesne sanilmasi onlenir. Butun alinmis
-referanslar ters sirayla bir kez Release edilir. Native cagri donmeden cocuk oldurulurse
-Python finally'sinin tamamlandigi iddia edilmez; kaynaklar surec omruyle sinirlidir.
+Every COM output pointer enters the owned list before the call. The IDispatch pointer is not
+cast; IAccessible QueryInterface is used. The IUnknown references obtained through QI are kept
+alive until the end of the snapshot; this prevents a reused address from being mistaken for the
+same object. All obtained references are Released once in reverse order. If the child is
+killed before a native call returns, it is not claimed that Python's finally completed; the
+resources are bounded by the process lifetime.
 
-Dis UI agaci en fazla 512 dugum ve 32 seviye taranir. INVISIBLE/OFFSCREEN alt agaci atlanir;
-eksik role/state, dongu, kismi child enumeration veya sinir asimi adres verdirmez. Tek gorunur
-Document'e ulasilinca icine inilmez; iframe ana sayfa yerine gecmez. Iki gorunur belge ayni
-URL'de olsa, ikinci URL bos/yerel olsa veya belge BUSY olsa sonuc reddedilir. Iki secimde
-URL, baslik ve retained IUnknown belge kimligi ayni olmalidir.
+The outer UI tree is scanned to at most 512 nodes and 32 levels. An INVISIBLE/OFFSCREEN
+subtree is skipped; a missing role/state, a loop, partial child enumeration or exceeding a
+limit does not yield an address. Once the single visible Document is reached, it is not
+descended into; an iframe does not take the place of the main page. The result is rejected if
+two visible documents have the same URL, if the second URL is empty/local, or if the document
+is BUSY. In the two selections, the URL, title and retained IUnknown document identity must
+be the same.
 
-Hover, `AccessibleObjectFromPoint` gercek hit'inden baslar. Fiziksel imlec noktasi
-`WindowFromPhysicalPoint` ve `GetAncestor(GA_ROOT)` ile kaynak pencereye baglanir. En fazla
-64 ust nesne boyunca gercek `ROLE_SYSTEM_LINK=30`, linkin fiziksel siniri ve secilen
-Document'e ulasan soy zinciri aranir. Toolbar linki, baska belge, busy link/iframe, iki nested
-link, dongu veya eksik deger reddedilir. Iki hover okumasinda URL, ad ve retained
-IUnknown/child kimligi eslesmelidir; private kimlik alanlari IPC sonucuna yazilmaz. Windows
-hotkey'i kaydedilmis fiziksel noktayi kullanir; imlec sonradan hareket ettiyse yeni noktayi
-yakalanan nokta sanmaz. Bu, butun masaustunun atomik snapshot'i degildir.
+Hover starts from the real hit of `AccessibleObjectFromPoint`. The physical cursor point is
+tied to the source window with `WindowFromPhysicalPoint` and `GetAncestor(GA_ROOT)`. Across at
+most 64 ancestor objects, it looks for a real `ROLE_SYSTEM_LINK=30`, the link's physical
+bounds and a descent chain that reaches the selected Document. A toolbar link, another
+document, a busy link/iframe, two nested links, a loop or a missing value is rejected. In the
+two hover reads, the URL, name and retained IUnknown/child identity must match; private
+identity fields are not written to the IPC result. The Windows hotkey uses the recorded
+physical point; if the cursor moved afterwards, it does not take the new point as the captured
+point. This is not an atomic snapshot of the whole desktop.
 
-## Yandex, diger Chromium pencereleri ve ayri Opera uyandirma PR'yi
+## Yandex, other Chromium windows and the separate Opera wake-up PR
 
-`_chromium_committed_url`, mevcut `uia` cocuk isteginde calisir. Acik HTTP(S) omnibox degeri
-strict dogrulanir. Sema yoksa ayni cocuk/butcede `_opera_snapshot` ile gercek belge URL'si
-alinir; gorunen metinle uyum, ikinci odaksiz UIA okumasi ve foreground yeniden kontrol edilir.
-Odakli veya okunamaz kutuda fallback yoktur. Yalniz kok sondaki `/` farki esdeger sayilir;
-`www`, IDN ve percent-encoding gosterimi tahminle normalize edilmez. `tab_url` artik strict
-tam URL ister. Soguk renderer veya birebir gosterim uyusmazliginda sonuc bos olabilir.
+`_chromium_committed_url` runs inside the existing `uia` child request. An explicit HTTP(S)
+omnibox value is strictly verified. If there is no scheme, the real document URL is obtained
+with `_opera_snapshot` in the same child/budget; agreement with the visible text, a second
+unfocused UIA read and the foreground are rechecked. There is no fallback on a focused or
+unreadable box. Only a difference of a trailing root `/` is treated as equivalent; `www`, IDN
+and percent-encoding display are not normalized by guesswork. `tab_url` now requires a strict
+full URL. On a cold renderer or an exact display mismatch, the result may be empty.
 
-Yandex'in genel `browser.exe` adi tek basina guvenilir urun secimi degildir. Canli exe yolu
-`\\YandexBrowser\\Application\\browser.exe` ile bitiyorsa mevcut `_opera_snapshot` cagrilir;
-sonunda foreground/PID/class/yol kimligi tekrar denetlenir. Standart disi portable/beta
-kurulum bu sozlesmeyi saglamiyorsa adres yoktur. Tek gorunur renderer, iki belge/hover okumasi
-ve mevcut UIA hyperlink sinirlari korunur. Arc/Samsung Windows okuyuculari, exact process ve
-provider agaci cihazda olculmeden bu izin listesine eklenmedi. [B10]
+Yandex's generic `browser.exe` name alone is not a reliable product choice. If the live exe
+path ends with `\\YandexBrowser\\Application\\browser.exe`, the existing `_opera_snapshot` is
+called; at the end the foreground/PID/class/path identity is checked again. If a non-standard
+portable/beta installation does not satisfy this contract, there is no address. The single
+visible renderer, the two document/hover reads and the existing UIA hyperlink limits are
+preserved. Arc/Samsung Windows readers were not added to this allow list without measuring the
+exact process and provider tree on a device. [B10]
 
-Opera Air'de soguk web erisilebilirligini tek UIA istegiyle uyandirma,
-[#399](https://github.com/avenoxai/avenoxbeyin/pull/399) ayri calismasidir. Bu yama o degisikligi
-icermez; `_opera_snapshot` tarafina wake/retry/bekleme eklenmemistir. Ortak yolu kullanan
-Yandex ve sema dogrulamasi gereken Chromium icin soguk/sicak saglayici olcumu ayrica gerekir.
-#399 daha sonra birlesirse ortak yardimcinin tum cagricilari tekrar olculmelidir.
+Waking cold web accessibility in Opera Air with a single UIA request is the separate work in
+[#399](https://github.com/avenoxai/avenoxbeyin/pull/399). This patch does not include that
+change; no wake/retry/wait was added to the `_opera_snapshot` side. Cold/warm provider
+measurements are separately needed for Yandex, which uses the shared path, and for Chromium
+that needs schema verification. If #399 is merged later, all calls of the shared helper must
+be measured again.
 
-## Yeni tarayici okuyucularinin kabul olcumu
+## Acceptance measurement of the new browser readers
 
-Yeni test dosyasi `tests/v3_yakala_browser_windows_test.py`, gercek Windows masaustune
-gitmeden native adapter ABI/sahipligini, sahte saglayici agaclarini, process kimligini,
-fiziksel nokta sahipligini, iframe/split view, URL/nesne/foreground degisimlerini ve cocuk
-protokolunu denetler. Windows x86/x64 VARIANT modelleri, gercek x86 COM marshaling testi
-yerine gecmez. Tum platform testlerini repo kokunden calistirin:
+The new test file `tests/v3_yakala_browser_windows_test.py` checks, without going to a real
+Windows desktop, the native adapter ABI/ownership, fake provider trees, process identity,
+physical point ownership, iframe/split view, URL/object/foreground changes and the child
+protocol. The Windows x86/x64 VARIANT models do not replace a real x86 COM marshaling test.
+Run all the platform tests from the repo root:
 
 ```powershell
 py -3 -m unittest discover -s tests -p "v3_yakala*_test.py"
@@ -304,52 +322,55 @@ py -3 tests/manual_browser_capture.py --delay 5 --expected-page https://example.
 py -3 tests/manual_browser_capture.py --delay 5 --expect-empty
 ```
 
-Geri sayimda tarayiciya gecin. Gercek linkin tam adresini biliyorsaniz `--expected-hover`
-ekleyin. Probe kart yazmaz, URL/basliklari varsayilan yazdirmaz; `--show-urls` acik tercihtir.
-Beklenen deger olmadan cikis 0 sadece olcumun tamamlandigidir. `checked_samples` ve mismatch
-alanlarini okuyun. Windows build/Python mimarisi/tarayici surumu, izinler, DPI/monitor ve
-soguk/sicak durumunu sonuca ekleyin; p50/p95'yi en az 20 ornekle olcun.
+Switch to the browser during the countdown. If you know the full address of the real link,
+add `--expected-hover`. The probe does not write a card, and does not print URLs/titles by
+default; `--show-urls` is an explicit choice. Without an expected value, exit 0 means only
+that the measurement completed. Read the `checked_samples` and mismatch fields. Add the
+Windows build/Python architecture/browser version, permissions, DPI/monitor and cold/warm
+state to the result; measure p50/p95 with at least 20 samples.
 
-Oncelik: Firefox, Zen tek panel ve split view, Yandex standart kurulum, ardindan eski
-Chrome/Edge/Brave/Vivaldi/Opera regresyonu. Taslak omnibox, HTTP ve HTTPS, ayni URL'li iki
-sekme, ayni baslikli navigation, iframe icindeki link, yeni native dialog, negatif koordinat,
-%100/%150/%200 DPI, provider erisim reddi, iptal ve art arda hotkey senaryolarini ayri kaydedin.
-Gecko icin X/Instagram ARIA article fallback eklenmedi; gercek hyperlink yoksa hover bos
-olmasi dogrudur. Adres yoklugunu yanlis adresle ayni metrikte toplamayin. Yeni yollar icin
-cihaz basari orani ve p95 bu ortamda olculmedi.
+Priority: Firefox, Zen single pane and split view, a standard Yandex installation, then the
+old Chrome/Edge/Brave/Vivaldi/Opera regression. Record these scenarios separately: a draft
+omnibox, HTTP and HTTPS, two tabs with the same URL, navigation with the same title, a link
+inside an iframe, a new native dialog, a negative coordinate, %100/%150/%200 DPI, provider
+access denial, cancellation and consecutive hotkeys. No X/Instagram ARIA article fallback was
+added for Gecko; if there is no real hyperlink, an empty hover is correct. Do not combine the
+absence of an address with a wrong address in the same metric. The device success rate and p95
+for the new paths were not measured in this environment.
 
-Tarayici kaynaklari, erisim 19.10.2026. Hareketli `main` baglantilarinda dosya blob'u not
-edilmistir; yayin tarihi bulunmayan kaynaklara tarih uydurulmamistir:
+Browser sources, accessed 19.10.2026. For moving `main` links, the file blob is noted; no date
+was invented for sources that have no publication date:
 
-- **B01**: [Mozilla mimarisi](https://firefox-source-docs.mozilla.org/accessible/Architecture.html).
+- **B01**: [Mozilla architecture](https://firefox-source-docs.mozilla.org/accessible/Architecture.html).
 - **B02**: [MsaaAccessible.cpp](https://github.com/mozilla-firefox/firefox/blob/main/accessible/windows/msaa/MsaaAccessible.cpp),
   blob `3582dc88db83151e0a0a495c8f6c30fabcce1190`; Document accValue.
 - **B03**: [DocAccessible.cpp](https://github.com/mozilla-firefox/firefox/blob/main/accessible/generic/DocAccessible.cpp),
-  blob `dea5590be46e864477913934d3968b5f38f5b4ee`; chrome/content rol farki.
+  blob `dea5590be46e864477913934d3968b5f38f5b4ee`; chrome/content role difference.
 - **B04**: [RoleMap.inc](https://github.com/mozilla-firefox/firefox/blob/main/accessible/base/RoleMap.inc),
-  blob `2a56fff3f79f364af871139854420aee3106096f`; APPLICATION/DOCUMENT eslemesi.
+  blob `2a56fff3f79f364af871139854420aee3106096f`; APPLICATION/DOCUMENT mapping.
 - **B05**: [HTMLLinkAccessible.cpp](https://github.com/mozilla-firefox/firefox/blob/main/accessible/html/HTMLLinkAccessible.cpp),
-  blob `7f50d03d7712ca28d719a7f3f027fda6674abd8f`; LINK ve GetLinkLocation.
+  blob `7f50d03d7712ca28d719a7f3f027fda6674abd8f`; LINK and GetLinkLocation.
 - **B06**: [Windows SDK oleacc.h](https://github.com/microsoft/win32metadata/blob/main/generation/WinSDK/RecompiledIdlHeaders/um/oleacc.h),
   blob `179b03fa7f84399055a7e6638b9d2d67c7ac75e6`.
 - **B07**: [AccessibleChildren](https://learn.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-accessiblechildren),
-  guncelleme 13.10.2021; [AccessibleObjectFromPoint](https://learn.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-accessibleobjectfrompoint),
-  guncelleme 22.02.2024.
+  updated 13.10.2021; [AccessibleObjectFromPoint](https://learn.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-accessibleobjectfrompoint),
+  updated 22.02.2024.
 - **B08**: [get_accParent](https://learn.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-iaccessible-get_accparent),
-  guncelleme 22.02.2024; [accLocation](https://learn.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-iaccessible-acclocation),
-  guncelleme 13.10.2021.
+  updated 22.02.2024; [accLocation](https://learn.microsoft.com/en-us/windows/win32/api/oleacc/nf-oleacc-iaccessible-acclocation),
+  updated 13.10.2021.
 - **B09**: [IUnknown QueryInterface](https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)),
-  guncelleme 31.08.2022; [WindowFromPhysicalPoint](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-windowfromphysicalpoint),
-  guncelleme 22.02.2024.
-- **B10**: [Yandex exe adi](https://browser.yandex.com/help/en/troubleshooting/troubleshooting?lang=en)
-  ve [urun yolu](https://browser.yandex.com.tr/help/en/troubleshooting/media). Kaynaktaki
-  tarayici bayragi tavsiyesi uygulanmamistir; yalniz kurulum yolu kaniti alinmistir.
+  updated 31.08.2022; [WindowFromPhysicalPoint](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-windowfromphysicalpoint),
+  updated 22.02.2024.
+- **B10**: [Yandex exe name](https://browser.yandex.com/help/en/troubleshooting/troubleshooting?lang=en)
+  and [product path](https://browser.yandex.com.tr/help/en/troubleshooting/media). The browser
+  flag advice in the source was not applied; only the installation path evidence was taken.
 
-## Kaynaklar
+## Sources
 
-Aşağıdaki SDK/web kaynakları 13 Ekim 2026'da incelendi; yayımlanma tarihi bilinmeyenleri
-uydurulmuş tarihle etiketlemiyoruz. CreateForWindow Learn sayfası son güncellemesi
-2024-04-11; delayed-render makalesi 2022-06-09. Haritanın doğru olması canlı test yerine geçmez.
+The SDK and web sources below were reviewed on 13 October 2026; we do not label sources of
+unknown publication date with an invented date. The CreateForWindow Learn page was last
+updated on 2024-04-11; the delayed-render article is from 2022-06-09. A correct map does not
+replace live testing.
 
 - **S01** - [WGC WinRT ABI (Windows SDK)](https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/winrt/windows.graphics.capture.h)
 - **S02** - [IGraphicsCaptureItemInterop (Windows SDK)](https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/um/Windows.Graphics.Capture.Interop.h)

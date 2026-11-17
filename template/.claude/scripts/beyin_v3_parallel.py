@@ -138,17 +138,17 @@ def _load_presence(path):
 
 def _ago(seconds):
     minutes = int(seconds // 60)
-    return 'az once' if minutes < 1 else str(minutes) + ' dk once'
+    return 'just now' if minutes < 1 else str(minutes) + ' min ago'
 
 
 def line(others, now):
-    """ASCII Turkish, like the other hook lines. `others` is newest first."""
+    """Plain ASCII, like the other hook lines. `others` is newest first."""
     shown = ', '.join('#' + item['session'][:8] + ' (' + _ago(max(0, now - item['last_at'])) + ')'
                       for item in others[:MAX_SHOWN])
     rest = len(others) - MAX_SHOWN
-    return ("[Paralel oturum] Bu vault'ta " + str(len(others)) + ' oturum daha acik: ' + shown +
-            (' ve ' + str(rest) + ' tane daha' if rest > 0 else '') +
-            '. Ayni dosyaya dokunmadan once diskten yeniden oku; commit oncesi git status.\n')
+    return ("[Parallel session] " + str(len(others)) + " more session(s) open in this vault: " + shown +
+            (' and ' + str(rest) + ' more' if rest > 0 else '') +
+            '. Re-read from disk before touching the same file; run git status before committing.\n')
 
 
 def _state_key(state, create=False):

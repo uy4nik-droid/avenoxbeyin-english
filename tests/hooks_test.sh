@@ -627,7 +627,7 @@ output = payload["hookSpecificOutput"]
 assert output["hookEventName"] == "SessionStart"
 message = output["additionalContext"]
 assert message.isascii()
-assert "python3 bulunamadi" in message
+assert "python3 not found" in message
 PY
 assert_file "$STATE/python3-missing"
 pass "python3 yokluğunda marker ve geçerli ASCII fallback JSON üretiliyor"

@@ -55,7 +55,7 @@ class QuotedPostTest(unittest.TestCase):
     def test_quote_is_offered_unselected_on_its_own_key(self):
         sources = y.windows_sources({'url_imlec': POST, 'url': 'https://x.com/home', 'url_alinti': QUOTE}, '', False)
         quote = next(source for source in sources if source['value'] == QUOTE)
-        self.assertEqual((quote['label'], quote['key'], quote['on']), ('Alıntılanan gönderi', 'a', False))
+        self.assertEqual((quote['label'], quote['key'], quote['on']), ('Quoted post', 'a', False))
         self.assertEqual([source['value'] for source in sources if source['on']], [POST])
 
     def test_hovered_link_reports_the_quote_only_when_asked(self):

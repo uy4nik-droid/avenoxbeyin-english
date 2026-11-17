@@ -234,7 +234,7 @@ class CapturedSourceIdentityTest(unittest.TestCase):
             return info
 
         with patch.object(os, 'stat', side_effect=unidentified):
-            with self.assertRaisesRegex(ValueError, 'Dosya kimligi dogrulanamadi'):
+            with self.assertRaisesRegex(ValueError, 'Could not verify the file identity'):
                 self.call('read_note', path=path)
 
 

@@ -93,7 +93,7 @@ class PreferencesTest(unittest.TestCase):
         import beyin_entry
         for layout, expected in (('flat', 'daily/YYYY-MM-DD.md'), ('v3', 'daily/v3/YYYY-MM-DD.md')):
             result = self.cli('preferences', '--daily-layout', layout)
-            self.assertIn('Daily duzeni: ' + layout + ' (' + expected + ')',
+            self.assertIn('Daily layout: ' + layout + ' (' + expected + ')',
                           beyin_entry.human_result(result, 'preferences'))
 
     def test_invalid_settings_do_not_replace_user_preferences(self):
@@ -346,7 +346,7 @@ class PreferencesTest(unittest.TestCase):
         r = subprocess.run([sys.executable, str(self.vault / 'beyin.py'), 'preferences', '--human'],
                            capture_output=True, text=True, encoding='utf-8', timeout=20)
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertIn('2000 karakter', r.stdout)
+        self.assertIn('2000 characters', r.stdout)
         self.assertIn('preferences', self.cli('doctor'))
 
     def test_project_context_preference_is_machine_local_and_rollback_safe(self):

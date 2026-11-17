@@ -167,7 +167,7 @@ class AgentConfigurationTest(AgentFiles):
         self.config_path.write_text(json.dumps(config), encoding='utf-8')
         with self.assertRaises(ValueError):
             yakala.configure_agent(self.vault, self.state, 'claude')  # turning on never adopts them
-        self.assertIn('gecersiz', yakala.status(self.vault, self.state)['ajan'])  # durum reports it
+        self.assertIn('invalid settings', yakala.status(self.vault, self.state)['ajan'])  # durum reports it
         yakala.configure_agent(self.vault, self.state, 'kapali')
         self.assertEqual(yakala.agent_settings(self.vault, self.state)['client'], 'kapali')
         self.config_path.write_text('{"client": ', encoding='utf-8')  # damaged by hand or by a sync tool
@@ -260,7 +260,7 @@ class AgentAutomaticClientTest(AgentFiles):
     def test_location_and_empty_session_markers_are_not_session_evidence(self):
         with patch.dict(os.environ, {'CODEX_HOME': str(self.vault), 'CODEX_THREAD_ID': '',
                                      'CLAUDECODE': '0', 'CLAUDE_CODE_ENTRYPOINT': ''}):
-            with self.assertRaisesRegex(ValueError, 'Ajan istemcisi bulunamadi'):
+            with self.assertRaisesRegex(ValueError, 'No agent client found'):
                 yakala._agent_select_client('otomatik', True)
         self.assertEqual(self.executable.call_args_list, [mock.call('claude'), mock.call('codex')])
 
@@ -278,7 +278,7 @@ class AgentAutomaticClientTest(AgentFiles):
                                (Mock(isatty=Mock(return_value=True)), True)):
             with self.subTest(stdin=stdin, as_json=as_json), patch.object(sys, 'stdin', stdin), \
                     patch('builtins.input') as ask:
-                with self.assertRaisesRegex(ValueError, '^Iki istemci de kurulu; --ajan claude veya --ajan codex sec[.]$'):
+                with self.assertRaisesRegex(ValueError, '^Both clients are installed; choose --ajan claude or --ajan codex[.]$'):
                     yakala._agent_select_client('otomatik', as_json)
                 ask.assert_not_called()
 
@@ -297,14 +297,14 @@ class AgentAutomaticClientTest(AgentFiles):
         self.executable.return_value = ['native-cli']
         for answer in ('', '3'):
             with self.subTest(answer=answer), patch.object(sys.stdin, 'isatty', return_value=True), \
-                    patch('builtins.input', return_value=answer), self.assertRaisesRegex(ValueError, 'Gecersiz secim'):
+                    patch('builtins.input', return_value=answer), self.assertRaisesRegex(ValueError, 'Invalid choice'):
                 yakala._agent_select_client('otomatik', False)
         with patch.object(sys.stdin, 'isatty', return_value=True), patch('builtins.input', side_effect=EOFError), \
-                self.assertRaisesRegex(ValueError, 'Istemci secilemedi'):
+                self.assertRaisesRegex(ValueError, 'No client was chosen'):
             yakala._agent_select_client('otomatik', False)
 
     def test_neither_installed_fails_before_install_or_config_write(self):
-        with patch.object(yakala, 'install') as install, self.assertRaisesRegex(ValueError, 'Ajan istemcisi bulunamadi'):
+        with patch.object(yakala, 'install') as install, self.assertRaisesRegex(ValueError, 'No agent client found'):
             self.cli(['kur', '--ajan', 'otomatik'])
         install.assert_not_called()
         self.assertFalse(self.config_path.exists())
@@ -317,7 +317,7 @@ class AgentAutomaticClientTest(AgentFiles):
         for argv in (['kur', '--ajan', 'otomatik', '--json'], ['ajan', 'otomatik', '--json']):
             with self.subTest(argv=argv), patch.object(yakala, 'install') as install, \
                     patch.object(sys.stdin, 'isatty', return_value=True), patch('builtins.input') as ask, \
-                    self.assertRaisesRegex(ValueError, 'Iki istemci de kurulu'):
+                    self.assertRaisesRegex(ValueError, 'Both clients are installed'):
                 self.cli(argv, terminal=True)
             install.assert_not_called()
             ask.assert_not_called()
@@ -348,9 +348,9 @@ class AgentAutomaticClientTest(AgentFiles):
             install.return_value = {'status': 'kuruldu', 'web_clipper_sablonu': 'clipper.json'}
             output = self.cli(['kur', '--ajan', 'otomatik'], terminal=True)
             ask.assert_called_once()
-            self.assertIn('nasil calissin', ask.call_args.args[0])
-        self.assertIn('Arka plan ajani: claude', output)
-        self.assertIn('Ajan secimi: kurulum-ajani', output)
+            self.assertIn('How should the Ctrl+Enter agent run', ask.call_args.args[0])
+        self.assertIn('Background agent: claude', output)
+        self.assertIn('Agent choice: kurulum-ajani', output)
         self.assertEqual(yakala.agent_settings(self.vault, self.state)['gorunum'], 'pencere')
         self.assertEqual(yakala.agent_settings(self.vault, self.state)['client'], 'claude')
 
@@ -363,9 +363,9 @@ class AgentAutomaticClientTest(AgentFiles):
                 patch('builtins.input', side_effect=['1', '2']) as ask:
             output = self.cli(['kur', '--ajan', 'otomatik'], terminal=True)
         self.assertEqual(ask.call_count, 2)
-        self.assertIn('hangi istemciyi', ask.call_args_list[0].args[0])
-        self.assertIn('nasil calissin', ask.call_args_list[1].args[0])
-        self.assertIn('Ajan secimi: kullanici', output)
+        self.assertIn('Which client should', ask.call_args_list[0].args[0])
+        self.assertIn('How should the Ctrl+Enter agent run', ask.call_args_list[1].args[0])
+        self.assertIn('Agent choice: kullanici', output)
         config = json.loads(self.config_path.read_text(encoding='utf-8'))
         self.assertEqual(config['client'], 'claude')
         self.assertEqual(config['gorunum'], 'pencere')
@@ -500,7 +500,7 @@ class AgentQueueTest(AgentFiles):
             self.assertEqual(yakala._agent_worker(self.vault, self.state), 0)
         self.assertEqual([call.args[2]['id'] for call in run.call_args_list], [healthy['id']])
         self.assertEqual(target.read_bytes(), before)
-        self.assertIn('Is kaydi okunamadi', (yakala._agent_root(self.state) / 'worker.log').read_text(encoding='utf-8'))
+        self.assertIn('Could not read the job record', (yakala._agent_root(self.state) / 'worker.log').read_text(encoding='utf-8'))
 
     def test_old_config_and_job_ignore_missing_last_session_and_still_start(self):
         self.configure()
@@ -546,7 +546,7 @@ class AgentQueueTest(AgentFiles):
             self.assertEqual(yakala._agent_worker(self.vault, self.state), 0)
         self.assertEqual([call.args[2]['id'] for call in run.call_args_list], [healthy['id']])
         self.assertEqual(target.read_bytes(), before)
-        self.assertIn('Is kaydi okunamadi', (yakala._agent_root(self.state) / 'worker.log').read_text(encoding='utf-8'))
+        self.assertIn('Could not read the job record', (yakala._agent_root(self.state) / 'worker.log').read_text(encoding='utf-8'))
 
     @unittest.skipIf(os.name == 'nt', 'This exercises POSIX flock with real workers; Win32 needs its native gate.')
     def test_two_real_workers_run_each_job_once_without_overlapping(self):
@@ -595,7 +595,7 @@ sys.exit(y._agent_worker(vault, state))
         saved, original = self.card(url='https://example.com/source', why='Bu eski istek.')
         same = yakala.capture(self.vault, url='https://example.com/source', why='Bu yeni istek.', state=self.state)
         self.assertEqual(same['id'], saved['id'])
-        self.assertEqual(yakala._section(yakala.find_card(self.vault, same['id'], self.state)['body'], 'Neden'),
+        self.assertEqual(yakala._section(yakala.find_card(self.vault, same['id'], self.state)['body'], 'Why'),
                          'Bu eski istek.')
         result = yakala.enqueue_agent(self.vault, self.state, same['id'], 'Bu yeni istek.')
         job = yakala._agent_load_job(self.vault, self.state, result['job_id'])
@@ -815,7 +815,7 @@ class AgentCommandTest(AgentFiles):
         for required in ('AGENTS.md', 'CLAUDE.md', 'beyin-yakala', 'receipt', 'Ajan/Gunluk-YYYY-MM.md'):
             self.assertIn(required, prompt)
         self.assertIn('--file <receipt.json>', prompt)
-        self.assertIn('durum ve kart/sonuc/receipt baglantilarini ekler', prompt)
+        self.assertIn('adds the status and card/result/receipt links', prompt)
         self.assertNotIn('companion kartiyla', prompt)
         self.assertNotIn('--session <gercek_oturum_id>', prompt)
 
@@ -846,7 +846,7 @@ class AgentNetworkOptionTest(AgentFiles):
         self.assertEqual(argv[argv.index('--tools') + 1], 'WebSearch')
         self.assertEqual(argv[argv.index('--allowedTools') + 1], 'WebSearch,mcp__yakala__*')
         prompt = yakala._agent_prompt(self.vault, job)
-        for rule in ('yalniz herkese acik bilgi', 'arama sorgusuna, URL', 'approval_required") ile kullanicidan izin'):
+        for rule in ('only for public information', 'search query, URL', 'permission with complete(status="approval_required")'):
             self.assertIn(rule, prompt)
 
     def test_open_network_turns_codex_hosted_search_on(self):
@@ -967,7 +967,7 @@ class AgentSelectedSourceTest(AgentFiles):
         # must leave room for runtime identity and the eventual result summary.
         self.assertEqual(yakala._agent_extra_source_urls(values, self.primary), values)
         before = card['path'].read_bytes()
-        with self.assertRaisesRegex(ValueError, 'is kaydi.*buyuk'):
+        with self.assertRaisesRegex(ValueError, 'job record is too large'):
             yakala.enqueue_agent(self.vault, self.state, saved['id'], '\U0001f642' * 16000)
         self.assertEqual(card['path'].read_bytes(), before)
         self.assertEqual(yakala._agent_jobs(self.vault, self.state), [])
@@ -1028,8 +1028,8 @@ class AgentWindowViewTest(AgentFiles):
             self.assertTrue(any(item.startswith('mcp_servers.yakala.args=') for item in argv))
             self.assertIn('web_search="' + ('live' if network == 'acik' else 'disabled') + '"', argv)
             self.assertEqual(argv[-2], '--')
-            self.assertTrue(argv[-1].startswith('Bu vault icinde'))
-            self.assertIn('canli izliyor', argv[-1])
+            self.assertTrue(argv[-1].startswith('In this vault you'))
+            self.assertIn('watching this window live', argv[-1])
             self.assertEqual([item for item in argv if 'Istek ' in item], [argv[-1]])
 
     def test_both_clients_are_asked_for_a_view_only_at_a_persons_terminal(self):
@@ -1060,11 +1060,11 @@ class AgentWindowViewTest(AgentFiles):
         for flag in ('--dangerously-skip-permissions', 'bypassPermissions', '--bare'):
             self.assertNotIn(flag, argv)
         # The request travels only inside the single prompt argument, after every option.
-        self.assertTrue(argv[-1].startswith('Bu vault icinde'))
+        self.assertTrue(argv[-1].startswith('In this vault you'))
         self.assertEqual(argv[-2], '--')
-        self.assertIn('canli izliyor', argv[-1])
-        self.assertIn('basarinin henuz dogrulanmadigini', argv[-1])
-        self.assertNotIn('birkac saniye icinde', argv[-1])
+        self.assertIn('watching this window live', argv[-1])
+        self.assertIn('success is not verified yet', argv[-1])
+        self.assertNotIn('within a few seconds', argv[-1])
         self.assertEqual([item for item in argv if 'Müziği bul' in item], [argv[-1]])
 
     def test_valid_request_can_exceed_createprocess_limit_after_json_and_quoting(self):
@@ -1138,7 +1138,7 @@ class AgentWindowViewTest(AgentFiles):
             with self.subTest(error=error):
                 outcome, process, popen, finalize, job = self.run_window(None, True, client='codex', session_error=error)
                 self.assertEqual(outcome[0], 'approval_required')
-                self.assertIn('oturum', outcome[1])
+                self.assertIn('session', outcome[1])
                 finalize.assert_not_called()
                 process.kill.assert_not_called()
                 self.assertIsNone(job['session_id'])
@@ -1204,7 +1204,7 @@ class AgentCodexWindowSessionTest(AgentFiles):
     def test_two_new_sessions_in_the_vault_are_ambiguous(self):
         self.rollout()
         self.rollout(stamp='2026-10-18T09:00:02.000Z')
-        with self.assertRaisesRegex(ValueError, 'birden fazla'):
+        with self.assertRaisesRegex(ValueError, 'more than one'):
             self.discover()
 
     def test_missing_or_invalid_metadata_never_supplies_an_identity(self):
@@ -3165,7 +3165,7 @@ class AgentManualProcessRaceTest(unittest.TestCase):
         self.assertIn('A newer captured request.', body)
         self.assertEqual(self.raw_path.read_bytes(), original_raw)
         self.assertEqual(result['kartlar'][0]['durum'], 'hata')
-        self.assertIn('degisti', result['kartlar'][0]['not'])
+        self.assertIn('changed', result['kartlar'][0]['not'])
 
     def test_unchanged_source_still_commits_raw_text_and_card(self):
         with patch.object(yakala, 'tools', return_value={}), \
@@ -3216,7 +3216,7 @@ class AgentManualProcessRaceTest(unittest.TestCase):
                         patch.object(yakala, 'extract', side_effect=extract):
                     result = yakala.process(self.vault, [self.card_id], state=self.state)
                 self.assertEqual(result['kartlar'][0]['durum'], 'hata')
-                self.assertIn('degisti', result['kartlar'][0]['not'])
+                self.assertIn('changed', result['kartlar'][0]['not'])
                 self.assertEqual(self.card_path.read_bytes(), changed)
                 self.assertEqual(self.raw_path.read_bytes(), b'Existing raw source')
 

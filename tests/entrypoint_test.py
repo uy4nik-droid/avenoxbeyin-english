@@ -22,7 +22,7 @@ class EntrypointRoutingTest(unittest.TestCase):
     def test_platform_gate_precedes_every_install_step(self) -> None:
         self.assertLess(
             ENTRYPOINT.index("## STEP -1: Platform gate"),
-            ENTRYPOINT.index("## STEP 0: Mevcut beyin var mı?"),
+            ENTRYPOINT.index("## STEP 0: Is there an existing brain?"),
         )
         rules = section(ENTRYPOINT, "## Rules for you, Claude", "Placeholders you must resolve")
         self.assertIn("Route first, interview second, build third", rules)
@@ -52,17 +52,17 @@ class EntrypointRoutingTest(unittest.TestCase):
 
     def test_existing_macos_fast_path_remains_intact(self) -> None:
         self.assertIn(
-            "git clone https://github.com/avenoxai/avenoxbeyin.git /tmp/avenoxbeyin && cd /tmp/avenoxbeyin",
+            "git clone https://github.com/uy4nik-droid/avenoxbeyin-english.git /tmp/avenoxbeyin && cd /tmp/avenoxbeyin",
             ENTRYPOINT,
         )
         self.assertIn("Then read and follow `SETUP.md` in that repo", ENTRYPOINT)
         self.assertIn("macOS remains the fully tested POSIX path", ENTRYPOINT)
 
     def test_readme_exposes_the_same_three_way_contract(self) -> None:
-        self.assertIn("Bu tek satırlık giriş önce platformu ayırır", README)
-        self.assertIn("macOS, Linux veya WSL'de repoyu doğrudan klonla", README)
-        self.assertIn("yerel\nWindows `SETUP-WINDOWS.md`", README)
-        self.assertIn("WSL ise tamamen aynı Linux dağıtımı", README)
+        self.assertIn("This one-line entry first tells platforms apart", README)
+        self.assertIn("Or on macOS, Linux or WSL, clone the repo directly", README)
+        self.assertIn("native\nWindows moves to `SETUP-WINDOWS.md`", README)
+        self.assertIn("WSL uses the POSIX path that stays entirely\ninside the same Linux distribution", README)
         self.assertIn("On native Windows", README)
 
 

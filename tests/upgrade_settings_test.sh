@@ -384,7 +384,7 @@ test_bad_local_fails_cleanly_or_applies_cleanly() {
       return 1
     }
     grep -Eqi 'settings\.local\.json' "$CASE_ROOT/apply.out" \
-      && grep -Eqi 'HATA|JSON|nesne' "$CASE_ROOT/apply.out" || {
+      && grep -Eqi 'ERROR|JSON|object' "$CASE_ROOT/apply.out" || {
       diag "bad-local hatası anlaşılır bir kullanıcı mesajı vermedi"
       return 1
     }

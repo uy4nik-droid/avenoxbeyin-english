@@ -1,21 +1,21 @@
-# README görselleri
+# README images
 
 ## cover.png
 
-İkinci Beyin için özel üretilmiş kavramsal kapak. Gerçek ürün ekranı değildir.
-OpenAI imagegen aracıyla 12 Kasım 2026'da üretildi; orijinal PNG kullanıldı.
+A conceptual cover produced specially for Second Brain. It is not a real product screen.
+It was generated with the OpenAI imagegen tool on 12 November 2026; the original PNG was used.
 
-Üretim prompt'u [cover-prompt.txt](cover-prompt.txt) içinde tutulur. Kapak sürüm
-numarası veya test sonucu içermez; sürüm güncellenince yeniden üretilmesi gerekmez.
+The generation prompt is kept in [cover-prompt.txt](cover-prompt.txt). The cover contains no version
+number or test result; it does not need to be regenerated when the version is updated.
 
 ## web-tasks.png
 
-V3.13.0'ın gerçek yerel web arayüzünün Görevler ekranı. README için oluşturulan
-örnek bir vault, beş not, sekiz görev ve beş iş sonucu kullanıldı. Kişisel veri yoktur.
+The Tasks screen of the real local web interface of V3.13.0. A sample vault created for the README,
+five notes, eight tasks and five work results were used. There is no personal data.
 
-Paket kurulduktan sonra kayıtlar kurulu `note-create`, `task-create` ve `receipt`
-komutlarıyla oluşturuldu. `web ac --read-only --no-browser` ile açılan arayüz yeni
-bir headless Chromium oturumunda 1660 × 850 boyutunda görüntülendi. Ürün HTML/CSS'i
-ve ekran görüntüsü değiştirilmedi. Çekim sonunda yerel sunucu kapatıldı.
+After the package was installed, the records were created with the installed `note-create`, `task-create` and `receipt`
+commands. The interface, opened with `web ac --read-only --no-browser`, was captured in a fresh
+headless Chromium session at 1660 × 850. The product HTML/CSS and the
+screenshot were not modified. The local server was closed at the end of the capture.
 
-Bu görsel otomatik ajan/hook teslimini kanıtlamaz; örnek verilerle arayüzü gösterir.
+This image does not prove automatic agent/hook delivery; it shows the interface with sample data.

@@ -67,7 +67,7 @@ class ReviewTriageTest(unittest.TestCase):
                     self.assertNotIn(marker, json.dumps(report['review']))
                 if installed:
                     human = self.cli('triage', '--human')
-                    self.assertIn('[Yeniden Bakilacak Notlar]', human)
+                    self.assertIn('[Notes Due for Review]', human)
                     self.assertIn('notes/old.md', human)
 
     def test_review_bounds_and_invalid_dates_match_doctor(self):

@@ -1,10 +1,10 @@
-# İsteğe bağlı Jev danışmanı
+# Optional Jev advisor
 
-Normal `context`, lifecycle hook'ları ve otomatik işler yerel kalır. Bu eklenti **varsayılan kapalıdır**. Jev bellek kaydetmez, kullanıcı onayı vermez veya kaynak/proje sınırını genişletmez.
+Normal `context`, lifecycle hooks and automatic jobs stay local. This add-on is **off by default**. Jev does not save memory, does not give user approval, and does not widen the source or project boundary.
 
-## Açık etkinleştirme
+## Explicit activation
 
-Kurucu bu eklentiyi sormaz ve kurmaz. Açmak, kapatmak ve durumu görmek için kurulu kasada:
+The installer does not ask about this add-on and does not install it. To turn it on, turn it off and see its state, use these commands in the installed vault:
 
 ```sh
 python beyin.py jev status
@@ -13,93 +13,93 @@ python beyin.py jev on
 python beyin.py jev off
 ```
 
-Kaynak depodan aynı komut: `python scripts/beyin_v3.py --vault /path/to/vault --state /path/to/state jev status`.
+The same command from the source repository: `python scripts/beyin_v3.py --vault /path/to/vault --state /path/to/state jev status`.
 
-`status` yalnız okur; `off|shadow|on` ayarı yazıp sonucu ve `"changed": true` döndürür. Komut kasa indeksine veya kaynak senkronizasyonuna ihtiyaç duymaz. Anahtar kabul etmez ve yazdırmaz; `--key` benzeri bir seçenek bilerek yoktur.
+`status` only reads; `off|shadow|on` writes the setting and returns the result and `"changed": true`. The command does not need the vault index or source synchronization. It does not accept or print a key; there is deliberately no `--key`-like option.
 
-Özellikler ayrı ayrı açılıp kapanır; `--enable` ve `--disable` tekrarlanabilir ve `status` ile birlikte kullanılamaz:
+Features turn on and off individually; `--enable` and `--disable` can be repeated and cannot be combined with `status`:
 
 ```sh
 python beyin.py jev on --enable auto_context
 python beyin.py jev shadow --disable answer
 ```
 
-| Özellik | Kullanan komut | Varsayılan |
+| Feature | Command that uses it | Default |
 | --- | --- | --- |
-| `context` | `context --jev` | açık |
-| `review` | `jev-review`, `jev-memory` | açık |
-| `answer` | `jev-answer` | açık |
-| `auto_context` | her turdaki hook yolu; [aşağıda](#her-turda-otomatik-bağlam-auto_context), açıkça etkinleştirilmedikçe kapalı | kapalı |
+| `context` | `context --jev` | on |
+| `review` | `jev-review`, `jev-memory` | on |
+| `answer` | `jev-answer` | on |
+| `auto_context` | the per-turn hook path; [see below](#automatic-context-on-every-turn-auto_context); off unless explicitly enabled | off |
 
-Kapalı bir özelliğin amacı çağrılırsa istemci anahtar okumadan ve ağa çıkmadan `off` modu ile `feature_disabled` teşhisi döndürür.
+If the purpose of a disabled feature is called, the client returns the `off` mode with a `feature_disabled` diagnostic, without reading a key and without going to the network.
 
-`auto_context` açıkken `status` çıktısında `automatic_model_calls: true` olur; komut buna, her turda istemin ve en fazla 8 aday `internal`/`public` notun başlığı ile sorguya göre seçilen en fazla 600 karakterlik pasaj görünümünün sağlayıcıya gittiğini söyleyen bir `notice` ekler. Bu metin notun herhangi bir bölümünden gelebilir. `private` notlar gönderilmez. Mod `off` değilken anahtar yoksa `warning` eklenir ve çağrılar yerel sonuca düşer.
+When `auto_context` is on, `status` output shows `automatic_model_calls: true`; the command adds a `notice` to it saying that on every turn the prompt, plus the title and a query-selected passage view of at most 600 characters for each of up to 8 candidate `internal`/`public` notes, goes to the provider. That text can come from any section of the note. `private` notes are not sent. If the mode is not `off` and there is no key, a `warning` is added and calls fall back to the local result.
 
-### Acil kapatma
+### Emergency kill switch
 
-`BEYIN_JEV_DISABLE=1` ortam değişkeni veya state dizinindeki `jev.disabled` dosyası, kayıtlı modu değiştirmeden çağrıları durdurur. `status` bu durumda `mode: "off"`, eski değeriyle `saved_mode` ve `kill_switch: true` gösterir. Değişken kaldırılınca veya dosya silinince kayıtlı moda dönülür.
+The `BEYIN_JEV_DISABLE=1` environment variable, or a `jev.disabled` file in the state directory, stops calls without changing the saved mode. In that case `status` shows `mode: "off"`, the old value as `saved_mode`, and `kill_switch: true`. When the variable is removed or the file is deleted, the saved mode applies again.
 
-### Çağrı kaydı
+### Call log
 
-Her çağrı state dizinindeki `jev-calls.jsonl` dosyasına tek satırlık sayaç yazar: amaç, mod, sağlayıcı (`provider`), önbellek isabeti, `degraded`, hata kodu, gecikme, giriş token sayısı, HTTP istek sayısı (`http_requests`) ve zaman. Sorgu metni, aday metni, yanıt içeriği ve anahtar yazılmaz. Dosya sınırı aşarsa eski yarısı atılır. `jev status` ve `doctor` son 24 saati buradan özetler.
+Every call writes a one-line counter to `jev-calls.jsonl` in the state directory: purpose, mode, provider (`provider`), cache hit, `degraded`, error code, latency, input token count, HTTP request count (`http_requests`) and time. Query text, candidate text, response content and the key are not written. When the file exceeds its limit, the older half is discarded. `jev status` and `doctor` summarize the last 24 hours from it.
 
-### Elle düzenleme
+### Manual editing
 
-`jev.json` hala elle düzenlenebilir; `timeout`, `max_candidates`, `base_url`, `env_file` gibi ileri anahtarlar komut yazarken korunur. Komut bu dosyanın tek yazıcısıdır: 0600 izinle atomik yazar. Dosya bozuksa komut hata döndürür ve dosyaya dokunmaz.
+`jev.json` can still be edited by hand; advanced keys such as `timeout`, `max_candidates`, `base_url` and `env_file` are preserved when the command writes. The command is the only writer of this file: it writes atomically with 0600 permissions. If the file is corrupt the command returns an error and does not touch the file.
 
 ```json
 {"mode":"shadow","model":"jev-1.13.0","provider":"typesafe","timeout":3,"max_candidates":32,"max_questions":96,"max_input_chars":24000,"cache_ttl":3600}
 ```
 
-`TYPESAFE_API_KEY` ortam değişkeninde olmalıdır. Anahtarı Markdown'a, sürüm kontrolüne veya komut argümanına yazmayın. `env_file` kullanılırsa mutlak yol gerekir. Sağlayıcı URL'si `base_url` veya `TYPESAFE_BASE_URL` ile seçilir; HTTPS ve yerel HTTP desteklenir. Yerel adreslere (`localhost`, `127.0.0.1`, `::1`) giden çağrılar `HTTP_PROXY`, `ALL_PROXY` veya sistem proxy ayarlarını kullanmaz; uzak HTTPS adresleri tanımlı proxy üzerinden gitmeye devam eder. Vercel uyumlu bir köprü kullanılıyorsa `provider: "vercel"` seçilebilir; bu bir Vercel hesap/anahtar kurucusu değildir. Anahtarsız, yerelde çalışan açık ağırlıklı model için [Laya bölümüne](#yerel-laya-arka-ucu-isteğe-bağlı) bakın.
+`TYPESAFE_API_KEY` must be in the environment. Do not write the key into Markdown, version control or a command argument. If `env_file` is used, it needs an absolute path. The provider URL is chosen with `base_url` or `TYPESAFE_BASE_URL`; HTTPS and local HTTP are supported. Calls to local addresses (`localhost`, `127.0.0.1`, `::1`) do not use `HTTP_PROXY`, `ALL_PROXY` or the system proxy settings; remote HTTPS addresses still go through the configured proxy. If a Vercel-compatible bridge is used, `provider: "vercel"` can be selected; this is not a Vercel account/key installer. For a keyless, open-weight model running locally, see [the Laya section](#local-laya-backend-optional).
 
 ```sh
-python scripts/beyin_v3.py --vault /path/to/vault --state /path/to/state context "kısa notlar" --project demo --jev
+python scripts/beyin_v3.py --vault /path/to/vault --state /path/to/state context "short notes" --project demo --jev
 ```
 
-Kurulu kasada karşılığı: `python beyin.py context "kısa notlar" --project demo --jev --json`. `--json`, danışman teşhislerini de gösterir. İnceleme için `python beyin.py jev-review --project demo --file proposal.json --json` kullanın.
+The equivalent in an installed vault: `python beyin.py context "short notes" --project demo --jev --json`. `--json` also shows the advisor diagnostics. For review, use `python beyin.py jev-review --project demo --file proposal.json --json`.
 
-`--jev` ve açık proje kimliği birlikte gerekir. Bu çağrı yerel aramanın en fazla 16 adayından uzaktan değerlendirmeye izin verilenlerin başlıklarını (160 karakter), metin kesitlerini (800 karakter), proje/durum/tarih bilgisini ve sorguyu gönderir. Son çıktıdaki kayıt sayısı ayrı bir sınırdır. Havuz tek isteğin sınırlarına (`max_candidates`, `max_questions`, `max_input_chars`) sığmazsa sırasıyla en fazla üç pakete bölünür; varsayılan 24.000 karakterde 800 karakterlik kesitli 16 aday tek isteğe sığmaz. Her paket bir kez gönderilir, tekrar denenmez; biri başarısız olursa bütün puanlar atılır ve yerel sıra kullanılır. Üç pakete sığmayan havuz için hiç çağrı yapılmaz (`budget_exceeded`). `internal` görünürlük de gönderilebilir; yalnız kamu metni için `--audience public` kullanın. `private`, kapsam dışı, güvenilmeyen, değişmiş ve superseded kayıtlar gönderilmez. Yerel sır örüntüsü eşleşirse çağrı yapılmaz; örüntü taraması tüm hassas bilgileri tanıma garantisi değildir.
+`--jev` and an explicit project identity are required together. This call sends, from at most 16 candidates of the local search, those allowed for remote evaluation: their titles (160 characters), text excerpts (800 characters), project/status/date information and the query. The number of records in the final output is a separate limit. If the pool does not fit the limits of a single request (`max_candidates`, `max_questions`, `max_input_chars`), it is split into at most three packets in turn; with the default 24,000 characters, 16 candidates with 800-character excerpts do not fit one request. Each packet is sent once and is not retried; if one fails, all scores are discarded and the local order is used. If the pool does not fit into three packets, no call is made (`budget_exceeded`). `internal` visibility can also be sent; use `--audience public` for public text only. `private`, out-of-scope, untrusted, changed and superseded records are not sent. If a local secret pattern matches, no call is made; pattern scanning is not a guarantee of recognizing all sensitive information.
 
-- `off`: ağ/anahtar/cache erişimi yok.
-- `shadow`: puanlar `jev` alanında; yerel sonuç ve sıralama korunur.
-- `on`: aday havuzundan seçim yapılır; ilk yerel çıktıya sığmayan ilgili aday alınabilir. Noktalı virgülle ayrılmış en fazla üç alt istek ayrı değerlendirilir. Karakter bütçesi değişmez. Yerel aday aramasının hiç bulmadığı kaydı Jev bulamaz.
+- `off`: no network/key/cache access.
+- `shadow`: scores are in the `jev` field; the local result and order are preserved.
+- `on`: selection is made from the candidate pool; a relevant candidate that did not fit into the first local output can be taken. Up to three sub-requests separated by semicolons are evaluated separately. The character budget does not change. Jev cannot find a record that the local candidate search did not find at all.
 
-`remote_allowed: false` veya `sensitivity: sensitive` kaynak metaverisi, başlık dahil kaydın Jev'e gönderilmesini engeller. `remote_allowed` için metin değil JSON/YAML boolean kullanın. Yerelde uygun bulunan böyle kaynaklar, uzakta seçilenlerle dönüşümlü paketlenir; bütün kotayı baştan kaplayamazlar. `aliases: ["ses ofseti", "audio offset"]` yerel aday aramasını genişletir; izin kapılarını aşmaz.
+`remote_allowed: false` or `sensitivity: sensitive` source metadata prevents the record, including its title, from being sent to Jev. For `remote_allowed`, use a JSON/YAML boolean, not text. Such sources, when found suitable locally, are packed alternately with the ones selected remotely; they cannot fill the whole quota from the start. `aliases: ["sound offset", "audio offset"]` widens the local candidate search; it does not bypass the permission gates.
 
-Çağrıdan sonra kaynak hashleri, indeks revizyonları ve erişim koşulları yeniden kontrol edilir. Değişim varsa puan atılır ve güncel yerel sonuç kullanılır. Timeout, 429, eksik anahtar veya bozuk yanıt yerel sonuçları engellemez. Teşhislerde ham servis hataları bulunmaz.
+After the call, source hashes, index revisions and access conditions are checked again. If anything changed, the score is discarded and the current local result is used. A timeout, 429, missing key or malformed response does not block local results. Diagnostics do not contain raw service errors.
 
-### Klasörle proje kapsamı (isteğe bağlı)
+### Project scope by folder (optional)
 
-Proje kapsamı varsayılan olarak kaydın kendi `project` alanıdır. Notlarını klasörle düzenleyen ve bu alanı hiç yazmayan bir kasada `--project` alan her komutun (`context --jev`, `jev-review`, `jev-memory`, `jev-answer`) kapsamı boş kalır. Vault kökündeki `.beyin-projects.json` bunu notlara dokunmadan çözer:
+By default the project scope is the record's own `project` field. In a vault that organizes notes by folder and never writes this field, every command that takes `--project` (`context --jev`, `jev-review`, `jev-memory`, `jev-answer`) ends up with an empty scope. A `.beyin-projects.json` in the vault root resolves this without touching the notes:
 
 ```json
 {
-  "folders": {"Projeler/Oyun Kanalları": "oyun", "Projeler/Arşiv": "arsiv"},
+  "folders": {"Projects/Game Channels": "games", "Projects/Archive": "archive"},
   "shared_unscoped": true
 }
 ```
 
-- `folders`: vault'a göreli klasör → proje. Kaydın boş olmayan kendi `project` alanı her zaman önce gelir; iç içe klasörlerde en uzun eşleşme kazanır. Eşleşme klasör sınırında durur (`Projeler/Oyun` klasörü `Projeler/Oyun Eski` içindekileri kapsamaz); yollar Unicode NFC, `/` ve büyük/küçük harf farkı gözetmeden karşılaştırılır (macOS ve Windows kasaları gibi). Yazılan her klasör kasada gerçekten bulunmalıdır: yanlış yazılmış ya da yeniden adlandırılmış bir klasör hiçbir notu eşlemez. Bulunamayan klasör uyarı verir ama eşlemesi sınır olarak korunur; eski indeks satırları `shared_unscoped` ile her projeye ortak kayıt olarak açılmaz.
-- `shared_unscoped`: `true` ise hiçbir projeye düşmeyen kayıtlar (kurallar, genel notlar) her açık proje sorgusunda ortak kayıt olarak kapsama girer. Başka bir projenin kaydı hiçbir durumda girmez. Varsayılan `false`.
-- Dosya yalnız açık proje verilen çağrılarda okunur. Proje göndermeyen her tur bağlamı ve dosyası olmayan kasalar eskisiyle birebir aynı çalışır. Görünürlük, güven, güncellik ve superseded kapıları kapsamın içinde de aynen uygulanır.
-- Bozuk dosya (geçersiz JSON, bilinmeyen anahtar, nesne olmayan `folders`, mantıksal değer olmayan `shared_unscoped`) açık proje çağrısını hata ile durdurur. Tek bir hatalı girdi (mutlak ya da `..`/`.` içeren yol, boş proje adı, iki projeye atanmış klasör) ise stderr uyarısıyla atlanır ve diğer eşlemeler çalışmaya devam eder: girdinin kasa içinde işaret edebileceği klasör hiçbir projeye açılmaz, üst klasörün projesine de düşmez ve girdi düzeltilene kadar `shared_unscoped` kapalı sayılır. Kapsam sessizce genişlemez; `doctor` ve `project-scope list` atlanan girdileri adıyla gösterir. Proje klasörünü yeniden adlandırınca dosyayı da güncelleyin.
-- Kasa dışındaki kardeş bir depo (örneğin `../depo`) kapsam dosyasına yazılmaz; böyle bir girdi atlanır. Çalışma dizininin ya da üst dizinlerinden birinin adı bir projenin adına veya eşlenen klasörün son adına eşitse oturum kuralları için o proje seçilir.
-- `shared_unscoped: true` açıkken dış proje köprüsünden yapılan `context --project` aramaları da ortak kayıtları görür; kişisel notlar ortak rafta kalacaksa `private` görünürlük kullanın.
+- `folders`: folder relative to the vault → project. The record's own non-empty `project` field always comes first; with nested folders, the longest match wins. A match stops at the folder boundary (the `Projects/Game` folder does not cover what is in `Projects/Game Old`); paths are compared as Unicode NFC, regardless of `/` and upper/lower case (like macOS and Windows vaults). Every folder you write must actually exist in the vault: a misspelled or renamed folder maps no note. A folder that cannot be found gives a warning but its mapping is kept as a boundary; old index rows are not opened to every project as shared records through `shared_unscoped`.
+- `shared_unscoped`: if `true`, records that fall under no project (rules, general notes) enter the scope as shared records in every explicit-project query. Another project's records never enter under any condition. Default `false`.
+- The file is read only in calls with an explicit project. Vaults where a turn sends no project, and vaults without this file, work exactly as before. The visibility, trust, freshness and superseded gates apply unchanged inside the scope too.
+- A corrupt file (invalid JSON, unknown key, a `folders` that is not an object, a `shared_unscoped` that is not a boolean) stops an explicit-project call with an error. A single bad entry (an absolute path or one containing `..`/`.`, an empty project name, a folder assigned to two projects) is instead skipped with a stderr warning and the other mappings keep working: the folder the entry could have pointed to inside the vault is not opened to any project, does not fall to the parent folder's project either, and `shared_unscoped` is treated as off until the entry is fixed. The scope never widens silently; `doctor` and `project-scope list` show skipped entries by name. When you rename a project folder, update the file too.
+- A sibling repository outside the vault (for example `../repo`) is not written into the scope file; such an entry is skipped. If the name of the working directory or of one of its parent directories equals a project's name or the last name of a mapped folder, that project is selected for the session rules.
+- With `shared_unscoped: true` on, `context --project` searches made through the external project bridge also see the shared records; if personal notes are to stay off the shared shelf, use `private` visibility.
 
-## Kaydedilmemiş bilgi adayını inceleme
+## Reviewing an unrecorded knowledge candidate
 
-Önce normal `context` ile kaynak kaydının `id` ve `source_sha256` değerlerini alın. Ayrı bir JSON dosyası hazırlayın:
+First get the source record's `id` and `source_sha256` with normal `context`. Prepare a separate JSON file:
 
 ```json
 {
   "status":"proposed",
   "project":"demo",
-  "claim":"Demo projesinde kısa notlar tercih ediliyor.",
+  "claim":"Short notes are preferred in the Demo project.",
   "evidence":[{
     "record_id":"demo-notlar",
-    "source_sha256":"KAYNAK_DOSYANIN_GUNCEL_SHA256_DEGERI",
-    "quote":"Demo için kısa notlar kullanalım."
+    "source_sha256":"CURRENT_SHA256_OF_THE_SOURCE_FILE",
+    "quote":"Let's use short notes for Demo."
   }]
 }
 ```
@@ -108,89 +108,93 @@ Proje kapsamı varsayılan olarak kaydın kendi `project` alanıdır. Notların�
 python scripts/beyin_v3.py --vault /path/to/vault --state /path/to/state jev-review --project demo --file proposal.json
 ```
 
-1–8 kanıt, tam alıntı, aynı proje ve güncel hash zorunludur; alıntı hem indeks metninde hem gerçek kaynakta bulunmalıdır. Kaynak senkronizasyonu eksikse inceleme durur. Yanıt her zaman `approved: false`, `memory_written: false` içerir. Sonuç yalnız iddianın alıntıyla desteklenme puanıdır; başka kartlarla otomatik birleştirme/çelişki çözümü yapmaz. Ayrı inceleyen kişi/ajan kapsam ve zaman sınırını değerlendirir, gerekirse mevcut `note-create` akışını kullanır.
+1–8 pieces of evidence, an exact quote, the same project and a current hash are required; the quote must be present both in the index text and in the real source. If source synchronization is missing, the review stops. The response always contains `approved: false` and `memory_written: false`. The result is only the score of how well the quote supports the claim; it does not automatically merge with other cards or resolve contradictions. A separate reviewing person/agent evaluates scope and time limits and, if needed, uses the existing `note-create` flow.
 
-## Kaynaklı hafıza değerlendirmesi (`jev-memory`)
+## Source-backed memory evaluation (`jev-memory`)
 
-`review` özelliğini kullanır ve aynı `proposal.json` biçimini kabul eder:
+It uses the `review` feature and accepts the same `proposal.json` format:
 
 ```sh
 python beyin.py jev-memory --project demo --file proposal.json --json
 ```
 
-İsteğe bağlı `prior_record_ids: ["eski-karar"]` alanıyla en fazla dört eski kayıt
-belirtilebilir. Alan yoksa aynı projedeki uygun yerel adaylardan seçilir; boş liste
-eski kayıt karşılaştırmasını kapatır. Bir istekte üç bağımsız Choice sorusu
-(destek, kesinlik/niyet, bilgi türü) ve eski kayıt başına bir ilişki sorusu sorulur.
-İlişkiler: tekrar, ayrıntılandırma, değişen karar, çelişki veya ilgisiz kayıt.
+With the optional `prior_record_ids: ["old-decision"]` field, up to four prior
+records can be specified. If the field is absent, they are chosen from suitable
+local candidates in the same project; an empty list turns off the comparison with
+prior records. One request asks three independent Choice questions (support,
+certainty/intent, type of knowledge) and one relationship question per prior record.
+The relationships: repeat, elaboration, changed decision, contradiction or unrelated record.
 
-Herhangi bir cevap düşük güvenliyse, kaynak iddiayı desteklemiyorsa, ifade kesin
-değilse veya eski kayıtla çelişiyorsa `route: inspect_sources` döner. Değişen karar
-için kaynak tarihleri ayrıca kodda kontrol edilir. Uygun aday bile yalnız
-`candidate_for_agent_review` olur; `approved`, `memory_written`, `task_created`
-ve `task_completed` her zaman `false` kalır. Aktif ajan kaynağı inceler ve mevcut
-yetkisi kapsamında normal kayıt akışını kullanır.
+If any answer has low confidence, the source does not support the claim, the wording
+is not definite, or it contradicts a prior record, `route: inspect_sources` is
+returned. For a changed decision, the source dates are additionally checked in code.
+Even a suitable candidate only becomes `candidate_for_agent_review`; `approved`,
+`memory_written`, `task_created` and `task_completed` always stay `false`. The active
+agent inspects the source and uses the normal recording flow within its existing authority.
 
-İddia aynı proje ve kitle sınırında reddedilmiş bir `inference` veya `preference`
-kaydını yeniden söylüyorsa sonuç `previously_rejected` tanısını ve bu kayıtların
-kimliklerini taşır; `candidate_for_agent_review` yerine `inspect_sources` döner.
-Bu kontrol her modda, `off` dahil, yerel çalışır: model çağrısı ve yazma yoktur,
-reddedilmiş metin ve gerekçe sağlayıcı isteğine girmez. Eşleşme sözcükseldir:
-`rejected_matches(store, text, project, audience)` (`beyin_v3.py`) iki taraftaki
-metni bağlam aramasıyla aynı biçimde normalleştirir (küçük harf, Unicode biçimi,
-Türkçe ekler) ve reddedilen ifadenin, başlığı ya da metniyle, en az %60'ı ve en az
-iki terimi yeni iddiada geçiyorsa eşleşir. Başlık ancak en az üç terim taşıyorsa
-sayılır; "Kahve tercihi" gibi kısa bir başlık konu etiketidir, iddia değildir.
-Anlamca aynı ama başka sözcüklerle yazılmış iddiayı yakalamaz. Olumsuzluğu da
-ayırt etmez: reddedilen iddiayı düzelten yeni bir cümle aynı terimleri taşıdığı
-için eşleşebilir. Sonuç yalnız yönlendirmeyi `inspect_sources`'a çevirir, hiçbir
-şeyi engellemez; son karar kaynağı okuyan ajandadır. Aynı işlev aday üreten başka yollar için de çağrılabilir.
+If the claim restates an `inference` or `preference` record that was rejected in the
+same project and audience boundary, the result carries a `previously_rejected`
+diagnosis and the identifiers of those records; it returns `inspect_sources` instead
+of `candidate_for_agent_review`. This check runs locally in every mode, including `off`:
+there is no model call and no write, and the rejected text and rationale do not enter
+the provider request. The match is lexical: `rejected_matches(store, text, project, audience)`
+(`beyin_v3.py`) normalizes the text on both sides the same way as context search
+(lower case, Unicode form, Turkish suffixes), and it matches if at least 60% and at
+least two terms of the rejected statement, by its title or text, appear in the new
+claim. A title counts only if it carries at least three terms; a short title like
+"Coffee preference" is a topic label, not a claim. It does not catch a claim that
+means the same but is written in other words. Nor does it distinguish negation: a new
+sentence that corrects the rejected claim can match because it carries the same terms.
+The result only turns the routing into `inspect_sources`, and blocks nothing; the final
+decision is the agent that reads the source. The same function can also be called from
+other paths that produce candidates.
 
-`off` modunda kaynak/alıntı kontrolü yereldir; anahtar, Jev cache veya sağlayıcı
-erişimi olmaz. `shadow` değerlendirme yapabilir ama boyutları ve yönlendirmeyi
-uygulamaz. İzinli kanıtların ve eski kayıtların tam metni gönderilir; kaynak
-başına 4.000 karakter veya toplam istek bütçesi aşılırsa yerel incelemeye dönülür.
-Bir kaynak yerel-only ise bütün anlamsal değerlendirme atlanır.
+In `off` mode the source/quote check is local; there is no key, Jev cache or provider
+access. `shadow` can evaluate but does not apply the dimensions and routing. The full
+text of the permitted evidence and prior records is sent; if 4,000 characters per source
+or the total request budget is exceeded, it falls back to local review. If one source is
+local-only, the whole semantic evaluation is skipped.
 
-## Jev olmadan devam bağlamı
+## Follow-up context without Jev
 
-Hook'un gerçekten teslim ettiği en fazla üç kaynak, aynı harness ve oturumda
-"onu da test et" gibi kısa devamlar için hatırlanır. Ham mesaj veya transcript
-kaydedilmez; yalnız kaynak kimliği, hash, revizyon, proje ve zaman tutulur.
-Somut konudan itibaren 20 dakika sonra süre dolar; belirsiz devamlar süreyi
-uzatmaz. Farklı proje, yeni konu, kaynak değişikliği veya izin kaybında kaynak
-devralınmaz. Konu ayırımı sınırlı Türkçe/İngilizce kelime kurallarıdır; genel
-dil anlama garantisi değildir. Bu yerel özellik Jev modlarından bağımsızdır.
+At most three sources that the hook actually delivered are remembered, in the same
+harness and session, for short follow-ups like "test that one too". The raw message
+or transcript is not saved; only the source identifier, hash, revision, project and
+time are kept. It expires 20 minutes after a concrete topic; vague follow-ups do not
+extend the time. A source is not carried over on a different project, a new topic, a
+source change or loss of permission. The topic distinction is a limited set of
+Turkish/English word rules; it is not a guarantee of general language understanding.
+This local feature is independent of the Jev modes.
 
-Güncel uygulama, araştırma bağlantıları, ölçüm ve sınırlar:
-[PR 69 inceleme kanıtı](decision-quality/REVIEW.md).
+For the current implementation, research links, measurement and limits:
+[PR 69 review evidence](decision-quality/REVIEW.md).
 
-## Aktarılan çözümler ve ölçüm
+## Ported solutions and measurement
 
-Forn Hafıza OS `524fd07` sürümünden bütçeli istemci, kaynak/scope bağlı puan önbelleği, strict skor doğrulaması ve Vercel'in iki ondalığa yuvarlanmış olasılıkları için dar tolerans aktarıldı. Tolerans yalnız Vercel'de matematiksel olarak mümkün dağılımlara uygulanır; doğrudan TypeSafe doğrulaması gevşetilmez. MIT atfı istemcinin içinde ve [lisans dosyasında](THIRD-PARTY-JEV.txt) bulunur.
+From Forn Hafıza OS version `524fd07`, the budgeted client, the source/scope-bound score cache, strict score validation and a narrow tolerance for Vercel's probabilities rounded to two decimals were ported. The tolerance applies only to distributions that are mathematically possible on Vercel; direct TypeSafe validation is not loosened. The MIT attribution is inside the client and in [the license file](THIRD-PARTY-JEV.txt).
 
-Önbellek yalnız doğrulanmış puanları ve sınırlı metaveriyi state dizininde saklar; sorgu, kaynak metni ve anahtar saklamaz. Cache anahtarı kaynak sürümü, proje, amaç, model, endpoint ve rubriğe bağlıdır. Token sayaçları sağlayıcıdan gelirse raporlanır; karakter bütçesi token/fatura değildir. İstemcide özel 400 çağrı sınırı yoktur; önceki deney köprüsünün sayacı sağlayıcı hesap kotası değildi.
+The cache stores only validated scores and limited metadata in the state directory; it does not store the query, source text or key. The cache key depends on source version, project, purpose, model, endpoint and rubric. Token counters are reported if they come from the provider; the character budget is not a token/billing figure. The client has no special 400-call limit; the counter of the earlier experimental bridge was not a provider account quota.
 
-Öğrenme değişikliklerini ölçerken kaynakları ve soruları yazımdan önce dondurun. Aynı kod/yönlendirmeyle önce/sonra nihai bağlam teslimini ve proje dışına taşmayı ölçün; model açık/kapalı karşılaştırmasını ayrı yapın. Özel kasadaki kartlar ve deney sonuçları bu depoya taşınmadı. Buradaki sentetik offline testler genel anlamsal başarı veya canlı Jev bağlantısı kanıtı değildir.
+When measuring learning changes, freeze the sources and questions before writing. With the same code/routing, measure final context delivery and spill outside the project before/after; do the model on/off comparison separately. Cards in the private vault and experiment results were not moved into this repository. The synthetic offline tests here are not proof of general semantic success or of a live Jev connection.
 
-## Cevaptaki iddiaları kaynaklarıyla denetleme
+## Checking the claims in an answer against their sources
 
-`jev-answer`, hazırlanmış bir cevaptaki 1–20 iddiayı ayrı ayrı değerlendirir.
-Forn Hafıza OS yerel `jev_answer.py` akışındaki kaynak kapısı ve destek/çelişki
-ayrımı V3 kayıt kimliği, proje kapsamı ve revizyon sözleşmesine uyarlandı.
-Kişisel kayıtlar ve diğer hafıza sistemi güncellemeleri aktarılmadı.
+`jev-answer` evaluates 1–20 claims in a prepared answer one by one.
+The source gate and the support/contradiction distinction from the Forn Hafıza OS
+local `jev_answer.py` flow were adapted to the V3 record identity, project scope
+and revision contract. Personal records and other memory-system updates were not ported.
 
-Önce `context` çıktısından kayıt kimliğini ve güncel hash'i alın. `claims.json`:
+First take the record identifier and current hash from the `context` output. `claims.json`:
 
 ```json
 [
   {
-    "text": "Demo projesinde kısa notlar tercih ediliyor.",
+    "text": "Short notes are preferred in the Demo project.",
     "citations": [
       {
         "record_id": "demo-notlar",
-        "source_sha256": "KAYNAK_DOSYANIN_GUNCEL_SHA256_DEGERI",
-        "quote": "Demo için kısa notlar kullanalım."
+        "source_sha256": "CURRENT_SHA256_OF_THE_SOURCE_FILE",
+        "quote": "Let's use short notes for Demo."
       }
     ]
   }
@@ -201,102 +205,106 @@ Kişisel kayıtlar ve diğer hafıza sistemi güncellemeleri aktarılmadı.
 python beyin.py jev-answer --project demo --file claims.json --json
 ```
 
-Kaynak depodan kullanım:
+Usage from the source repository:
 
 ```sh
 python scripts/beyin_v3.py --vault /path/to/vault --state /path/to/state jev-answer --project demo --file claims.json
 ```
 
-İddia başına en fazla 8 atıf, toplam 32.000 giriş karakteri kabul edilir.
-İddialar sağlayıcıya 8'li paketlerle gider (aynı anda en fazla 4 istek). Paket
-içinde her iddia kendi anahtarıyla durur (`items.k3`) ve sorusu o yolu
-backtick içinde adresler; liste sırası ve dolaylı atıfla adreslemede canlı
-Jev'de puanlar komşu iddialara sızıyordu. Bir paket `max_input_chars` sınırını
-aşarsa ağ çağrısı yapılmadan ikiye bölünür. Hata veren bir istek yalnız kendi
-paketindeki iddiaları `degraded` yapar.
+At most 8 citations per claim and 32,000 input characters in total are accepted.
+Claims go to the provider in packets of 8 (at most 4 requests at the same time).
+Within a packet each claim stands under its own key (`items.k3`) and its question
+addresses that path in backticks; with addressing by list order and by indirect
+citation, scores leaked to neighboring claims in live Jev. If a packet exceeds the
+`max_input_chars` limit, it is split in two without making a network call. A request
+that fails makes `degraded` only the claims in its own packet.
 
-Alıntıyla birlikte kaynak kayıtlarının tam indeks metni ve sınırlı kapsam
-metaverisi gönderilir (iddia başına toplam 4.000 karakter). Tam bağlam sığmazsa
-kesilmez: iddia `uncertain` ve `source_context_incomplete` ile yerel incelemeye döner. Alıntı birebir
-doğru olup notun devamı tersini söyleyebilir ("eski plan ... bu plan iptal
-edildi"); yalnız alıntı gönderildiğinde böyle iddialar `supported` çıkıyordu.
-Bu bağlam da aynı sır taramasından geçer; eşleşme varsa o iddia gönderilmez ve
-`context_sensitive` ile `degraded` olur.
+Along with the quote, the full index text of the source records and limited scope
+metadata are sent (4,000 characters in total per claim). If the full context does not
+fit, it is not truncated: the claim returns to local review as `uncertain` with
+`source_context_incomplete`. A quote can be exactly right while the rest of the note
+says the opposite ("old plan ... this plan was cancelled"); when only the quote was
+sent, such claims came out `supported`. This context goes through the same secret
+scan; if there is a match, that claim is not sent and becomes `degraded` with
+`context_sensitive`.
 
-Boş atıf veya eşleşmeyen hash/alıntı `insufficient` döndürür ve o iddia
-sağlayıcıya gönderilmez. Alıntı hem indeks kaydında hem gerçek kaynakta aynen
-bulunmalıdır. Diğer Jev komutlarındaki proje, görünürlük, güven ve sır
-kontrolleri geçerlidir. Bu açık komut `internal` kayıt alıntılarını ve çevresindeki
-metni sağlayıcıya gönderebilir; `private` kayıtlar elenir. Normal bağlam ve hook akışı değişmez.
+An empty citation or a hash/quote that does not match returns `insufficient`, and that
+claim is not sent to the provider. The quote must be found verbatim both in the index
+record and in the real source. The project, visibility, trust and secret checks of the
+other Jev commands apply. This explicit command can send `internal` record quotes and
+the text around them to the provider; `private` records are filtered out. The normal
+context and hook flow does not change.
 
-`mechanical_verified`, kaynak/alıntı eşleşmesini
-bildirir; anlamsal doğrulama değildir. `off` ve `shadow` modlarında anlamsal
-sonuç `uncertain` kalır. `on` modunda her iddia için tek bir seçim sorusu
-sorulur: kanıt iddiayı destekliyor mu, iddiayla çelişiyor mu, yoksa iddia
-hakkında bir şey söylemiyor mu. Bu, sağlayıcının kendi atıf denetimi tarifidir.
+`mechanical_verified` reports the source/quote match; it is not semantic verification.
+In `off` and `shadow` modes the semantic result stays `uncertain`. In `on` mode a single
+choice question is asked for each claim: does the evidence support the claim, contradict
+the claim, or say nothing about the claim. This is the provider's own recipe for citation checking.
 
-| Seçim | Güven ≥ 0,8 | Güven < 0,8 |
+| Choice | Confidence ≥ 0.8 | Confidence < 0.8 |
 |---|---|---|
 | `supports` | `supported` | `uncertain` |
 | `contradicts` | `contradicted` | `uncertain` |
 | `says_nothing` | `insufficient` | `uncertain` |
 
-Sonuçta `relation` ve `confidence` alanları da döner; `uncertain` sonuçlarda
-teşhis `low_confidence` olur. Güven, sağlayıcının seçenek olasılıklarından
-türettiği değerdir; doğruluk olasılığı değildir.
+The result also returns `relation` and `confidence` fields; for `uncertain` results
+the diagnosis is `low_confidence`. Confidence is a value derived from the provider's
+option probabilities; it is not a probability of correctness.
 
-0,8 eşiği sağlayıcı tarifindeki başlangıç değeridir; kalibre edilmiş doğruluk
-olasılığı veya genel başarı ölçümü değildir. Çağrıdan sonra
-kaynak, indeks revizyonu, erişim koşulları veya yapılandırma değişirse sonuç
-`degraded` olur. Servis hataları da doğrulanmış sonuç üretmez. Komut cevabı
-yeniden yazmaz, aday onaylamaz veya kanonik hafıza kaydı oluşturmaz;
-`approved`, `memory_written` ve `rewrites` daima `false` olur. CLI'nin normal
-kaynak senkronizasyonu yerel indeksi yenileyebilir; Jev puan önbelleği de
-state dizininde güncellenebilir.
+The 0.8 threshold is the starting value in the provider's recipe; it is not a calibrated
+probability of correctness or a measure of general success. If, after the call, the
+source, index revision, access conditions or configuration change, the result becomes
+`degraded`. Service errors also produce no verified result. The command does not rewrite
+the answer, approve a candidate or create a canonical memory record;
+`approved`, `memory_written` and `rewrites` are always `false`. The CLI's normal source
+synchronization may refresh the local index; the Jev score cache may also be updated in
+the state directory.
 
-Testler sentetik kaynaklar ve offline transport ile çalışır. Tasarım
-2026-09-20'de canlı `jev-1.13.0` üzerinde 26 sentetik Türkçe/İngilizce iddiayla
-(olumsuzluk eki, farklı sayı/gün, kapsam genişletme, ilgisiz alıntı, birebir
-alıntı ama notun devamı tersini söylüyor) seçildi. Uçtan uca, iki sıralama ve
-üçer tekrarla 156 sonuç: 138 beklenen net etiket, 18 `uncertain`, yanlış net
-etiket yok; 26 iddia 4 istek ve iddia başına yaklaşık 250 giriş token'ı. İki
-Score sorulu ve yalnız alıntı gönderen önceki hal iddia başına yaklaşık 750
-token harcıyor ve iptal edilmiş plandan alıntı içeren 4 iddianın 3'ünü
-kaçırıyordu. Paketleme bedelsiz değildir: zor iddialar paketin sonlarında
-güven kaybedip `uncertain` olabiliyor (iddia başına tek istekte 24/24, pakette
-18-21/24). Bu küçük bir yapılandırma denemesidir; gerçek kasalarda genel
-doğruluk, maliyet avantajı veya kullanıcı kabulü iddia edilmez.
+The tests run with synthetic sources and an offline transport. The design was chosen on
+2026-09-20 on live `jev-1.13.0` with 26 synthetic Turkish/English claims (negation
+suffix, different number/day, scope widening, unrelated quote, exact quote but the rest
+of the note says the opposite). End to end, with two orderings and three repeats each,
+156 results: 138 expected clear labels, 18 `uncertain`, no wrong clear label; 26 claims
+in 4 requests and about 250 input tokens per claim. The earlier version, with two Score
+questions and sending only the quote, spent about 750 tokens per claim and missed 3 of
+the 4 claims that contained a quote from a cancelled plan. Packing is not free: hard
+claims near the end of a packet can lose confidence and become `uncertain` (24/24 with
+one request per claim, 18-21/24 in a packet). This is a small configuration trial; no
+general accuracy, cost advantage or user acceptance on real vaults is claimed.
 
-## Her turda otomatik bağlam (`auto_context`)
+## Automatic context on every turn (`auto_context`)
 
-Diğer üç özellik elle çağrılır. Bu özellik hook'un içinde, her mesajda çalışır; bu yüzden bir mod seçmek onu **açmaz**, ayrıca istenir:
+The other three features are called by hand. This feature runs inside the hook, on
+every message; so choosing a mode does **not** turn it on, it is requested separately:
 
 ```sh
-python beyin.py jev shadow --enable auto_context   # önce ölç
-python beyin.py jev on --enable auto_context       # sonra uygula
-python beyin.py jev on --disable auto_context      # yalnız bunu kapat
+python beyin.py jev shadow --enable auto_context   # measure first
+python beyin.py jev on --enable auto_context       # then apply
+python beyin.py jev on --disable auto_context      # turn off only this
 ```
 
-Neden var: yerel "strict" eşleşme bir notu ancak iki ortak kelimeyle getirir. Bu, alakasız notu dışarıda tutar ama başka kelimelerle sorulan soruyu da kaçırır ("deploy sonrası eski sürüme nasıl dönerim" sorusu, içinde "geri alma" yazan notu bulamaz). Açıkken hook iki aşamalı çalışır:
+Why it exists: local "strict" matching brings a note only with two shared words. This
+keeps an unrelated note out, but also misses a question asked in other words (the
+question "how do I go back to the previous version after a deploy" cannot find the
+note that says "rollback"). When on, the hook works in two stages:
 
-1. Yerel arama strict eşleşmelere ek olarak gevşek adaylar bulur. Uzaktan değerlendirmeye izinli en fazla 8 kayıt seçilir: önce strict eşleşmeler, kalan yerlere gevşek adaylar. Gevşek adaylar iki sıranın dönüşümlü birleşimidir: bütün notun sözcük ağırlığı ve notun isteme en çok uyan bölümünün ağırlığı (strict bölüm puanı, eşiksiz). Böylece uzun bir notun tek bölümündeki cevap, istemin genel bir sözcüğünü tekrar eden kısa notların arkasında kalmaz; sözcük sırasının ilk adayı da yerini korur (#533). Bölüm sırası aynı turda strict aramanın kurduğu bölüm dizinini kullanır; dizin henüz hazır değilse yalnız sözcük sırası kullanılır. Her sıradan en fazla 64 aday bakılır. `daily/`, hariç tutulan klasörler, yerel-only ve zaten strict'te olan kayıtlar sıra kesilmeden önce ayıklanır, yer tüketmez. Havuz aynı görünürlük, güven, tazelik ve supersede kapılarından geçer; `daily/` ve `private` kayıtlar havuza girmez. Sağlayıcıya giden kart sayısı ve kart başına metin sınırı değişmedi.
-2. Tek bir Jev isteği bir konu kapısı ("bu mesaj somut bir konu mu, selam/onay mı") ve aday başına bir evet/hayır sorar.
+1. Besides the strict matches, local search finds loose candidates. At most 8 records allowed for remote evaluation are selected: strict matches first, loose candidates in the remaining places. Loose candidates are an alternating merge of two rankings: the word weight of the whole note, and the weight of the section of the note that best fits the prompt (the strict section score, without a threshold). This way the answer in a single section of a long note does not stay behind short notes that repeat a general word of the prompt; the first candidate of the word ranking also keeps its place (#533). The section ranking uses the section index that strict search built in the same turn; if the index is not ready yet, only the word ranking is used. At most 64 candidates from each ranking are looked at. `daily/`, excluded folders, local-only records and records already in strict are filtered out before the ranking is cut, and use up no place. The pool goes through the same visibility, trust, freshness and supersede gates; `daily/` and `private` records do not enter the pool. The number of cards going to the provider and the per-card text limit did not change.
+2. A single Jev request asks a topic gate ("is this message a concrete topic, or a greeting/acknowledgement") and one yes/no per candidate.
 
-Sonuç `on` kipinde şöyle uygulanır: konu kapısı 0,25 altındaysa hiçbir not eklenmez. Strict eşleşme 0,4 altına düşerse çıkarılır. Gevşek aday yalnız 0,6 ve üstünde eklenir. En fazla 5 kayıt, aynı karakter bütçesi. Hiçbir şey değişmiyorsa yerel sonuç olduğu gibi kullanılır. `shadow` kipinde çağrı yapılır, sonuç değişmez, yalnız sayaçlar yazılır (`dropped`, `rescued`).
+In `on` mode the result is applied like this: if the topic gate is under 0.25, no note is added. A strict match that falls under 0.4 is removed. A loose candidate is added only at 0.6 and above. At most 5 records, same character budget. If nothing changes, the local result is used as it is. In `shadow` mode the call is made, the result does not change, only the counters are written (`dropped`, `rescued`).
 
-Yerel sonuca geri dönülen durumlar: 12 karakterden kısa mesaj, yerel sır örüntüsü eşleşmesi, eksik anahtar, zaman aşımı, 429, bozuk yanıt, çağrı sırasında değişen kaynak, kill switch. Hook en fazla 2 saniye bekler ve kendi 5 saniyelik sınırına yaklaşmışsa hiç çağırmaz. `jev.json` yoksa Jev modülü içe aktarılmaz.
+Cases that fall back to the local result: a message shorter than 12 characters, a local secret pattern match, missing key, timeout, 429, malformed response, a source that changed during the call, kill switch. The hook waits at most 2 seconds, and does not call at all if it is close to its own 5-second limit. If `jev.json` does not exist, the Jev module is not imported.
 
-Bedeli açıkça: her mesajda mesaj metni ve aday notların başlığı ile sorguya göre seçilen en fazla 600 karakterlik pasaj görünümü sağlayıcıya gider. Strict aramanın iki pasajı varsa ikisine de yer ayrılır; uzun pasajlarda sorguyla eşleşen pencere seçilir. Gevşek adayın da ilgili bölümü yerelde seçilir. Kurtarılırsa son zarf en fazla 3.300 karakterlik açılışa öncelik verir. Notun tamamını, açılışla birincil eşleşen pasajı veya açılışla bu pasajın sorguya göre seçilen en fazla 600 karakterlik penceresini taşıyan görünümlerden kalan bütçeye tam sığan ilkini kullanır (`pack_widened`). Hiçbiri sığmazsa açılış kalır. Bu yerel teslim tercihi Jev kartını büyütmez. Bölüm başlığı ve aralıklar arasındaki `[…]` işareti bu 600 karaktere dahildir. Kart şeması, aday sayısı, istemin 2.000 karakterlik sınırı, metadata alanları ve son gönderimden önceki sır taraması değişmez. `private` / `remote_allowed` kontrolleri her zamanki gibi uygulanır. İstanbul'dan daha önce ölçülen tek atımlık çağrı ortanca 1,3 saniye, yüzde onu 2 saniyenin üstündeydi (sunucu ABD batı kıyısında); yeni pasaj görünümü için canlı gecikme ve eşik davranışı ayrıca ölçülmelidir.
+The cost, plainly: on every message, the message text and the title of the candidate notes, along with a query-selected passage view of at most 600 characters, go to the provider. If strict search has two passages, room is reserved for both; for long passages the window matching the query is chosen. The relevant section of a loose candidate is also chosen locally. If it is rescued, the final envelope gives priority to the opening of at most 3,300 characters. It uses the first of the views that fits exactly into the remaining budget: the whole note, the passage that primarily matches together with the opening, or the opening with the query-selected window of at most 600 characters of that passage (`pack_widened`). If none fits, the opening stays. This local delivery preference does not enlarge the Jev card. The section heading and the `[…]` mark between ranges are included in these 600 characters. The card schema, the number of candidates, the 2,000-character limit of the prompt, the metadata fields and the secret scan before the final send do not change. The `private` / `remote_allowed` checks apply as usual. A single-shot call measured earlier from Istanbul had a median of 1.3 seconds and its 90th percentile was above 2 seconds (the server is on the US west coast); live latency and threshold behavior for the new passage view must be measured separately.
 
-Ölçüm (2026-09-20, canlı Jev, 12 sentetik Türkçe/İngilizce not, 26 mesaj, tek koşu): ilgili notu bulma 13/17'den 15/17'ye çıktı, alakasız not enjeksiyonu 2'den 1'e indi, strict'in bulduğu hiçbir ilgili not kaybedilmedi, bir çağrı zaman aşımına uğrayıp yerel sonuca döndü. Bir yanlış ekleme oldu ("bu fonksiyonu test için refactor et" mesajına test stratejisi notu). Bu sentetik bir ölçümdür ve Jev aynı isteğe her seferinde biraz farklı puan verir; gerçek kasada isabet daha düşük çıkabilir. Kendi notlarınızda önce `shadow` ile birkaç gün sayaçlara bakın, sonra `on` yapın.
+Measurement (2026-09-20, live Jev, 12 synthetic Turkish/English notes, 26 messages, single run): finding the relevant note rose from 13/17 to 15/17, unrelated-note injection fell from 2 to 1, no relevant note found by strict was lost, and one call timed out and fell back to the local result. There was one wrong addition (a test-strategy note for the message "refactor this function for testing"). This is a synthetic measurement and Jev gives slightly different scores to the same request each time; on a real vault the hit rate may come out lower. On your own notes, first look at the counters with `shadow` for a few days, then switch to `on`.
 
-## Yerel Laya arka ucu (isteğe bağlı)
+## Local Laya backend (optional)
 
-[Laya](https://github.com/NandhaKishorM/laya), Convai Innovations'ın Apache 2.0 lisanslı, açık ağırlıklı System One karar modelidir. `laya-serve` sunucusu Jev ile aynı `POST /v1/systemone` protokolünü konuşur. Beyin, Laya'yı ayrı kurulan yerel bir sunucu olarak kullanır: Beyin paketine Laya kodu, model ağırlığı veya PyTorch girmez; hook ve CLI `torch` ya da `laya` içe aktarmaz (`tests/v3_stdlib_imports_test.py` bunu denetler). Varsayılan sağlayıcı değişmez; Laya yalnız açıkça seçilince kullanılır ve yalnız gölge modda çalışır: puanları ölçüm için kaydedilir, kullanıcının gördüğü sonucu değiştirmez ([Yalnız gölge mod](#yalnız-gölge-mod)).
+[Laya](https://github.com/NandhaKishorM/laya) is Convai Innovations' Apache 2.0 licensed, open-weight System One decision model. The `laya-serve` server speaks the same `POST /v1/systemone` protocol as Jev. Beyin uses Laya as a separately installed local server: no Laya code, model weights or PyTorch enter the Beyin package; the hook and CLI do not import `torch` or `laya` (`tests/v3_stdlib_imports_test.py` checks this). The default provider does not change; Laya is used only when explicitly selected and runs only in shadow mode: its scores are recorded for measurement and do not change the result the user sees ([Shadow mode only](#shadow-mode-only)).
 
-### Laya'yı Beyin dışında kurma
+### Installing Laya outside Beyin
 
-Laya Python 3.10+ ve PyTorch ister. Beyin'in ortamına değil, ayrı bir araç ortamına kurun:
+Laya needs Python 3.10+ and PyTorch. Install it into a separate tool environment, not Beyin's environment:
 
     pipx install "laya[serve]"
     LAYA_HOST=127.0.0.1 LAYA_PORT=8765 LAYA_MODELS=multilingual laya-serve
@@ -305,71 +313,71 @@ Windows PowerShell:
 
     $env:LAYA_HOST = "127.0.0.1"; $env:LAYA_PORT = "8765"; $env:LAYA_MODELS = "multilingual"; laya-serve
 
-`LAYA_HOST=127.0.0.1` şarttır: `laya-serve` varsayılan olarak `0.0.0.0` adresini dinler ve aynı ağdaki cihazlara açılır. Beyin'in varsayılan adresi `http://127.0.0.1:8765` olduğu için `LAYA_PORT=8765` verin. `laya-serve`'in kendi varsayılanı olan 8000 sık kullanılan bir geliştirme portudur; Laya kapalıyken orada çalışan başka bir uygulama not metnini almasın diye Beyin 8000'i varsaymaz. İlk çalıştırma modeli Hugging Face'ten indirir (multilingual yaklaşık 650 MB). İndirmeden sonra `HF_HUB_OFFLINE=1` ile başlatmak sunucunun ağa çıkmasını ve istek üzerine yeni model indirmesini önler. Apple Silicon'da `LAYA_DEVICE=mps` kullanılabilir; yalnız CPU varsa `LAYA_THREADS` fiziksel çekirdek sayısını geçmemelidir. Sunucu yüklü modellerle birlikte birkaç GB bellek tutar.
+`LAYA_HOST=127.0.0.1` is required: `laya-serve` listens on `0.0.0.0` by default and opens to devices on the same network. Since Beyin's default address is `http://127.0.0.1:8765`, give `LAYA_PORT=8765`. `laya-serve`'s own default, 8000, is a commonly used development port; Beyin does not assume 8000, so that another application running there while Laya is down does not receive the note text. The first run downloads the model from Hugging Face (multilingual is about 650 MB). After the download, starting with `HF_HUB_OFFLINE=1` prevents the server from going to the network and downloading a new model on request. On Apple Silicon `LAYA_DEVICE=mps` can be used; if there is only a CPU, `LAYA_THREADS` should not exceed the number of physical cores. The server holds several GB of memory together with the loaded models.
 
-### Açma ve kapatma
+### Turning on and off
 
     python beyin.py jev shadow --provider laya
     python beyin.py jev status --check
     python beyin.py jev shadow --provider laya --model multilingual
     python beyin.py jev on --provider typesafe
 
-Son komut Jev'e döner; Laya ayarları saklanır. `jev on --provider laya` kabul edilmez (`laya_shadow_only`); aşağıya bakın. `--base-url` ve `--model` yalnız Laya sağlayıcısıyla kabul edilir. `status --check` yalnız yapılandırılmış yerel sunucunun `/health` adresini bir kez okur (1 saniye), not veya anahtar göndermez; TypeSafe'i hiç yoklamaz. `doctor` ağa çıkmaz.
+The last command returns to Jev; the Laya settings are kept. `jev on --provider laya` is not accepted (`laya_shadow_only`); see below. `--base-url` and `--model` are accepted only with the Laya provider. `status --check` reads only the `/health` address of the configured local server, once (1 second), and sends no note or key; it never probes TypeSafe. `doctor` does not go to the network.
 
-Ayar `jev.json` içinde ayrı bir `laya` bloğunda durur:
+The setting sits in a separate `laya` block in `jev.json`:
 
     {"mode":"shadow","provider":"laya","laya":{"base_url":"http://127.0.0.1:8765","model":"multilingual"}}
 
-- `base_url` yalnız `127.0.0.1` veya `::1` olabilir; `localhost` bile kabul edilmez, çünkü hosts dosyası onu başka bir adrese yönlendirebilir. `TYPESAFE_BASE_URL` Laya çağrılarını yönlendirmez; ortamdaki HTTP proxy ayarları bu çağrılarda kullanılmaz.
-- Anahtar gerekmez. `laya-serve` `LAYA_API_KEY` ile çalışıyorsa aynı değer Beyin'in ortamında (veya `env_file` içinde) `LAYA_API_KEY` olarak bulunmalıdır. `TYPESAFE_API_KEY` Laya'ya hiçbir zaman gönderilmez.
-- `model`: `multilingual` (varsayılan; Türkçe ve İngilizce, satır başına 1024 token) veya `english` (yalnız İngilizce, 512 token). Tek model sabitlenir; aynı sorudaki adaylar farklı modellerle puanlanmaz. Sunucu başka bir modelle cevap verirse sonuç atılır (`laya_checkpoint_mismatch`). `typed-decisions` desteklenmez: başka iş akışlarına göre eğitilmiştir ve yüklü olmayan bir sunucuda ilk istekte 843 MB indirme başlatır.
-- `timeout` en fazla 10 saniyedir, varsayılan 8. Hook yolu yine en fazla 2 saniye bekler; yetişmezse yerel sonuç kullanılır.
-- Laya desteğinden önceki bir sürüme `rollback` yapılırsa eski sürüm `laya` bloğunu tanımaz, ayarı geçersiz sayar ve danışmanı kapatır; TypeSafe anahtarını yerel porta göndermez. Eski sürümde Jev'e dönmek için bloğu `jev.json`'dan silin. Bu davranış `scripts/verify_v3_jev_package.py` içinde yayımlanmış 3.1.0 ile doğrulanır.
+- `base_url` can only be `127.0.0.1` or `::1`; even `localhost` is not accepted, because the hosts file can redirect it to another address. `TYPESAFE_BASE_URL` does not redirect Laya calls; HTTP proxy settings in the environment are not used for these calls.
+- No key is needed. If `laya-serve` runs with `LAYA_API_KEY`, the same value must be present in Beyin's environment (or in `env_file`) as `LAYA_API_KEY`. `TYPESAFE_API_KEY` is never sent to Laya.
+- `model`: `multilingual` (default; Turkish and English, 1024 tokens per row) or `english` (English only, 512 tokens). A single model is pinned; candidates in the same question are not scored with different models. If the server answers with another model, the result is discarded (`laya_checkpoint_mismatch`). `typed-decisions` is not supported: it was trained for other workflows and on a server where it is not loaded it starts an 843 MB download on the first request.
+- `timeout` is at most 10 seconds, default 8. The hook path still waits at most 2 seconds; if it does not make it, the local result is used.
+- If a `rollback` is made to a version from before Laya support, the old version does not recognize the `laya` block, treats the setting as invalid and turns the advisor off; it does not send the TypeSafe key to the local port. To return to Jev in the old version, delete the block from `jev.json`. This behavior is verified with the published 3.1.0 in `scripts/verify_v3_jev_package.py`.
 
-### Jev'den farkları
+### Differences from Jev
 
-Laya her soruyu ayrı bir satırda değerlendirir ve satırın ilk 512 veya 1024 token'ından fazlasını hata vermeden keser. Jev için tek istekte birden çok notu anahtarla adresleyen biçim Laya'da sonraki notları görünmez yapardı. Bu yüzden Laya arka ucu her isteğe tek aday ve tek soru koyar: `auto_context` için bir konu isteği ve not başına bir istek, `context --jev` için aday ve alt istek başına bir istek, `jev-answer` için iddia başına bir istek, `jev-memory` için üç boyut ve eski kayıt başına birer istek. Sorular kısa, soru önde ve İngilizcedir; seçenek metinleri Jev ile aynıdır. En fazla 48 istek yapılır; istekler tek sırayla gider, çünkü `laya-serve` aynı anda tek çıkarım yapar. `jev-answer` da Laya ile paketleri paralel değil sırayla gönderir.
+Laya evaluates each question in a separate row and truncates anything beyond the first 512 or 1024 tokens of the row without an error. For Jev, the format that addresses several notes by key in one request would make the later notes invisible in Laya. For this reason the Laya backend puts a single candidate and a single question in each request: for `auto_context` one topic request and one request per note, for `context --jev` one request per candidate and sub-request, for `jev-answer` one request per claim, for `jev-memory` one request each for the three dimensions and per prior record. The questions are short, question-first and in English; the option texts are the same as Jev's. At most 48 requests are made; requests go in a single sequence, because `laya-serve` does one inference at a time. With Laya, `jev-answer` also sends packets in sequence, not in parallel.
 
-Metin sığdırılmak için kesilmez. Her istek gönderilmeden önce ölçülmüş bir boyut sınırıyla karşılaştırılır; biri aşarsa hiçbir istek yapılmaz ve sonuç `laya_state_too_large` ile yerel sonuca döner. Tek bilinçli kısaltma `auto_context` isteminin payıdır: konu isteği ve her not isteği, notu kesmeden sınıra sığan kadar istem taşır. Sınırı yine de dolduran bir satır cevaptan sonra yakalanır: satır token sınırına ulaştıysa sonuç atılır (`laya_state_truncated`). Laya'da iddia başına kaynak bağlamı 4.000 yerine 1.200 karakterle (`english` için 400) sınırlıdır; aşan iddia yalnız kendisi için `source_context_incomplete` ile yerel incelemeye döner.
+The text is not truncated to make it fit. Before each request is sent, it is compared with a measured size limit; if one exceeds it, no request is made and the result falls back to the local result with `laya_state_too_large`. The only deliberate shortening is the prompt's share in the `auto_context` request: the topic request and each note request carry as much of the prompt as fits within the limit, without cutting the note. A row that still fills the limit is caught after the answer: if the row reached the token limit, the result is discarded (`laya_state_truncated`). In Laya, the source context per claim is limited to 1,200 characters instead of 4,000 (400 for `english`); a claim that exceeds it returns to local review with `source_context_incomplete`, for that claim only.
 
-Sınırlar 2026-09-24'te iki modelin kendi tokenizer'ıyla ölçüldü: şablonlar soru ve seçenekler için 39 ile 102 token arası yer tutar, duruma en az 918 (multilingual) veya 403 (english) token kalır. Boyut birimi karakter sayısıdır; rakamlar ve U+024F üstündeki karakterler (CJK, emoji) daha ağır sayılır, Türkçe harfler tek birimdir. Türkçe belgeler, ASCII Türkçe, İngilizce metin, 493 gerçek Markdown not ve Python kodu üzerinde birim başına token en fazla 0,52 (multilingual) ve 0,50 (english) çıktı. Gerçek notlardan kurulan 1.080 `auto_context`, 960 `context --jev` ve bağlam sınırını geçen 909 `jev-answer` isteğinin hiçbiri multilingual sınırını aşmadı; en fazla alanın yüzde 57'sini kullandı. `english` modelinde aynı not isteklerinin hiçbiri sığmadı; bu model yalnız kısa İngilizce içerik içindir ve not boyutlu isteklerde yerel sonuca döner.
+The limits were measured on 2026-09-24 with the two models' own tokenizers: the templates take between 39 and 102 tokens for the question and options, leaving at least 918 (multilingual) or 403 (english) tokens for the state. The size unit is the character count; digits and characters above U+024F (CJK, emoji) count heavier, Turkish letters are a single unit. On Turkish documents, ASCII Turkish, English text, 493 real Markdown notes and Python code, tokens per unit came out at most 0.52 (multilingual) and 0.50 (english). Of 1,080 `auto_context`, 960 `context --jev` and 909 `jev-answer` requests built from real notes and exceeding the context limit, none exceeded the multilingual limit; at most 57 percent of the room was used. With the `english` model none of the same note requests fit; this model is only for short English content and falls back to the local result on note-sized requests.
 
-`choice` sorularında güven, Laya'nın entropi tabanlı `confidence` alanından değil en olası seçeneğin olasılığından alınır; Laya'nın kalibre ettiği değer budur. Kayıtta `confidence_provenance.origin` değeri `laya_max_probability` olur.
+For `choice` questions, confidence is taken not from Laya's entropy-based `confidence` field but from the probability of the most likely option; this is the value Laya calibrates. In the record, `confidence_provenance.origin` is `laya_max_probability`.
 
-### Yalnız gölge mod
+### Shadow mode only
 
-Laya puanları kullanıcının gördüğü hiçbir sonucu değiştirmez. Nedeni aşağıdaki [ölçümdür](#ölçüm): sıfır atışlı (zero-shot) Laya bu karar görevlerinde Jev'den çok daha zayıf çıktı.
+Laya scores do not change any result the user sees. The reason is [the measurement](#measurement) below: zero-shot Laya came out much weaker than Jev on these decision tasks.
 
-- `jev on --provider laya`, Laya ayarlıyken `jev on` ve kayıtlı `on` modundan Laya'ya geçiş `laya_shadow_only` koduyla reddedilir; `jev.json` değişmez. Komut hatası bir sonraki adımı gösteren ASCII Türkçe bir `hint` taşır.
-- `jev.json` elle `"mode":"on"` yapılsa da Laya gölge modda çalışır. `jev status` bunu `mode: "shadow"`, `saved_mode: "on"`, `shadow_only: true` ve `mode_refused: "laya_shadow_only"` ile gösterir; `jev status` ve `doctor` insan çıktısında mod `golge (yalniz)` olarak yazılır.
-- Laya ile `auto_context` ve `context --jev` bağlamın sırasını ve içeriğini değiştirmez; otomatik bağlam kaydı `scored_unverified` olur. `jev-answer` iddiaları `semantic_shadow` ile `uncertain` kalır, `jev-review` sonucu `mode: "shadow"` taşır ve `jev-memory` karar üretmez (`shadow_not_applied`). Puanlar çıktıda ve sayaçlarda ölçüm için görünür.
-- Karar eşikleri `beyin_v3_jev_client.THRESHOLDS` tablosunda sağlayıcı ve model çiftine göre durur. Laya satırları Jev değerlerinin kopyasıdır ve `verified: false` işaretlidir; `status` bunu `calibration: "jev_thresholds_unverified_for_laya"` ve `auto_context_applied: false` ile, çıktılar `calibration: "unverified_for_provider"` ile gösterir. Gölge sınırı bu işaretten bağımsızdır: Laya `client.SHADOW_ONLY` listesinden ayrı bir kararla çıkarılmadıkça bir satırın `verified: true` yapılması hiçbir sonucu değiştirmez.
+- `jev on --provider laya`, `jev on` while Laya is configured, and a switch from the saved `on` mode to Laya are rejected with the `laya_shadow_only` code; `jev.json` does not change. The command error carries an English `hint` that points to the next step.
+- Even if `jev.json` is set by hand to `"mode":"on"`, Laya runs in shadow mode. `jev status` shows this with `mode: "shadow"`, `saved_mode: "on"`, `shadow_only: true` and `mode_refused: "laya_shadow_only"`; in the human output of `jev status` and `doctor` the mode is written as `shadow (only)`.
+- With Laya, `auto_context` and `context --jev` do not change the order and content of the context; the automatic context record becomes `scored_unverified`. `jev-answer` claims stay `uncertain` with `semantic_shadow`, the `jev-review` result carries `mode: "shadow"`, and `jev-memory` produces no decision (`shadow_not_applied`). Scores are visible in the output and counters for measurement.
+- Decision thresholds sit in the `beyin_v3_jev_client.THRESHOLDS` table by provider and model pair. The Laya rows are copies of Jev's values and are marked `verified: false`; `status` shows this with `calibration: "jev_thresholds_unverified_for_laya"` and `auto_context_applied: false`, and the outputs show it with `calibration: "unverified_for_provider"`. The shadow boundary is independent of this mark: unless Laya is removed from the `client.SHADOW_ONLY` list by a separate decision, setting a row to `verified: true` changes no result.
 
-### Gizlilik
+### Privacy
 
-Laya yerelde çalışsa da gönderim kuralları Jev ile aynıdır: `private` notlar, `remote_allowed: false` ve `sensitivity: sensitive` kayıtlar, `daily/` oturum notları ve sır örüntüsüyle eşleşen metinler gönderilmez. Bir loopback portunu yalnız `laya-serve` değil herhangi bir yerel süreç dinleyebilir. Yerel-only notları yalnız yerel Laya'ya açan bir seçenek (`local_only_notes`) ileride ayrıca değerlendirilecek; bugün `laya` bloğunda bu anahtar geçersizdir. Acil kapatma (`BEYIN_JEV_DISABLE=1`, `jev.disabled`), özellik anahtarları, çağrı kaydı ve önbellek aynı şekilde çalışır; kayıtta `provider` alanı `laya`, `http_requests` gerçek istek sayısı olur. Jev ve Laya önbellekleri birbirine karışmaz.
+Even though Laya runs locally, the sending rules are the same as Jev's: `private` notes, `remote_allowed: false` and `sensitivity: sensitive` records, `daily/` session notes and text matching a secret pattern are not sent. Not only `laya-serve` but any local process can listen on a loopback port. An option that opens local-only notes to local Laya only (`local_only_notes`) will be evaluated separately in the future; today this key is invalid in the `laya` block. The kill switch (`BEYIN_JEV_DISABLE=1`, `jev.disabled`), feature switches, call log and cache work the same way; in the record the `provider` field is `laya` and `http_requests` is the real request count. The Jev and Laya caches do not mix.
 
-### Ölçüm
+### Measurement
 
-Bu depodaki Laya testleri sahte bir yerel sunucuyla çalışır ve model kalitesi hakkında bilgi vermez. Laya'nın kendi README'sindeki doğruluk sayıları bu depoda doğrulanmadı.
+The Laya tests in this repository run against a fake local server and say nothing about model quality. The accuracy numbers in Laya's own README were not verified in this repository.
 
 <!-- BENCH -->
-**Jev ile Laya karşılaştırması (2026-09-24).** Jev: `jev-1.13.0`, resmi TypeSafe API. [Laya](https://github.com/NandhaKishorM/laya): 0.3.20, Hugging Face `convaiinnovations/laya` revizyonu `55cf4c4e`, `multilingual` ve `english` modelleri, loopback üzerinde `laya-serve`, Apple M5 (24 GB, MPS). Laya sıfır atışlı (zero-shot) kullanıldı, ince ayar yapılmadı. Yalnız sentetik, kurgu veya daha önce yayımlanmış etiketli setler kullanıldı; öğeler ve doğru etiketler ilk model çağrısından önce sha256 ile donduruldu. Laya, Jev'e giden baytların aynısının yanında kendisine daha uygun biçimleri de aldı (istek başına tek öğe, İngilizce ifade biçimi, sabit model); tabloda her satırın en iyi Laya sonucu var. Güven en büyük olasılıktır, köşeli parantezler yüzde 95 aralığıdır.
+**Jev vs Laya comparison (2026-09-24).** Jev: `jev-1.13.0`, the official TypeSafe API. [Laya](https://github.com/NandhaKishorM/laya): 0.3.20, Hugging Face `convaiinnovations/laya` revision `55cf4c4e`, `multilingual` and `english` models, `laya-serve` over loopback, Apple M5 (24 GB, MPS). Laya was used zero-shot, with no fine-tuning. Only synthetic, fictional or previously published labeled sets were used; the items and correct labels were frozen with sha256 before the first model call. Laya received, besides the same bytes that went to Jev, also formats better suited to it (one item per request, English phrasing, pinned model); the table has the best Laya result for each row. Confidence is the largest probability; the square brackets are the 95 percent interval.
 
-| Görev | Ölçüt | Jev | En iyi Laya |
+| Task | Metric | Jev | Best Laya |
 | --- | --- | --- | --- |
-| İddia ve kaynak (190 iddia) | Doğruluk, Beyin `jev-answer` biçimi | 0,930 | 0,579 [0,51; 0,65] |
-| İddia ve kaynak (190 iddia) | Beyin biçiminde güven kapısını geçen yanlış `supports` | 6 | 42 |
-| Hafıza incelemesi (100 ifade, 64'ü temkinli veya olumsuz) | İlişki doğruluğu | 1,000 | 0,450 [0,36; 0,55] |
-| Hafıza incelemesi (100 ifade, 64'ü temkinli veya olumsuz) | Güven kapısını geçen yanlış terfi (64 ifadede) | 0 | 5 (İngilizce ifade biçiminde 11) |
-| Eylem risk kapısı (315 sentetik araç çağrısı) | Yakalama / yanlış uyarı | %97,9 / %3,7 | %54,7 / %21,8 |
-| Konu kapısı (279 kısa Türkçe ve İngilizce mesaj) | Doğruluk, Beyin ifadesi, eşik 0,25 (Jev: 3 koşu ortalaması) | 0,866 | 0,652 [0,59; 0,71] |
-| Küçük değişiklik dayanıklılığı (98 cümle çifti) | İki cümle de doğru tarafta | 0,918 | 0,316 |
-| Mevcut sentetik etiketli setler (1.285 ikili karar) | AUC / ECE | 0,994 / 0,073 | 0,609 / 0,227 |
+| Claim and source (190 claims) | Accuracy, Beyin `jev-answer` format | 0.930 | 0.579 [0.51; 0.65] |
+| Claim and source (190 claims) | Wrong `supports` that passes the confidence gate in Beyin format | 6 | 42 |
+| Memory review (100 statements, 64 hedged or negated) | Relation accuracy | 1.000 | 0.450 [0.36; 0.55] |
+| Memory review (100 statements, 64 hedged or negated) | Wrong promotion that passes the confidence gate (on 64 statements) | 0 | 5 (11 in the English phrasing) |
+| Action risk gate (315 synthetic tool calls) | Catch / false alarm | 97.9% / 3.7% | 54.7% / 21.8% |
+| Topic gate (279 short Turkish and English messages) | Accuracy, Beyin phrasing, threshold 0.25 (Jev: mean of 3 runs) | 0.866 | 0.652 [0.59; 0.71] |
+| Robustness to small changes (98 sentence pairs) | Both sentences on the correct side | 0.918 | 0.316 |
+| Existing synthetic labeled sets (1,285 binary decisions) | AUC / ECE | 0.994 / 0.073 | 0.609 / 0.227 |
 
-Eylem kapısında gizlilik süzgeci 5 çağrıyı Jev'e göndermedi; Jev oranları kalan 310 çağrı üzerindendir. İki tarafta da HTTP hatası, zaman aşımı veya geçersiz cevap olmadı; Laya her tekrar kontrolünde bit düzeyinde aynı sonucu verdi.
+In the action gate the privacy filter did not send 5 calls to Jev; the Jev rates are over the remaining 310 calls. On neither side were there HTTP errors, timeouts or invalid answers; Laya gave bit-for-bit identical results on every repeat check.
 
-Sonuç açık: sıfır atışlı Laya bu Türkçe ve İngilizce karar görevlerinde Jev'den çok daha zayıf ve denenen hiçbir biçim farkı kapatmadı. Başlıca nedenler: birden çok notu anahtarla adresleyen durumlarda her öğeye neredeyse aynı puan, çoğu olumsuzluğun kaçırılması, kısa veya Türkçe karakter içermeyen Türkçe metnin otomatik yönlendirmede `english` modeline gitmesi ve satır sınırında hatasız kesme. Bu yüzden Beyin'de sonucu değiştirebilen tek sağlayıcı Jev'dir. Laya isteğe bağlı, yalnız gölge modda çalışan yerel bir seçenek olarak kalır: veri makineden çıkmaz, API maliyeti yoktur ve aynı girdiye hep aynı cevabı verir; bu yüzden ölçüm ve gizlilik denemeleri için tutulur. Sunucu 4,5 ile 5,9 GB bellek tutar, soğuk başlangıcı 11 ile 19 saniye sürer. `THRESHOLDS` içindeki Laya satırları `verified: false` kalır. Denenen yüzeyler içinde Laya'nın tek güçlü sinyali, İngilizce ifade biçiminde iki iddianın aynı şeyi söyleyip söylemediği oldu (AUC 0,915); bu kullanım da kendi eşiği ayrı geliştirme ve test setlerinde ölçülmeden açılmamalı.
+The result is clear: zero-shot Laya is much weaker than Jev on these Turkish and English decision tasks and no format difference that was tried closed the gap. The main reasons: nearly the same score for every item in cases that address several notes by key, missing most negations, short Turkish text or Turkish text without Turkish characters being routed to the `english` model in automatic routing, and error-free truncation at the row limit. For this reason the only provider in Beyin that can change the result is Jev. Laya stays as an optional local option that runs only in shadow mode: the data does not leave the machine, there is no API cost, and it always gives the same answer to the same input; for this reason it is kept for measurement and privacy experiments. The server holds 4.5 to 5.9 GB of memory and its cold start takes 11 to 19 seconds. The Laya rows in `THRESHOLDS` stay `verified: false`. Among the surfaces tried, Laya's only strong signal was whether two claims say the same thing in the English phrasing (AUC 0.915); this use also must not be turned on without measuring its own threshold on separate development and test sets.
 
-Sınırlar: öğelerin çoğu sentetik veya kurgu; bazı setlerde öğeleri ve etiketleri aynı yazar hazırladı ve bazı rubrik ile eşikler daha önce Jev'e göre ayarlandı, bu yüzden bazı setler Jev için örneklem içidir. Sonuçlar `55cf4c4e` revizyonundaki sıfır atışlı Laya içindir; ağırlıklar değişebilir, ince ayar denenmedi. Bu karşılaştırmada gecikme ölçülmedi.
+Limits: most items are synthetic or fictional; in some sets the same author prepared the items and labels, and some rubrics and thresholds were tuned earlier against Jev, so some sets are in-sample for Jev. The results are for zero-shot Laya at revision `55cf4c4e`; weights can change, and fine-tuning was not tried. Latency was not measured in this comparison.
 <!-- /BENCH -->

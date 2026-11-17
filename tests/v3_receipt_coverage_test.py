@@ -189,7 +189,7 @@ class ReceiptCoverageTest(unittest.TestCase):
 
         # Human rendering test
         human_text = beyin_entry.human_result(doc, 'doctor')
-        self.assertIn('Makbuz kapsami: %50 (1/2 oturum, son 7 gun: %50)', human_text)
+        self.assertIn('Receipt coverage: 50% (1/2 sessions, last 7 days: 50%)', human_text)
 
     def test_first_prompt_delivered_as_session_start_counts(self):
         """Hermes and OpenCode send the first user prompt as SessionStart; a one-prompt session still counts."""

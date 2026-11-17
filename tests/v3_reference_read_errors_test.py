@@ -101,7 +101,7 @@ class InstalledReferenceReadErrorsTest(unittest.TestCase):
                 self.assertIn('jev', result)
                 self.assertNotEqual(result['status'], 'needs_attention')
         human = self.doctor('--human')
-        warning = 'Talimat ve skill baglanti denetimi tamamlanamadi (bilgi): ' + expected_error + '.'
+        warning = 'Instruction and skill link check could not finish (info): ' + expected_error + '.'
         self.assertIn(warning, human)
         self.assertNotIn('private-content-canary', human)
         if before is not None:
@@ -149,9 +149,9 @@ class ReferenceHumanOutputTest(unittest.TestCase):
         text = entry.human_result({'status': 'observed_metadata', 'instruction_references': {
             'status': 'unavailable', 'error': 'OSError',
             'message': 'private-path-and-content-canary'}}, 'doctor', '3.12.0')
-        self.assertIn('Talimat ve skill baglanti denetimi tamamlanamadi (bilgi): OSError.', text)
+        self.assertIn('Instruction and skill link check could not finish (info): OSError.', text)
         self.assertNotIn('private-path-and-content-canary', text)
-        self.assertNotIn('kirik baglanti (bilgi)', text)
+        self.assertNotIn('Broken links in instruction and skill files (info)', text)
 
 
 if __name__ == '__main__':

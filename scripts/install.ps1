@@ -13,7 +13,7 @@
 
     Usage:
       pwsh -NoProfile -File .\scripts\install.ps1 -VaultPath "C:\Users\me\Documents\AylinOS" `
-           -UserName "Aylin" -UserBio "Ürün tasarımcısı" -Companion "Echo" -OsName "AylinOS"
+           -UserName "Aylin" -UserBio "Product designer" -Companion "Echo" -OsName "AylinOS"
 
       powershell -NoProfile -File .\scripts\install.ps1 -PreflightOnly   # just check
 
@@ -113,7 +113,7 @@ function Invoke-BeyinPreflight {
         $result.Pwsh = $pwshPath
     }
     else {
-        [void]$missing.Add("PowerShell 7 bulunamadi (sistemde $($PSVersionTable.PSVersion) var)`n  winget install --id Microsoft.PowerShell --source winget")
+        [void]$missing.Add("PowerShell 7 not found (this system has $($PSVersionTable.PSVersion))`n  winget install --id Microsoft.PowerShell --source winget")
     }
 
     $pythonPath = Find-BeyinPython
@@ -121,7 +121,7 @@ function Invoke-BeyinPreflight {
         $result.Python = $pythonPath
     }
     else {
-        [void]$missing.Add("Python 3 bulunamadi (WindowsApps stub'i Python degildir)`n  winget install --id Python.Python.3.13 --source winget")
+        [void]$missing.Add("Python 3 not found (the WindowsApps stub is not Python)`n  winget install --id Python.Python.3.13 --source winget")
     }
 
     $git = Get-Command git -ErrorAction SilentlyContinue
@@ -130,14 +130,14 @@ function Invoke-BeyinPreflight {
         $gitOk = Test-BeyinDependency -Path $git.Source -Arguments @('--version') -ExpectPattern '^git version \d'
     }
     if (-not $gitOk) {
-        [void]$missing.Add("Git bulunamadi`n  winget install --id Git.Git --source winget")
+        [void]$missing.Add("Git not found`n  winget install --id Git.Git --source winget")
     }
 
     if ($Harness -eq 'Antigravity') {
         $agyPath = Find-BeyinAgy
         if ($agyPath) { $result.Runner = $agyPath }
         else {
-            [void]$missing.Add("Antigravity CLI bulunamadi (agy)`n  https://antigravity.google/docs/cli/")
+            [void]$missing.Add("Antigravity CLI not found (agy)`n  https://antigravity.google/docs/cli/")
         }
     }
     else {
@@ -148,7 +148,7 @@ function Invoke-BeyinPreflight {
         }
         if ($claudeOk) { $result.Runner = $claude.Source }
         else {
-            [void]$missing.Add("Claude Code bulunamadi`n  https://claude.com/claude-code")
+            [void]$missing.Add("Claude Code not found`n  https://claude.com/claude-code")
         }
     }
 
@@ -162,7 +162,7 @@ function Write-BeyinPreflightReport {
     param([Parameter(Mandatory = $true)][hashtable]$Report)
 
     if ($Report.Ok) {
-        Write-Host "On kontrol gecti."
+        Write-Host "Preflight passed."
         Write-Host "  pwsh   : $($Report.Pwsh)"
         Write-Host "  python : $($Report.Python)"
         Write-Host "  runner : $($Report.Runner)"
@@ -174,9 +174,9 @@ function Write-BeyinPreflightReport {
         Write-Host ("X " + $m)
         Write-Host ""
     }
-    Write-Host "Kurulum baslatilmadi. Diske hicbir sey yazilmadi."
-    Write-Host "Yukaridakileri kurup bu script'i tekrar calistirin."
-    Write-Host "winget yoksa: https://aka.ms/powershell  ve  https://www.python.org/downloads/"
+    Write-Host "Install not started. Nothing was written to disk."
+    Write-Host "Install the above and run this script again."
+    Write-Host "Without winget: https://aka.ms/powershell  and  https://www.python.org/downloads/"
 }
 
 
@@ -280,15 +280,15 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 
 foreach ($p in 'VaultPath', 'UserName', 'Companion', 'OsName') {
     if ([string]::IsNullOrWhiteSpace((Get-Variable -Name $p -ValueOnly))) {
-        Write-Host "Eksik parametre: -$p"
+        Write-Host "Missing parameter: -$p"
         exit 2
     }
 }
 
 # Never destroy. Installing into an existing vault is out of scope by design.
 if (Test-Path -LiteralPath $VaultPath) {
-    Write-Host "Hedef zaten var: $VaultPath"
-    Write-Host "Mevcut bir vault'a kurulum bu script'in kapsaminda degil. Bkz. README."
+    Write-Host "Target already exists: $VaultPath"
+    Write-Host "Installing into an existing vault is outside this script's scope. See README."
     exit 3
 }
 
@@ -305,9 +305,9 @@ catch { $longPaths = 0 }
 $budget = 260 - $VaultPath.Length - 'knowledge\concepts\'.Length
 if ($longPaths -ne 1 -and $budget -lt 80) {
     Write-Host ""
-    Write-Host "UYARI: vault yolu derin ($($VaultPath.Length) karakter)."
-    Write-Host "  Uzun yol destegi kapali; makale adlarina $budget karakter kaliyor."
-    Write-Host "  Daha sig bir yol onerilir, ornegin C:\Users\<ad>\Documents\<OsName>."
+    Write-Host "WARNING: the vault path is deep ($($VaultPath.Length) characters)."
+    Write-Host "  Long path support is off; $budget characters remain for article names."
+    Write-Host "  A shallower path is recommended, for example C:\Users\<name>\Documents\<OsName>."
     Write-Host ""
 }
 
@@ -353,13 +353,13 @@ Copy-Item -Path (Join-Path $VaultPath '.claude\skills\*') `
 & $report.Python (Join-Path $VaultPath '.claude\scripts\render_codex_hooks.py') `
     --vault $VaultPath --platform windows | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    throw 'Codex hooks.json üretilemedi.'
+    throw 'Could not generate Codex hooks.json.'
 }
 
 & $report.Python (Join-Path $VaultPath '.claude\scripts\render_antigravity_hooks.py') `
     --vault $VaultPath --platform windows | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    throw 'Antigravity hooks.json üretilemedi.'
+    throw 'Could not generate Antigravity hooks.json.'
 }
 
 New-Item -ItemType Directory -Force -Path (Join-Path $VaultPath '.claude\scripts\.state') | Out-Null
@@ -372,15 +372,15 @@ $left = @(Get-ChildItem -LiteralPath $VaultPath -Recurse -File -Include *.md, *.
           Select-String -Pattern '\{\{[A-Z_]+\}\}' -ErrorAction SilentlyContinue)
 if ($left.Count -gt 0) {
     Write-Host ""
-    Write-Host "HATA: cozulmemis placeholder kaldi:"
+    Write-Host "ERROR: unresolved placeholders remain:"
     foreach ($m in $left) { Write-Host "  $($m.Path):$($m.LineNumber)" }
     exit 4
 }
 
 Write-Host ""
-Write-Host "Kurulum tamam: $VaultPath"
-Write-Host "  motor : .claude\scripts  (python: $($report.Python))"
-Write-Host "  kanca : 4 adet, .claude\settings.json icinde kayitli"
+Write-Host "Install complete: $VaultPath"
+Write-Host "  engine : .claude\scripts  (python: $($report.Python))"
+Write-Host "  hooks : 4, registered in .claude\settings.json"
 Write-Host "  codex : AGENTS.md + .agents\skills + .codex\hooks.json"
-Write-Host "  antigravity : .agents\hooks.json (ortak motor adaptoru)"
+Write-Host "  antigravity : .agents\hooks.json (shared engine adapter)"
 exit 0

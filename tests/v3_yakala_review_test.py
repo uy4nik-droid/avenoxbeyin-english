@@ -48,7 +48,7 @@ class NetworkReviewTest(unittest.TestCase):
                 else:
                     self.call('fetch_source', url=self.job['url'])
             for tool, extra in (('fetch_source', {}), ('download', {'filename': 'file.txt'})):
-                with self.subTest(tool=tool), self.assertRaisesRegex(ValueError, 'cagri hakki doldu'):
+                with self.subTest(tool=tool), self.assertRaisesRegex(ValueError, 'network calls; ask for approval'):
                     self.call(tool, url=self.job['url'], **extra)
         self.assertEqual(fetch.call_count + download.call_count, y._AGENT_NETWORK_CALLS)
         self.assertEqual(self.budget()['used'], y._AGENT_NETWORK_CALLS)
@@ -59,7 +59,7 @@ class NetworkReviewTest(unittest.TestCase):
             for _ in range(y._AGENT_NETWORK_CALLS):
                 with self.assertRaises(TimeoutError):
                     self.call('fetch_source', url=self.job['url'])
-            with self.assertRaisesRegex(ValueError, 'cagri hakki doldu'):
+            with self.assertRaisesRegex(ValueError, 'network calls; ask for approval'):
                 self.call('fetch_source', url=self.job['url'])
         self.assertEqual(fetch.call_count, y._AGENT_NETWORK_CALLS)
         self.assertEqual(self.call('read_note', path='knowledge/ordinary.md')['text'], 'still readable')
@@ -71,7 +71,7 @@ class NetworkReviewTest(unittest.TestCase):
         with patch.object(y, '_agent_fetch_source', return_value=self.fetched(url)) as fetch:
             for _ in range(y._AGENT_NETWORK_CALLS):
                 self.call('fetch_source', url=url)
-            with self.assertRaisesRegex(ValueError, 'cagri hakki doldu'):
+            with self.assertRaisesRegex(ValueError, 'network calls; ask for approval'):
                 self.call('fetch_source', url=url)
         self.assertEqual(fetch.call_count, y._AGENT_NETWORK_CALLS)
 
@@ -142,7 +142,7 @@ for _ in range(y._AGENT_NETWORK_CALLS):
         y._agent_tool_call(vault, state, job['id'], 'fetch_source', {'url': job['url']})
         ok += 1
     except ValueError as exc:
-        if 'cagri hakki doldu' not in str(exc):
+        if 'network calls; ask for approval' not in str(exc):
             raise
 print(ok)
 '''

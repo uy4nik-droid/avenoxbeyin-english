@@ -611,10 +611,11 @@ And another link on line 8: [[Components/Auth]].
         (self.vault / "knowledge/concepts/solid.md").write_text("# SOLID Principles", encoding="utf-8")
         (self.vault / "knowledge/patterns").mkdir(parents=True)
         (self.vault / "knowledge/patterns/factory.md").write_text("---\ntitle: Factory Pattern\n---\n# Pattern Note", encoding="utf-8")
+        (self.vault / "knowledge/overview.md").write_text("# Overview", encoding="utf-8")
 
         res = linter.generate_moc(self.vault, "knowledge", "MOC.md")
         self.assertEqual(res["status"], "created")
-        self.assertEqual(res["indexed_notes_count"], 2)
+        self.assertEqual(res["indexed_notes_count"], 3)
 
         moc_file = self.vault / "knowledge/MOC.md"
         self.assertTrue(moc_file.is_file())
@@ -625,6 +626,8 @@ And another link on line 8: [[Components/Auth]].
         self.assertIn("[[knowledge/concepts/solid.md|SOLID Principles]]", text)
         self.assertIn("### Patterns", text)
         self.assertIn("[[knowledge/patterns/factory.md|Factory Pattern]]", text)
+        # Notes directly in the folder go under a fixed English heading.
+        self.assertIn("### General\n- [[knowledge/overview.md|Overview]]\n", text)
         self.assertIn(linter.MOC_START_MARKER, text)
         self.assertIn(linter.MOC_END_MARKER, text)
 

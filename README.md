@@ -1,137 +1,140 @@
-# İkinci Beyin
+# Second Brain
 
-![İkinci Beyin: farklı ajanlar aynı Markdown notlarına bağlanır.](docs/assets/readme/cover.png)
+> **English edition.** This repository is an English translation of [avenoxai/avenoxbeyin](https://github.com/avenoxai/avenoxbeyin) (MIT), which is written in Turkish. All credit for the system goes to the original author. Command, file and folder names keep their original Turkish spelling (`beyin` = brain, `yakala` = capture, `doktor` = doctor, `guncelle` = update, `kur` = install, `durum` = status) so that vaults stay compatible with upstream.
 
-**AI istemcin değişse de notların, kararların ve görevlerin aynı yerde kalsın.**
+![Second Brain: different agents connect to the same Markdown notes.](docs/assets/readme/cover.png)
 
-AvenoxBeyin, AI ajanlarınla kullanabileceğin yerel bir hafıza sistemi. Önemli bilgiyi Markdown dosyalarına kaydettirir, sonraki oturumda kaynağıyla bulursun. Klasörünü Obsidian'da veya istediğin metin editöründe açabilirsin.
+**Even if you switch AI clients, your notes, decisions and tasks stay in the same place.**
 
-**[Kuruluma geç](#kurulum)** · [Son sürümü indir](https://github.com/avenoxai/avenoxbeyin/releases/latest) · [Görsel kurulum rehberi](https://avenox.io/ikincibeyin) · [Belgeler](#belgeler)
+AvenoxBeyin is a local memory system you can use with your AI agents. It has your agent save important information to Markdown files, and in the next session you find it again, with its source. You can open the folder in Obsidian or in any text editor you like.
 
-macOS · Windows · Linux &nbsp; | &nbsp; Python 3.11+ &nbsp; | &nbsp; [MIT lisansı](LICENSE)
+**[Jump to setup](#kurulum)** · [Download the latest release](https://github.com/uy4nik-droid/avenoxbeyin-english/releases/latest) · [Visual setup guide](https://avenox.io/ikincibeyin) · [Docs](#belgeler)
 
-## Ne işe yarar?
+macOS · Windows · Linux &nbsp; | &nbsp; Python 3.11+ &nbsp; | &nbsp; [MIT license](LICENSE)
 
-| İstediğin | Beyin ile yapabileceğin |
+## What is it for?
+
+| What you want | What you can do with Beyin |
 | --- | --- |
-| Yeni oturumda kaldığın yerden devam etmek | Son işin sonucunu, açık konuları ve sonraki adımı kaynak notlara kaydetmek |
-| Daha önce verdiğin kararı bulmak | Notlarda aramak, kararın geçtiği dosyayı açmak |
-| Bir kaynağı kaybetmemek | Video, makale veya dosyayı **Yakala** ile gelen kutuna almak |
-| Claude'dan Codex'e geçmek | Aynı klasördeki not ve görevleri başka bir desteklenen istemciyle kullanmak |
+| Pick up where you left off in a new session | Save the result of your last task, open issues and the next step as source notes |
+| Find a decision you made earlier | Search your notes and open the file where the decision appears |
+| Not lose a source | Put a video, article or file into your inbox with **Yakala** (capture) |
+| Move from Claude to Codex | Use the same folder of notes and tasks with another supported client |
 
-Kasanın ayrı bir kopyasını sakla: [Git bilmeden veya özel Git deposuyla yedekleme](docs/v3/BACKUP.md).
+Keep a separate copy of the vault: [Backup without knowing Git, or with a private Git repository](docs/v3/BACKUP.md).
 
-### Nasıl çalışır?
+### How does it work?
 
 ```mermaid
 flowchart TB
-    A["Sen ve AI ajanın"] -->|"Bilgiyi kaydet"| B["Yerel Markdown notları"]
-    B -->|"Yerel arama"| C["İlgili notlar ve kaynakları"]
-    C -->|"Sonraki oturumda bağlam"| A
+    A["You and your AI agent"] -->|"Save information"| B["Local Markdown notes"]
+    B -->|"Local search"| C["Relevant notes and their sources"]
+    C -->|"Context in the next session"| A
 ```
 
-Asıl kaynak dosyaların. Beyin bunların yerel indeksini tutar ve seçilen bağlamı kullandığın AI istemcisine verir. Sohbet geçmişinin tamamını kendiliğinden bilgiye dönüştürmez; kalıcı olmasını istediğin şeyi nota yazdırırsın.
+Your files are the source of truth. Beyin keeps a local index of them and hands the selected context to the AI client you use. It does not turn your whole chat history into knowledge on its own; you have the agent write down whatever you want to keep.
 
-> **V3.13.0'da yeni:** Yakala'dan isteğe bağlı Claude/Codex'e gönderim, Word (.docx) belgelerini okuma, Pi bağlantısı ve OpenCode global köprüsü. Yerel web görünümü ve çalışma alanı araçları da bu sürümde. [Tüm yenilikler](docs/v3/releases/3.13.0.md).
+> **New in V3.13.0:** Optional send from Yakala to Claude/Codex, reading Word (.docx) documents, a Pi connection and an OpenCode global bridge. The local web view and workspace tools are also in this release. [All changes](docs/v3/releases/3.13.0.md).
 
 <a id="kurulum"></a>
-## Üç adımda kurulum
+## Setup in three steps
 
-**Gerekenler:** Python **3.11+** ve desteklenen bir AI istemcisi. İstemcinin kurulumu ve hesabı ayrı gerekir. Beyin'in temel kurulumu için Git, pip, Mem0 hesabı, ek API anahtarı veya sürekli açık sunucu gerekmez. Obsidian isteğe bağlıdır.
+**You need:** Python **3.11+** and a supported AI client. The client's own installation and account are separate requirements. Beyin's basic setup does not need Git, pip, a Mem0 account, an extra API key or an always-on server. Obsidian is optional.
 
-### 1. Bir klasör seç
+### 1. Pick a folder
 
-Yeni bir klasör veya mevcut Obsidian vault'un olabilir. Notlarını başka yere taşıman gerekmez.
+It can be a new folder or your existing Obsidian vault. You don't need to move your notes anywhere else.
 
-### 2. AI istemcinde o klasörü aç
+### 2. Open that folder in your AI client
 
-Claude Code, Codex veya aşağıdaki [istemcilerden](#istemciler) birini kullan. Kurulumu istediğin klasörde çalıştığından emin ol.
+Use Claude Code, Codex or one of the [clients](#istemciler) below. Make sure the setup runs in the folder you want.
 
-### 3. Bu mesajı yapıştır
+### 3. Paste this message
 
 ```text
-https://avenox.io/beyin.md adresini oku. Bu klasöre ikinci beynimi kur.
-Mevcut kurulum varsa notlarımı koruyarak güncelle. Gerekli indirme ve
-kurulum adımlarını sen yap. Sonunda örnek bir bilgiyi kaydedip yeni
-oturumda geri okuyarak birlikte doğrulayalım.
+Read https://raw.githubusercontent.com/uy4nik-droid/avenoxbeyin-english/main/beyin.md. Set up my second brain in this folder.
+If there is an existing installation, update it and keep my notes. Do the
+necessary downloads and setup steps yourself. At the end, let's verify it
+together by saving a sample piece of information and reading it back in a
+new session.
 ```
 
-Ajan resmi kararlı paketi indirir, checksum'u doğrular ve kurulumu kontrol eder. İstemcinin gösterdiği klasör veya hook güven incelemesini tamamla. Ardından **aynı klasörde yeni bir oturum aç**; Codex'te yeni hook tanımlarını `/hooks` ekranında incele.
+The agent downloads the official stable package, verifies the checksum and checks the installation. Complete the folder or hook trust review that your client shows. Then **open a new session in the same folder**; in Codex, review the new hook definitions on the `/hooks` screen.
 
 <details>
-<summary><strong>Terminalden kendim kurmak istiyorum</strong></summary>
+<summary><strong>I want to install it myself from the terminal</strong></summary>
 
-1. [Son sürümden](https://github.com/avenoxai/avenoxbeyin/releases/latest) **`beyin-v3-X.Y.Z.zip`** ve yanındaki **`.sha256`** dosyasını indir. GitHub'ın **Source code** arşivini seçme.
-2. ZIP'in SHA-256 değerini yanındaki dosyayla karşılaştır ve paketi aç. [Doğrulama adımları](beyin.md).
-3. **Açtığın paket klasöründe** terminal aç. Vault yolunu kendi not klasörünle değiştir:
+1. From the [latest release](https://github.com/uy4nik-droid/avenoxbeyin-english/releases/latest), download **`beyin-v3-X.Y.Z.zip`** and the **`.sha256`** file next to it. Don't pick GitHub's **Source code** archive.
+2. Compare the ZIP's SHA-256 value with the file next to it, then unpack the package. [Verification steps](beyin.md).
+3. Open a terminal **in the folder you unpacked**. Replace the vault path with your own notes folder:
 
 **macOS / Linux**
 
 ```sh
-python3 scripts/install_v3.py --vault "/tam/yol/Beynim"
+python3 scripts/install_v3.py --vault "/full/path/MyBrain"
 ```
 
 **Windows**
 
 ```powershell
-py -3 scripts/install_v3.py --vault "C:\Notlar\Beynim"
+py -3 scripts/install_v3.py --vault "C:\Notes\MyBrain"
 ```
 
-Kurucu motoru, istemci bağlantılarını ve dört başlangıç skill'ini vault'a yerleştirir. Paket klasörünü açık tutman gerekmez. Vault'u istemcinde aç, güven incelemesini tamamla ve yeni bir oturum başlat. [Ayrıntılı kurulum](SETUP-V3.md).
+The installer puts the engine, the client connections and the four starter skills into the vault. You don't need to keep the package folder open. Open the vault in your client, complete the trust review and start a new session. [Detailed setup](SETUP-V3.md).
 
 </details>
 
-## İlk 5 dakika
+## The first 5 minutes
 
-Ajanına sırayla şunları söyle. Bunlar örnek mesajlar; kendi bilgilerinle değiştirebilirsin.
+Tell your agent the following, in order. These are example messages; replace them with your own details.
 
-| Adım | Ajanına söyle |
+| Step | Tell your agent |
 | --- | --- |
-| **Tanış** | “Beyin skill'ini kullan. Beni tanımak için birkaç kısa soru sor ve cevaplarımı notlara kaydet.” |
-| **Kaydet** | “Örnek proje için Python seçtim, çünkü ekip Python biliyor. Bunu karar notu olarak kaydet.” |
-| **Geri bul** | Yeni oturum aç: “Örnek projede hangi dili seçmiştik, neden? Kaynak notu göster.” |
-| **Görev oluştur** | “Örnek projenin ilk taslağını hazırlamam için bir görev oluştur.” |
+| **Get acquainted** | "Use the beyin skill. Ask me a few short questions to get to know me and save my answers to my notes." |
+| **Save** | "For the sample project I chose Python, because the team knows Python. Save this as a decision note." |
+| **Find it again** | Open a new session: "Which language did we pick for the sample project, and why? Show the source note." |
+| **Create a task** | "Create a task for me to prepare the first draft of the sample project." |
 
-Kaydı dosyada, geri çağırmayı yeni oturumda kontrol et. Böylece kendi istemcinde bağlantının çalıştığını da görürsün.
+Check the saving in the file and the recall in the new session. That way you also see that the connection works in your own client.
 
 <details>
-<summary><strong>Kurulan dört skill ne yapıyor?</strong></summary>
+<summary><strong>What do the four installed skills do?</strong></summary>
 
-| Skill | Kullanım |
+| Skill | Use |
 | --- | --- |
-| **beyin** | Not bulma, bilgi kaydetme, görev ve iş sonucu oluşturma |
-| **beyin-doktor** | Bağlantı, kayıt ve kurulum sorunlarını kontrol etme |
-| **beyin-guncelle** | Güncelleme, sürüm kontrolü ve geri alma |
-| **beyin-kontrol** | Hafızadaki bilginin hala doğru olup olmadığını denetleme; yalnız sen istediğinde çalışır, onayın olmadan yazmaz |
+| **beyin** | Finding notes, saving information, creating tasks and work results |
+| **beyin-doktor** | Checking connection, saving and setup problems |
+| **beyin-guncelle** | Updating, version checks and rollback |
+| **beyin-kontrol** | Checking whether information in memory is still correct; runs only when you ask, and does not write without your approval |
 
-Ortak kaynak `.agents/skills` içindedir; Claude ve Kiro kendi proje kopyalarını kullanır. Mevcut kişisel skill'ler sessizce ezilmez.
+The shared source lives in `.agents/skills`; Claude and Kiro use their own project copies. Your existing personal skills are not silently overwritten.
 
 </details>
 
 <a id="istemciler"></a>
-## Hangi istemcilerle kullanılır?
+## Which clients does it work with?
 
-| İstemci | Kurulum sonrası |
+| Client | After setup |
 | --- | --- |
-| **Claude Code** | Vault klasöründe yeni oturum aç. |
-| **Codex** | Yeni hook tanımlarını `/hooks` ile incele; yeni oturum aç. |
-| **Google Antigravity** | Vault'u workspace olarak aç ve klasöre güven. [Kurulum](SETUP-V3.md) |
-| **Kiro** | Hook'ları incele; yeni oturum aç. [Rehber](docs/v3/KIRO.md) |
-| **Hermes Agent** | Profil bağlantısını yap, `beyin-v3` eklentisini etkinleştir. [Rehber](docs/v3/HERMES.md) |
-| **OpenCode** | Vault klasöründe aç; eklenti yüklenir. [Rehber](docs/v3/OPENCODE.md) |
-| **OMP / Oh My Pi** | Vault klasöründe aç; hook yüklenir. [Rehber](docs/v3/OMP.md) |
-| **Pi** | Extension için proje güvenini onayla; yeni oturum aç. [Rehber](docs/v3/PI.md) |
-| **DeepSeek Harness (DSH)** | Yalnız açık `context`/`receipt` CLI kullanımı; otomatik teslim doğrulanmadı. [Rehber](docs/v3/DSH.md) |
+| **Claude Code** | Open a new session in the vault folder. |
+| **Codex** | Review the new hook definitions with `/hooks`; open a new session. |
+| **Google Antigravity** | Open the vault as a workspace and trust the folder. [Setup](SETUP-V3.md) |
+| **Kiro** | Review the hooks; open a new session. [Guide](docs/v3/KIRO.md) |
+| **Hermes Agent** | Set up the profile connection and enable the `beyin-v3` plugin. [Guide](docs/v3/HERMES.md) |
+| **OpenCode** | Open it in the vault folder; the plugin loads. [Guide](docs/v3/OPENCODE.md) |
+| **OMP / Oh My Pi** | Open it in the vault folder; the hook loads. [Guide](docs/v3/OMP.md) |
+| **Pi** | Approve project trust for the extension; open a new session. [Guide](docs/v3/PI.md) |
+| **DeepSeek Harness (DSH)** | Explicit `context`/`receipt` CLI use only; automatic delivery is not verified. [Guide](docs/v3/DSH.md) |
 
-İstemcilerin hook ve güven akışları farklıdır. Codex Desktop'ta açık skill kullanımı ile otomatik hook teslimi aynı şey değildir; otomatik Desktop akışı henüz doğrulanmış sayılmaz. [Gerçek istemci kontrolleri](docs/v3/LIVE-CLIENTS.md).
+Clients differ in their hook and trust flows. In Codex Desktop, explicit skill use is not the same thing as automatic hook delivery; the automatic Desktop flow is not yet considered verified. [Real-client checks](docs/v3/LIVE-CLIENTS.md).
 
-Başka proje klasörlerinde çalışırken merkezi beynine erişmek için [isteğe bağlı global köprü](docs/v3/GLOBAL-BRIDGE.md) var.
+To reach your central brain while working in other project folders, there is an [optional global bridge](docs/v3/GLOBAL-BRIDGE.md).
 
-## Bir kaynağı tek tuşla yakala
+## Capture a source with one keystroke
 
-Video, tweet, makale, mail veya dosyayı gelen kutuna al. Sonra ajanına **“yakalananları işle”** de; metni çıkarıp notlarına bağlasın.
+Put a video, tweet, article, email or file into your inbox. Then tell your agent **"process the captures"** and it extracts the text and links it into your notes.
 
-**Bir kez, vault klasöründe:**
+**Once, in the vault folder:**
 
 ```sh
 python3 beyin.py yakala kur
@@ -139,92 +142,92 @@ python3 beyin.py yakala kur
 
 | macOS | Windows | Linux |
 | --- | --- | --- |
-| `Control + Option + B` | `Ctrl + Alt + B` | KDE Plasma'da `Ctrl + Alt + B`; diğer masaüstleri için [rehber](docs/v3/YAKALA.md) |
+| `Control + Option + B` | `Ctrl + Alt + B` | `Ctrl + Alt + B` on KDE Plasma; for other desktops see the [guide](docs/v3/YAKALA.md) |
 
-Varsayılan **Enter** yalnız kartı kaydeder. İstersen Claude Code veya Codex ajan modunu ayrıca açıp **Ctrl+Enter** ile o kartı ajana gönderebilirsin. Word (.docx) belgeleri desteklenir; YouTube sesini yazıya çevirme gibi ek işler ayrı araçlar gerektirebilir. [Yakala rehberi](docs/v3/YAKALA.md).
+By default, **Enter** only saves the card. If you like, you can separately enable the Claude Code or Codex agent mode and send that card to the agent with **Ctrl+Enter**. Word (.docx) documents are supported; extra jobs such as transcribing YouTube audio may need separate tools. [Yakala guide](docs/v3/YAKALA.md).
 
-## Beynine tarayıcıdan bak
+## Look at your brain in the browser
 
-Görevlerini, son iş sonuçlarını ve doktor özetini tek ekranda gör. İsteğe bağlı web görünümünü **vault klasöründe** aç:
+See your tasks, recent work results and the doctor summary on one screen. Open the optional web view **in the vault folder**:
 
 ```sh
 python3 beyin.py web ac
 ```
 
-![Örnek verilerle gerçek Beyin web arayüzünün görev görünümü.](docs/assets/readme/web-tasks.png)
+![The task view of the real Beyin web interface, with sample data.](docs/assets/readme/web-tasks.png)
 
-*Gerçek arayüz, örnek not ve görevlerle, salt okunur modda görüntülendi. Kişisel veri içermez.*
+*The real interface, shown with sample notes and tasks, in read-only mode. It contains no personal data.*
 
-Yalnız bu bilgisayarda açılır; 30 dakika kullanılmazsa kapanır. Kurulum sırasında kendiliğinden başlamaz. Sadece görüntülemek için `web ac --read-only` kullan. [Web rehberi](docs/v3/WEB.md).
+It opens only on this computer and closes after 30 minutes of inactivity. It does not start on its own during setup. To only view, use `web ac --read-only`. [Web guide](docs/v3/WEB.md).
 
-## Güncelleme ve yardım
+## Updates and help
 
-Güncellemek için ajanına **“beynimi güncelle”**, sorun varsa **“beyin-doktor ile kontrol et”** de. Terminal tercih edersen **vault klasöründe**:
+To update, tell your agent **"update my brain"**; if something is wrong, say **"check with beyin-doktor"**. If you prefer the terminal, run these **in the vault folder**:
 
 ```sh
-python3 beyin.py update --check   # Yeni sürümü kontrol et
-python3 beyin.py update          # Güncelle
-python3 beyin.py doctor          # Kurulumu ve bağlantıları kontrol et
+python3 beyin.py update --check   # Check for a new version
+python3 beyin.py update          # Update
+python3 beyin.py doctor          # Check the installation and connections
 ```
 
-**Windows:** Bu sayfadaki `python3 beyin.py ...` komutlarında `python3` yerine `py -3` kullan.
+**Windows:** In the `python3 beyin.py ...` commands on this page, use `py -3` instead of `python3`.
 
-**Yakala kullanıyorsan**, güncellemeden sonra `python3 beyin.py yakala kur` komutunu bir kez daha çalıştır; ayrı kopyalanan dinleyici ve skill de yenilensin. İstemcinde yeni oturum aç. Global köprü kullanıyorsan sürümün [yeniden kurulum notlarını](docs/v3/releases/3.13.0.md) da kontrol et.
+**If you use Yakala**, run `python3 beyin.py yakala kur` once more after an update, so the separately copied listener and skill are refreshed too. Open a new session in your client. If you use the global bridge, also check the release's [reinstall notes](docs/v3/releases/3.13.0.md).
 
-Kullanıcı notları güncellenen sistem dosyalarından ayrıdır. Yönetilen bir dosyada kendi değişikliğin varsa sessizce ezilmez; çakışma bildirilir. [Çevrimdışı güncelleme, `rollback` ve `recover`](docs/v3/UPDATE.md).
+Your user notes are separate from the system files that get updated. If you have your own changes in a managed file, it is not silently overwritten; the conflict is reported. [Offline update, `rollback` and `recover`](docs/v3/UPDATE.md).
 
-## Merak edilenler
+## Frequently asked
 
 <details>
-<summary><strong>Notlarım nerede? AI sağlayıcısına ne gider?</strong></summary>
+<summary><strong>Where are my notes? What goes to the AI provider?</strong></summary>
 
-Notların yerel Markdown dosyalarında, indeks bu bilgisayarda tutulur. Seçilen bağlam AI istemcine verilir; istemcinin model sağlayıcısı ve hesap koşulları geçerlidir. “Yerel hafıza”, bütün AI konuşmasının çevrimdışı olduğu anlamına gelmez.
+Your notes live in local Markdown files, and the index is kept on this computer. The selected context is given to your AI client; the client's model provider and account terms apply. "Local memory" does not mean the whole AI conversation is offline.
 
-Özel not işaretleri Beyin'in bağlam ve web filtrelerini etkiler; dosya erişimi verdiğin bir ajan için işletim sistemi düzeyinde koruma oluşturmaz. [Kaynak biçimi ve görünürlük](docs/v3/MARKDOWN.md).
+Private-note markers affect Beyin's context and web filters; they do not create operating-system-level protection against an agent you have given file access. [Source format and visibility](docs/v3/MARKDOWN.md).
 
 </details>
 
 <details>
-<summary><strong>Ek maliyet veya sürekli çalışan bir servis var mı?</strong></summary>
+<summary><strong>Is there an extra cost or an always-running service?</strong></summary>
 
-Temel yerel kontroller model çağırmaz. Ajana yaptırdığın işler ve eklenen bağlam istemcinin normal tüketimine girer. “Ekonomik moda geç” veya “otomatik kontrolleri kapat” diyebilirsin; desteklenen istemciler aynı vault tercihini kullanır.
+The basic local checks do not call a model. The work you have the agent do and the context that gets added fall under your client's normal consumption. You can say "switch to economy mode" or "turn off automatic checks"; supported clients use the same vault preference.
 
-İstemciler kapalıyken sürekli hafıza tarayan bir servis yoktur. Yakala dinleyicisi ve web görünümü ayrı, isteğe bağlı araçlardır. Sürüm bildirimi günde en fazla bir kez GitHub'ı kontrol eder; not göndermez ve kendiliğinden güncelleme kurmaz. İsteğe bağlı Jev danışmanı varsayılan kapalıdır.
+There is no service that continuously scans memory while the clients are closed. The Yakala listener and the web view are separate, optional tools. The version notice checks GitHub at most once a day; it does not send notes and does not install updates on its own. The optional Jev advisor is off by default.
 
-[Normal / Ekonomik / Manuel modlar](docs/v3/PREFERENCES.md) · [Jev](docs/v3/JEV.md)
-
-</details>
-
-<details>
-<summary><strong>Her şeyi hatırlar mı? Eski sohbetlerim ne olur?</strong></summary>
-
-Arama yerel kelime eşleştirmesine dayanır; her soruda doğru hatırlama garantisi yoktur. Önemli kararları nota yazdır, gerektiğinde kaynağını açtır. İş sonucu kaydı da ajanın yazdığı bir iddiadır; bağımsız doğrulama yerine geçmez.
-
-Eski sohbet geçmişinin tamamı otomatik alınmaz. İsteğe bağlı sohbet izi ve geçmişten özet çıkarma için [chat-trace rehberi](docs/v3/CHAT-TRACE.md), son işlerin özeti için [komut rehberi](docs/v3/QUICKSTART.md) var.
+[Normal / Economy / Manual modes](docs/v3/PREFERENCES.md) · [Jev](docs/v3/JEV.md)
 
 </details>
 
 <details>
-<summary><strong>V2'den geliyorum veya vault'u başka bilgisayara taşıyorum</strong></summary>
+<summary><strong>Does it remember everything? What happens to my old chats?</strong></summary>
 
-V2'den geçişte aynı kurucuyu mevcut vault üzerinde çalıştırırsın. Notlar ve eski günlükler korunur; tanınan eski otomatik yazıcılar geri alınabilir biçimde devreden çıkarılır. Özelleştirilmiş dosyalar varsa kurucu durup açıklar. V2'nin arka planda model çağıran derleyicisi V3'te çalışmaz.
+Search relies on local word matching; there is no guarantee of correct recall on every question. Have important decisions written to a note and have the source opened when needed. A work-result record is also a claim written by the agent; it is no substitute for independent verification.
 
-Vault'u taşımak ve birden çok makinede kullanmak ayrı adımlar gerektirir; çalışma veritabanını sıradan bir eşitlenen dosya gibi paylaşma.
+Your whole old chat history is not imported automatically. For the optional chat trace and for extracting summaries from history, see the [chat-trace guide](docs/v3/CHAT-TRACE.md); for a summary of recent work, see the [command guide](docs/v3/QUICKSTART.md).
 
-[V2 geçişi](docs/v3/MIGRATION.md) · [Birden çok makine](docs/v3/MULTI-MACHINE.md) · [Tarihsel V2 rehberi](docs/V2-README.md)
+</details>
+
+<details>
+<summary><strong>I'm coming from V2, or I'm moving the vault to another computer</strong></summary>
+
+When moving up from V2, you run the same installer on the existing vault. Notes and old logs are kept; recognized old automatic writers are disabled in a reversible way. If there are customized files, the installer stops and explains. V2's compiler, which called a model in the background, does not run in V3.
+
+Moving the vault and using it on several machines need separate steps; don't share the working database like an ordinary synced file.
+
+[V2 migration](docs/v3/MIGRATION.md) · [Multiple machines](docs/v3/MULTI-MACHINE.md) · [Historical V2 guide](docs/V2-README.md)
 
 </details>
 
 <a id="belgeler"></a>
-## Belgeler ve katkı
+## Docs and contributing
 
-| Aradığın | Rehber |
+| What you're looking for | Guide |
 | --- | --- |
-| Komutlar, görevler ve son işlerin özeti | [Komut rehberi](docs/v3/QUICKSTART.md) |
-| Açılış hafızası, kişilik ve arşivleme | [Companion](docs/v3/COMPANION-PARITY.md) |
-| Çalışma alanları ve not bağlantıları | [V3.13.0 yenilikleri](docs/v3/releases/3.13.0.md) |
-| Teknik mimari ve kaynak biçimi | [V3 belgeleri](docs/v3/README.md) · [Runtime](docs/v3/RUNTIME.md) · [Markdown](docs/v3/MARKDOWN.md) |
-| Neler test edildi? | [Platform testleri](docs/v3/PLATFORM-TESTS.md) · [Gerçek istemciler](docs/v3/LIVE-CLIENTS.md) |
-| Bir hata veya katkı | [Issue aç](https://github.com/avenoxai/avenoxbeyin/issues) · [Katkı rehberi](CONTRIBUTING.md) |
+| Commands, tasks and a summary of recent work | [Command guide](docs/v3/QUICKSTART.md) |
+| Startup memory, personality and archiving | [Companion](docs/v3/COMPANION-PARITY.md) |
+| Workspaces and note links | [What's new in V3.13.0](docs/v3/releases/3.13.0.md) |
+| Technical architecture and source format | [V3 docs](docs/v3/README.md) · [Runtime](docs/v3/RUNTIME.md) · [Markdown](docs/v3/MARKDOWN.md) |
+| What has been tested? | [Platform tests](docs/v3/PLATFORM-TESTS.md) · [Real clients](docs/v3/LIVE-CLIENTS.md) |
+| A bug or a contribution | [Open an issue](https://github.com/avenoxai/avenoxbeyin/issues) · [Contributing guide](CONTRIBUTING.md) |
 
-Avenox'un günlük ikinci beyin iş akışlarından geliştirildi. Katkı veren herkese teşekkürler. V2 bilgi derleme fikri için [Karpathy'nin bilgi tabanı deseninden](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) yararlanıldı.
+Developed out of Avenox's day-to-day second-brain workflows. Thanks to everyone who contributed. For the V2 knowledge-compilation idea, [Karpathy's knowledge-base pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) was drawn on.

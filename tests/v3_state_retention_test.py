@@ -431,10 +431,10 @@ class StateRetentionTest(unittest.TestCase):
                                    'database_bytes_before': 219 * 1048576, 'database_bytes_after': 34 * 1048576},
                                   'state-compact')
         self.assertIn('219.0 MB -> 34.0 MB', text)
-        self.assertIn('Vault dosyalarina dokunulmadi.', text)
+        self.assertIn('Vault files were not touched.', text)
         plan = entry.human_result({'status': 'planned', 'events_prunable': 7, 'event_bytes_prunable': 1048576,
                                    'stale_temp_files': 2}, 'state-compact')
-        self.assertIn('Hicbir sey degismedi', plan)
+        self.assertIn('Nothing changed', plan)
         doctor = entry.human_result({'status': 'observed_metadata', 'state_storage': {
             'compact_suggested': True, 'database_bytes': 219 * 1048576, 'free_bytes': 185 * 1048576}}, 'doctor', '3.12.0')
         self.assertIn('beyin.py state-compact', doctor)

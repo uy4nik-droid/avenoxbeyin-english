@@ -80,8 +80,8 @@ class SkillDescriptionTest(unittest.TestCase):
                 for mention in mentions(description, other):
                     with self.subTest(skill=name, mentions=other):
                         group = next((description[a:b] for a, b in groups if a < mention.start() < b), '')
-                        # "(kasada varsa gecmis-import)": V3 never installs it, a V2 vault may keep it.
-                        self.assertIn('varsa', group, description)
+                        # "(gecmis-import, if the vault has it)": V3 never installs it, a V2 vault may keep it.
+                        self.assertIn('if the vault has it', group, description)
 
 
 if __name__ == '__main__':

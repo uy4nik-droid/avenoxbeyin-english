@@ -621,7 +621,7 @@ class HookInstallerTest(unittest.TestCase):
         engine.receipt('bare-1', summary, ['notes/task.md'], 'claude', session=session(sess_name))
         response = self.lifecycle('Stop', sess_name, 'claude')
         self.assertEqual(response.get('decision'), 'block')
-        self.assertIn("Öğrenilen: yok", response.get('reason', ''))
+        self.assertIn("Learned: none", response.get('reason', ''))
         # A second stop passes open
         self.assertEqual(self.lifecycle('Stop', sess_name, 'claude'), {})
 
@@ -1055,7 +1055,7 @@ class HookInstallerTest(unittest.TestCase):
                    'tool_input': {'file_path': str(big)}}
         self.assertEqual(self.invoke(payload, 'claude'), {})
         start = self.invoke(dict(self.payload, hook_event_name='SessionStart'), 'claude')
-        self.assertNotIn('Soru sirasi', json.dumps(start))
+        self.assertNotIn('Question queue', json.dumps(start))
         self.assertFalse((self.state / 'soruldu').exists())
         self.assertFalse((self.state / 'touch-log.tsv').exists())
 
@@ -1068,7 +1068,7 @@ class HookInstallerTest(unittest.TestCase):
                    'tool_input': {'file_path': str(big)}}
         for harness in ('claude', 'codex'):
             response = self.invoke(dict(payload, session_id='hygiene-cap-' + harness), harness)
-            self.assertIn('Bolum SINYALI', response['hookSpecificOutput']['additionalContext'])
+            self.assertIn('split SIGNAL', response['hookSpecificOutput']['additionalContext'])
         antigravity = self.invoke(dict(payload, session_id='hygiene-cap-antigravity'), 'antigravity')
         self.assertEqual(antigravity, {'decision': 'stop'})
 
@@ -1080,7 +1080,7 @@ class HookInstallerTest(unittest.TestCase):
         payload = {'hook_event_name': 'PostToolUse', 'session_id': 'hygiene-cap-custom',
                    'tool_input': {'file_path': str(note)}}
         response = self.invoke(payload, 'claude')
-        self.assertIn('10 kelime tavan uzerinde', response['hookSpecificOutput']['additionalContext'])
+        self.assertIn('10 words over the cap', response['hookSpecificOutput']['additionalContext'])
 
     def test_folder_questions_opt_in_asks_once_per_cooldown(self):
         self.seed()
@@ -1090,12 +1090,12 @@ class HookInstallerTest(unittest.TestCase):
         self.enable(folder_questions=True)
         first = self.invoke(dict(self.payload, hook_event_name='SessionStart'), 'claude')
         context = first['hookSpecificOutput']['additionalContext']
-        self.assertIn('Soru sirasi', context)
+        self.assertIn('Question queue', context)
         self.assertIn('Beden', context)
         stamps = list((self.state / 'soruldu').glob('*.stamp'))
         self.assertEqual([stamp.stem for stamp in stamps], ['Beden'])
         second = self.invoke(dict(self.payload, hook_event_name='SessionStart'), 'claude')
-        self.assertNotIn('Soru sirasi', json.dumps(second))
+        self.assertNotIn('Question queue', json.dumps(second))
 
     def test_promotion_opt_in_touch_log_records_once(self):
         self.seed()
@@ -1119,7 +1119,7 @@ class HookInstallerTest(unittest.TestCase):
             payload = {'hook_event_name': 'PostToolUse', 'session_id': 'hygiene-' + profile,
                        'tool_input': {'file_path': str(big)}}
             response = self.invoke(payload, 'claude')
-            self.assertIn('Bolum SINYALI', response['hookSpecificOutput']['additionalContext'], profile)
+            self.assertIn('split SIGNAL', response['hookSpecificOutput']['additionalContext'], profile)
         self.assertEqual(self.invoke(dict(payload, session_id='bridge'), 'claude', extra=['--metadata-only']), {})
 
     def test_codex_apply_patch_payload_is_measured_and_logged(self):

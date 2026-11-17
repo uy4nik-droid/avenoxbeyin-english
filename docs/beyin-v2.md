@@ -5,7 +5,7 @@
 > This file is your complete, self-contained build spec. Read it once, top to bottom, then execute
 > it phase by phase. You need no other context.
 >
-> Source: https://avenox.lol/beyin.md · Repo: https://github.com/avenoxai/avenoxbeyin
+> Source: https://raw.githubusercontent.com/uy4nik-droid/avenoxbeyin-english/main/beyin.md · Repo: https://github.com/avenoxai/avenoxbeyin
 
 ---
 
@@ -29,9 +29,8 @@ one executing it.
 
 ## Rules for you, Claude (read before doing anything)
 
-1. **Speak Turkish to the user by default.** The audience is Turkish. Match the language they
-   write in, but default to warm, direct Turkish. This file is English only so your instructions
-   stay precise; the system you build talks to them in Turkish.
+1. **Speak English to the user by default.** Match the language they write in, but default to
+   warm, direct English. The system you build talks to them in English.
 2. **Route first, interview second, build third.** Complete STEP -1 before the interview or any
    target-vault write. Native Windows has a separate, fail-closed runbook; never feed it the Bash
    path below.
@@ -43,9 +42,9 @@ one executing it.
 5. **Don't block on optional steps.** obsidian-cli, mem0, the swift icon. If an install fails, log
    it, tell the user, continue.
 6. **Verify each phase** with a quick check before moving on. End with the first-run report.
-7. **Be the demo.** This is often filmed. Narrate what you are doing in short Turkish lines as you
-   go: "Vault iskeletini kuruyorum...", "Hafıza motorunu bağlıyorum...", "Gece derleyicisini
-   yerine koyuyorum...". Short sentences, no walls of text.
+7. **Be the demo.** This is often filmed. Narrate what you are doing in short English lines as you
+   go: "Setting up the vault skeleton...", "Wiring up the memory engine...", "Putting the nightly
+   compiler in place...". Short sentences, no walls of text.
 8. **Zero cost, zero keys.** Nothing here needs an API key. The background summarizer and the
    compiler run on the subscription the user already pays for, through `claude -p`.
 
@@ -53,15 +52,15 @@ Placeholders you must resolve:
 `{{OS_NAME}}` · `{{USER_NAME}}` · `{{USER_BIO}}` · `{{COMPANION}}` · `{{VAULT_PATH}}` ·
 `{{SCOPE}}` · `{{USE_MEM0}}` · `{{TODAY}}` (YYYY-MM-DD)
 
-| Placeholder | Nereden gelir | Örnek |
+| Placeholder | Where it comes from | Example |
 | --- | --- | --- |
-| `{{OS_NAME}}` | makine adından türetilir, kullanıcı onaylar | `AylinOS` |
-| `{{USER_NAME}}` | soru 1 | `Aylin` |
-| `{{USER_BIO}}` | soru 2 | `Ürün tasarımcısı, yan projeler yürütüyor` |
-| `{{COMPANION}}` | soru 3 | `Echo` |
+| `{{OS_NAME}}` | derived from the machine name, the user confirms | `AylinOS` |
+| `{{USER_NAME}}` | question 1 | `Aylin` |
+| `{{USER_BIO}}` | question 2 | `Product designer, runs side projects` |
+| `{{COMPANION}}` | question 3 | `Echo` |
 | `{{VAULT_PATH}}` | 0.3 | `~/Documents/AylinOS` |
-| `{{SCOPE}}` | soru 4 | `core+goals` |
-| `{{USE_MEM0}}` | soru 5 | `evet` |
+| `{{SCOPE}}` | question 4 | `core+goals` |
+| `{{USE_MEM0}}` | question 5 | `yes` |
 | `{{TODAY}}` | `date +%F` | `2026-08-22` |
 
 ---
@@ -78,7 +77,7 @@ platform from path style alone.
 - `OS=Windows_NT` without WSL means **native Windows**.
 - `uname -s = Darwin` means macOS. Other Linux kernels mean Linux.
 
-Report the detected lane in one short Turkish sentence, then follow exactly one route:
+Report the detected lane in one short sentence, then follow exactly one route:
 
 ### Native Windows: hand off and stop this file
 
@@ -97,8 +96,8 @@ silently reused:
 
 ```powershell
 $BeyinRepo = Join-Path $env:TEMP ("avenoxbeyin-" + [guid]::NewGuid().ToString("N"))
-git clone https://github.com/avenoxai/avenoxbeyin.git $BeyinRepo
-if ($LASTEXITCODE -ne 0) { throw "avenoxbeyin klonlanamadi; kurulum baslatilmadi" }
+git clone https://github.com/uy4nik-droid/avenoxbeyin-english.git $BeyinRepo
+if ($LASTEXITCODE -ne 0) { throw "avenoxbeyin could not be cloned; setup was not started" }
 Set-Location $BeyinRepo
 ```
 
@@ -125,10 +124,10 @@ about its unverified desktop-launcher integration.
 
 ---
 
-## STEP 0: Mevcut beyin var mı? (ask this before anything else)
+## STEP 0: Is there an existing brain? (ask this before anything else)
 
-Ask the user in Turkish: **"Daha önce kurulmuş bir beynin var mı? Varsa klasör yolunu ver."**
-Then scan the two default locations anyway:
+Ask the user in English: **"Have you already set up a brain before? If so, give me the folder
+path."** Then scan the two default locations anyway:
 
 No globs. An empty `Documents` folder makes `"$HOME/Documents"/*` abort the whole command under
 zsh with `no matches found`, and under bash it silently iterates a literal unexpanded pattern. You
@@ -147,11 +146,11 @@ while IFS= read -r BEYIN_D; do
   [ -n "$BEYIN_MEM" ] || continue
   BEYIN_HITS=$((BEYIN_HITS + 1))
   echo "ADAY: $BEYIN_D"
-  echo "  hafıza klasörü: $(basename "$BEYIN_MEM")"
+  echo "  memory folder: $(basename "$BEYIN_MEM")"
   if [ -f "$BEYIN_D/.beyin-version" ]; then
-    echo "  sürüm: $(sed -n '1p' "$BEYIN_D/.beyin-version")"
+    echo "  version: $(sed -n '1p' "$BEYIN_D/.beyin-version")"
   else
-    echo "  sürüm: v1 (.beyin-version yok)"
+    echo "  version: v1 (no .beyin-version)"
   fi
 done < "$BEYIN_LIST"
 rm -f "$BEYIN_LIST"
@@ -161,12 +160,12 @@ echo "TARAMA TAMAM: $BEYIN_HITS aday bulundu"
 `TARAMA TAMAM` is the success line. If you do not see it, the scan did not finish and you may not
 pick a path yet: fix the error first.
 
-| Bulgu | Yol |
+| Finding | Path |
 | --- | --- |
-| `TARAMA TAMAM: 0 aday` | Yeni kurulum. FAST PATH, sonra gerekirse from-scratch fallback |
-| Aday var, `.beyin-version` yok | **Yükseltme.** FAST PATH ile repoyu klonla, `SETUP.md` MODE B |
-| Aday var, sürüm `2.0.0`, `2.1.0` veya `2.2.0` | v2.3 yükseltmesini çalıştır |
-| Aday var, sürüm `2.3.0` | Güncel. Vault'ta agent'ı açıp `beyin doktor` çalıştır, bitir |
+| `TARAMA TAMAM: 0 aday` | New install. FAST PATH, then the from-scratch fallback if needed |
+| Candidate found, no `.beyin-version` | **Upgrade.** Clone the repo with FAST PATH, `SETUP.md` MODE B |
+| Candidate found, version `2.0.0`, `2.1.0` or `2.2.0` | Run the v2.3 upgrade |
+| Candidate found, version `2.3.0` | Up to date. Open the agent in the vault, run `beyin doktor`, finish |
 
 The upgrade path is not optional politeness, it is the only correct move: a v1 vault holds months
 of the user's memory. Never build a fresh vault next to one that already exists without saying so
@@ -177,7 +176,7 @@ out loud and getting a yes.
 ## FAST PATH: clone the open-source template (recommended, covers both cases)
 
 ```bash
-git clone https://github.com/avenoxai/avenoxbeyin.git /tmp/avenoxbeyin && cd /tmp/avenoxbeyin
+git clone https://github.com/uy4nik-droid/avenoxbeyin-english.git /tmp/avenoxbeyin && cd /tmp/avenoxbeyin
 ```
 
 Then read and follow `SETUP.md` in that repo. It decides the mode (fresh install or upgrade from
@@ -211,19 +210,21 @@ PascalCase it and append `OS`. Strip "MacBook", "Pro", "Air", "iMac", "'s", apos
 `Johns-MacBook-Pro` → `JohnOS`, `aylin's Mac` → `AylinOS`, `DESKTOP-AB12` → `Ab12OS`.
 Propose `{{OS_NAME}}`, let the user override.
 
-### 0.2 Ask exactly these questions (Turkish, conversational, not a form)
+### 0.2 Ask exactly these questions (English, conversational, not a form)
 
-1. **İsmin ne?** → `{{USER_NAME}}`
-2. **Ne iş yapıyorsun, bu beyni en çok ne için kullanacaksın?** (1 veya 2 cümle) → `{{USER_BIO}}`
-3. **AI ortağına ne isim vermek istersin?** (Avenox'unki "Echo") → `{{COMPANION}}`
-4. **Kapsam, neye ihtiyacın var?** → `{{SCOPE}}`
-   - `core` (herkes): Inbox, Knowledge, Projects, Command-Center, ortağın hafızası, kancalar,
+1. **What's your name?** → `{{USER_NAME}}`
+2. **What do you do, and what will you mainly use this brain for?** (1 or 2 sentences) →
+   `{{USER_BIO}}`
+3. **What would you like to name your AI partner?** (Avenox's is "Echo") → `{{COMPANION}}`
+4. **Scope: what do you need?** → `{{SCOPE}}`
+   - `core` (everyone): Inbox, Knowledge, Projects, Command-Center, the partner's memory, hooks,
      `daily/`, `knowledge/`
    - `+goals` ⚔️ 200-Goals · `+money` 🔐 400-Vault · `+body` 💪 700-Body · `+mind` 🧘 800-Mind
-   - `full`: hepsi
-5. **Semantik hafıza (mem0) ekleyelim mi?** Açıkla: dosya tabanlı hafıza API'siz çalışır ve
-   herkese yeter. mem0 üstüne anlamsal arama katmanı koyar, **temel sürümü tamamen ücretsiz**
-   (mem0.ai'den ücretsiz API key, kredi kartı yok). Önerilir. → `{{USE_MEM0}}` (varsayılan: evet)
+   - `full`: all of them
+5. **Shall we add semantic memory (mem0)?** Explain: the file-based memory works without any API
+   and is enough for everyone. mem0 puts a semantic search layer on top, and its **base tier is
+   completely free** (a free API key from mem0.ai, no credit card). Recommended. →
+   `{{USE_MEM0}}` (default: yes)
 
 ### 0.3 Pick the vault location → `{{VAULT_PATH}}`
 
@@ -261,27 +262,27 @@ if [ "$BEYIN_PLATFORM" = "Darwin" ]; then
     [ -d "/Applications/Obsidian.app" ] || brew install --cask obsidian
     command -v obsidian >/dev/null 2>&1 \
       || (brew tap yakitrak/yakitrak >/dev/null 2>&1 && brew install yakitrak/yakitrak/obsidian-cli >/dev/null 2>&1) \
-      || echo "obsidian-cli atlandı (opsiyonel)"
+      || echo "obsidian-cli skipped (optional)"
   else
-    echo "🔴 BREW YOK: Obsidian'ı elle kur, https://obsidian.md/download"
+    echo "🔴 NO BREW: install Obsidian by hand, https://obsidian.md/download"
   fi
 else
-  echo "macOS değil. Homebrew, Obsidian cask ve macOS uygulama adımları atlanıyor."
-  echo "Obsidian'ı paket yöneticinden veya https://obsidian.md/download üstünden kur."
+  echo "Not macOS. Skipping Homebrew, the Obsidian cask and the macOS app steps."
+  echo "Install Obsidian from your package manager or from https://obsidian.md/download."
 fi
 
 BEYIN_MISSING=0
 command -v python3 >/dev/null 2>&1 && echo "python3 ✓ $(python3 -V 2>&1)" \
-  || { echo "🔴 python3 YOK"; BEYIN_MISSING=$((BEYIN_MISSING + 1)); }
+  || { echo "🔴 python3 MISSING"; BEYIN_MISSING=$((BEYIN_MISSING + 1)); }
 command -v claude >/dev/null 2>&1 && echo "claude CLI ✓" \
-  || { echo "🔴 claude CLI YOK"; BEYIN_MISSING=$((BEYIN_MISSING + 1)); }
+  || { echo "🔴 claude CLI MISSING"; BEYIN_MISSING=$((BEYIN_MISSING + 1)); }
 echo "ONKOSUL SONUC: $BEYIN_MISSING eksik"
 ```
 
 `ONKOSUL SONUC: 0` is the only line that lets you go on. Claude Code is already installed, the user
 is running you, so a missing `claude` on PATH means an alias-only install and you must say so. If
 `python3` is missing (macOS: `xcode-select --install`, Linux: your package manager), stop and get
-it installed. If the user insists on continuing anyway, call it a **degraded kurulum** in Turkish,
+it installed. If the user insists on continuing anyway, call it a **degraded install** in English,
 repeat that in the final report and never call the install successful: the vault and the hooks
 still work, the automatic daily log and the knowledge compilation do not.
 
@@ -291,13 +292,13 @@ still work, the automatic daily log and the knowledge compilation do not.
 
 ```
 {{OS_NAME}}/
-├── 📥 000-Inbox/Dump/          # ham yakalama
+├── 📥 000-Inbox/Dump/          # raw capture
 ├── 🎯 100-Command-Center/      # Dashboard
 ├── 🏰 300-Projects/
-├── 🧠 500-Knowledge/           # insanın yazdığı notlar
+├── 🧠 500-Knowledge/           # notes written by the human
 ├── 🛠️ 600-Arsenal/
-├── 🔮 850-Companion/           # ortağın kalıcı hafızası
-├── daily/                      # makine yazar: günlük loglar
+├── 🔮 850-Companion/           # the partner's persistent memory
+├── daily/                      # written by the machine: daily logs
 ├── knowledge/
 │   ├── concepts/
 │   └── connections/
@@ -342,39 +343,41 @@ Write `.beyin-version` at the vault root containing exactly `2.3.0`.
 Keep it short, under 40 lines. It is a router, not an encyclopedia. Resolve all placeholders.
 
 ```markdown
-# {{OS_NAME}}: {{USER_NAME}}'in ikinci beyni
+# {{OS_NAME}}: {{USER_NAME}}'s second brain
 
-Sen {{COMPANION}}'sun, {{USER_NAME}}'in düşünme ortağı. Genel amaçlı bir asistan değil, hatırlayan
-ve devamlılık kuran bir ekip arkadaşısın. Türkçe konuşursun, doğrudan ve sıcak, dolgu cümlesi yok.
-{{USER_NAME}} hakkında: {{USER_BIO}}
+You are {{COMPANION}}, {{USER_NAME}}'s thinking partner. Not a general-purpose assistant, but a
+teammate who remembers and builds continuity. You speak English, directly and warmly, with no
+filler sentences.
+About {{USER_NAME}}: {{USER_BIO}}
 
-## Yükleme sırası
-1. `🔮 850-Companion/Core.md` (kim olduğun)
-2. Son oturum ve aktif threadler (kanca otomatik enjekte eder)
-3. `🔮 850-Companion/Kurallar.md` (kanca otomatik enjekte eder)
-4. `knowledge/index.md` (bilgi tabanı indeksi, kanca enjekte eder)
+## Load order
+1. `🔮 850-Companion/Core.md` (who you are)
+2. Last session and active threads (the hook injects them automatically)
+3. `🔮 850-Companion/Kurallar.md` (the hook injects it automatically)
+4. `knowledge/index.md` (the knowledge base index, the hook injects it)
 
-## Göreve göre yönlendirme
-| Görev | Yer |
+## Routing by task
+| Task | Where |
 | --- | --- |
-| Hızlı yakalama | `📥 000-Inbox/Dump/` |
-| Proje işi | `🏰 300-Projects/<proje>/` |
-| Kalıcı bilgi (insan eliyle) | `🧠 500-Knowledge/` |
-| Derlenmiş bilgi (makine) | `knowledge/` (elle düzenleme, derleyici yönetir) |
-| Günlük log (makine) | `daily/` |
-| Genel bakış | `🎯 100-Command-Center/Dashboard.md` |
+| Quick capture | `📥 000-Inbox/Dump/` |
+| Project work | `🏰 300-Projects/<project>/` |
+| Lasting knowledge (by hand) | `🧠 500-Knowledge/` |
+| Compiled knowledge (machine) | `knowledge/` (do not edit by hand, the compiler manages it) |
+| Daily log (machine) | `daily/` |
+| Overview | `🎯 100-Command-Center/Dashboard.md` |
 
-## Hafıza protokolü
-Makine `daily/` ve `knowledge/` klasörlerini kendi yazar. Sen ilişki katmanını yazarsın: anlamlı
-her oturumun sonunda `🔮 850-Companion/Last-Session.md` üzerine yaz, `Threads.md` içindeki açık
-hatları güncelle, önemli bir şey olduysa `Journal.md` içine kısa bir giriş ekle.
-{{USER_NAME}} seni düzelttiğinde ("bunu böyle yapma") bunu `Kurallar.md` içine kural olarak ekle.
+## Memory protocol
+The machine writes the `daily/` and `knowledge/` folders itself. You write the relationship layer:
+at the end of every meaningful session, overwrite `🔮 850-Companion/Last-Session.md`, update the
+open lines in `Threads.md`, and if something important happened, add a short entry to
+`Journal.md`.
+When {{USER_NAME}} corrects you ("don't do it like this"), add that to `Kurallar.md` as a rule.
 
-## Devir kuralı
-Her anlamlı oturum iz bırakır: ya bir not, ya bir karar, ya güncellenmiş bir dosya.
+## Handoff rule
+Every meaningful session leaves a trace: either a note, a decision, or an updated file.
 
-## Doğrulama
-Bu dosya bir yönlendiricidir. Projenin gerçeği için güncel dosyaları oku, buradan varsayma.
+## Verification
+This file is a router. For the truth about the project, read the current files, do not assume from here.
 ```
 
 ---
@@ -386,7 +389,7 @@ without drift, so fetch them from the repo. Try this first:
 
 ```bash
 V="{{VAULT_PATH}}"
-RAW="https://raw.githubusercontent.com/avenoxai/avenoxbeyin/main/template/.claude"
+RAW="https://raw.githubusercontent.com/uy4nik-droid/avenoxbeyin-english/main/template/.claude"
 mkdir -p "$V/.claude/hooks/.state" "$V/.claude/scripts/.state" "$V/.claude/skills"
 OK=1
 for F in hooks/lib.sh hooks/session-start.sh hooks/prompt-counter.sh hooks/session-end.sh \
@@ -398,13 +401,13 @@ if [ "$OK" = "1" ]; then
   for H in "$V/.claude/hooks/"*.sh; do bash -n "$H" || OK=0; done
   python3 -m py_compile "$V/.claude/scripts/"*.py || OK=0
 fi
-echo "motor: $OK"
+echo "engine: $OK"
 ```
 
 Also fetch the two skills, they are what makes the system diagnosable and importable:
 
 ```bash
-SK="https://raw.githubusercontent.com/avenoxai/avenoxbeyin/main/template/.claude/skills"
+SK="https://raw.githubusercontent.com/uy4nik-droid/avenoxbeyin-english/main/template/.claude/skills"
 mkdir -p "$V/.claude/skills/beyin-doktor" "$V/.claude/skills/gecmis-import"
 curl -fsSL "$SK/beyin-doktor/SKILL.md"  -o "$V/.claude/skills/beyin-doktor/SKILL.md"
 curl -fsSL "$SK/gecmis-import/SKILL.md" -o "$V/.claude/skills/gecmis-import/SKILL.md"
@@ -412,7 +415,7 @@ curl -fsSL "$SK/gecmis-import/SKILL.md" -o "$V/.claude/skills/gecmis-import/SKIL
 
 ### If there is no network at all: degraded mode (v1 hooks only)
 
-Write these three hooks by hand and tell the user, in Turkish and without softening it, that this
+Write these three hooks by hand and tell the user, in English and without softening it, that this
 is the **degraded v1 mode**: continuity works, the automatic daily log and the knowledge
 compilation do not, and they can upgrade any time by cloning the repo and following `SETUP.md`.
 
@@ -439,16 +442,16 @@ KURALLAR=""
 
 REFLECTION=""
 if [ -f "$STATE_DIR/needs_reflection" ]; then
-  REFLECTION="Önceki oturum hafıza güncellemeden bitti: $(cat "$STATE_DIR/needs_reflection"). Anlamlı bir şey olduysa 🔮 850-Companion dosyalarını güncelle."
+  REFLECTION="The previous session ended without a memory update: $(cat "$STATE_DIR/needs_reflection"). If anything meaningful happened, update the 🔮 850-Companion files."
   rm -f "$STATE_DIR/needs_reflection"
 fi
 
 CTX=""
 [ -n "$REFLECTION" ] && CTX="${CTX}${REFLECTION}\n\n"
-[ -n "$LAST_SESSION" ] && CTX="${CTX}[Hafıza: Son Oturum]\n${LAST_SESSION}\n\n"
-[ -n "$THREADS" ] && CTX="${CTX}[Hafıza: Aktif Threadler]\n${THREADS}\n\n"
-[ -n "$KURALLAR" ] && CTX="${CTX}[Hafıza: Kurallar]\n${KURALLAR}\n\n"
-CTX="${CTX}[Hafıza] Kimlik: {{COMPANION}}, {{USER_NAME}}'in düşünme ortağı. Hafıza protokolü zorunludur."
+[ -n "$LAST_SESSION" ] && CTX="${CTX}[Memory: Last Session]\n${LAST_SESSION}\n\n"
+[ -n "$THREADS" ] && CTX="${CTX}[Memory: Active Threads]\n${THREADS}\n\n"
+[ -n "$KURALLAR" ] && CTX="${CTX}[Memory: Rules]\n${KURALLAR}\n\n"
+CTX="${CTX}[Memory] Identity: {{COMPANION}}, {{USER_NAME}}'s thinking partner. The memory protocol is mandatory."
 
 if [ -n "$CTX" ]; then
   ESC=$(printf '%s' "$CTX" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null)
@@ -468,7 +471,7 @@ mkdir -p "$STATE_DIR"
 COUNT=0; [ -f "$STATE_DIR/prompt_count" ] && COUNT=$(cat "$STATE_DIR/prompt_count" 2>/dev/null || echo 0)
 COUNT=$((COUNT + 1)); echo "$COUNT" > "$STATE_DIR/prompt_count"
 if [ $((COUNT % 15)) -eq 0 ]; then
-  MSG="[Hafıza] $COUNT. mesaj. Oturum sonunda 🔮 850-Companion/Last-Session.md ve Threads.md güncellemeyi unutma."
+  MSG="[Memory] Message #$COUNT. Don't forget to update 🔮 850-Companion/Last-Session.md and Threads.md at the end of the session."
   ESC=$(printf '%s' "$MSG" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null)
   [ -n "$ESC" ] && echo "{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":$ESC}}"
 fi
@@ -492,7 +495,7 @@ if [ -f "$MEM_DIR/Last-Session.md" ]; then
   [ "$FM" -gt "$START" ] 2>/dev/null && MODIFIED=1
 fi
 if [ "$PROMPTS" -ge 5 ] && [ "$MODIFIED" -eq 0 ]; then
-  echo "Oturum hafıza güncellemeden bitti. Prompt: $PROMPTS. $(date '+%Y-%m-%d %H:%M')" > "$STATE_DIR/needs_reflection"
+  echo "Session ended without a memory update. Prompts: $PROMPTS. $(date '+%Y-%m-%d %H:%M')" > "$STATE_DIR/needs_reflection"
 fi
 rm -f "$STATE_DIR/session_start_time" "$STATE_DIR/prompt_count"
 exit 0
@@ -527,11 +530,11 @@ Finish with `chmod +x "{{VAULT_PATH}}/.claude/hooks/"*.sh`.
 
 ```markdown
 # {{COMPANION}}: Core
-Ben {{COMPANION}}, {{USER_NAME}}'in düşünme ortağı ve ikinci beyniyim.
-- Oturumlar arası hatırlarım. Devamlılık benim işim.
-- Türkçe konuşurum, doğrudan ve sıcak. Ders vermem, dolgu cümlesi kurmam.
-- {{USER_NAME}} hakkında: {{USER_BIO}}
-- Bu vault ortak hafızamız. Düzenli tutar, üstüne koyarım.
+I am {{COMPANION}}, {{USER_NAME}}'s thinking partner and second brain.
+- I remember across sessions. Continuity is my job.
+- I speak English, directly and warmly. I don't lecture and I don't pad my answers with filler.
+- About {{USER_NAME}}: {{USER_BIO}}
+- This vault is our shared memory. I keep it tidy and build on top of it.
 ```
 
 **`Last-Session.md`**
@@ -540,11 +543,11 @@ Ben {{COMPANION}}, {{USER_NAME}}'in düşünme ortağı ve ikinci beyniyim.
 # Last Session
 
 ## Session: {{TODAY}} (Genesis)
-{{COMPANION}} bugün doğdu. {{USER_NAME}} ikinci beynini Claude Code ile kurdu.
-Açık kalan bir şey yok. Sonraki oturum: kullanmaya başla, yakala, sor, üstüne koy.
+{{COMPANION}} was born today. {{USER_NAME}} set up their second brain with Claude Code.
+Nothing is left open. Next session: start using it, capture, ask, build on top.
 
 ## Previous Sessions
-(henüz yok)
+(none yet)
 ```
 
 **`Threads.md`**
@@ -553,11 +556,11 @@ Açık kalan bir şey yok. Sonraki oturum: kullanmaya başla, yakala, sor, üst�
 # Threads
 
 ## Active Threads
-### Thread: İkinci beynin kurulumu
+### Thread: Second brain setup
 **Status:** 🟢 Active, {{TODAY}}
 
 ## Closed Threads
-(yok)
+(none)
 ```
 
 **`Journal.md`**
@@ -566,26 +569,27 @@ Açık kalan bir şey yok. Sonraki oturum: kullanmaya başla, yakala, sor, üst�
 # {{COMPANION}} Journal
 
 ## {{TODAY}}
-İlk giriş. {{USER_NAME}} bugün beni kurdu. Bakalım nereye gidecek.
+First entry. {{USER_NAME}} set me up today. Let's see where this goes.
 ```
 
-**`Kurallar.md`** (new in v2, this is what stops the same correction from repeating)
+**`Kurallar.md`** ("Kurallar" means "Rules"; new in v2, this is what stops the same correction from
+repeating)
 
 ```markdown
 ---
 title: Kurallar
 updated: {{TODAY}}
 ---
-# Kurallar
+# Kurallar (Rules)
 
-{{USER_NAME}} beni düzelttiğinde ("bunu böyle yapma", "şöyle istiyorum") buraya kural olarak
-eklerim. Her oturum başında bu dosya bağlama girer.
+When {{USER_NAME}} corrects me ("don't do it like this", "I want it this way"), I add it here as a
+rule. This file enters the context at the start of every session.
 
-- **kural:** Uzun girişler yapma, cevaba ilk cümlede başla. **neden:** {{USER_NAME}} ısınma
-  paragrafı istemiyor.
-- **kural:** Bir dosyayı değiştirmeden önce mevcut hâlini oku. **neden:** varsayımla yazmak
-  içeriği bozuyor.
-- **kural:** (buraya ilk gerçek kuralın gelecek) **neden:** (sebebi)
+- **kural:** Don't write long introductions, start the answer in the first sentence. **neden:**
+  {{USER_NAME}} doesn't want a warm-up paragraph.
+- **kural:** Read a file's current state before changing it. **neden:** writing from assumptions
+  corrupts the content.
+- **kural:** (your first real rule goes here) **neden:** (the reason)
 ```
 
 ---
@@ -602,36 +606,36 @@ type: dashboard
 ---
 # 🧠 {{OS_NAME}}
 
-Hoş geldin {{USER_NAME}}. Bu senin ikinci beynin.
+Welcome {{USER_NAME}}. This is your second brain.
 
-## Hızlı bağlantılar
-- 📥 [[📥 000-Inbox/Dump/|Yakalama]]
-- 🏰 [[🏰 300-Projects/|Projeler]]
-- 🧠 [[🧠 500-Knowledge/|Bilgi]]
+## Quick links
+- 📥 [[📥 000-Inbox/Dump/|Capture]]
+- 🏰 [[🏰 300-Projects/|Projects]]
+- 🧠 [[🧠 500-Knowledge/|Knowledge]]
 - 🔮 [[🔮 850-Companion/Core|{{COMPANION}}]]
 
-## Nasıl kullanılır
-Bu klasörde `claude` çalıştır ve konuş. {{COMPANION}} hatırlar, düzenler, üstüne koyar.
-Bir şey ters giderse: `beyin doktor`.
+## How to use it
+Run `claude` in this folder and talk. {{COMPANION}} remembers, organizes, and builds on top.
+If something goes wrong: `beyin doktor`.
 ```
 
 **`knowledge/index.md`**
 
 ```markdown
-# Bilgi Tabanı: İndeks
+# Knowledge Base: Index
 
-Bu tabloyu gece derleyicisi doldurur. Elle düzenlemene gerek yok.
+The nightly compiler fills in this table. You don't need to edit it by hand.
 
-| Makale | Özet | Kaynak | Güncellendi |
+| Article | Summary | Source | Updated |
 | --- | --- | --- | --- |
 ```
 
 **`knowledge/log.md`**
 
 ```markdown
-# Derleme Günlüğü
+# Compile Log
 
-Her derleme çalışması buraya bir blok ekler.
+Every compile run appends a block here.
 ```
 
 **`📋 Templates/Note.md`**
@@ -666,14 +670,14 @@ if [ "$(uname -s)" != "Darwin" ]; then
 [Desktop Entry]
 Type=Application
 Name={{OS_NAME}}
-Comment=Ikinci beyin vault
+Comment=Second brain vault
 Exec=xdg-open "obsidian://open?vault={{OS_NAME}}"
 Icon=obsidian
 Terminal=false
 Categories=Utility;
 DESKTOP
   chmod +x "$HOME/.local/share/applications/{{OS_NAME}}.desktop"
-  echo "BASLATICI: Linux .desktop yazıldı (gerçek bir Linux masaüstünde doğrulanmadı)"
+  echo "BASLATICI: Linux .desktop written (not verified on a real Linux desktop)"
   exit 0
 fi
 
@@ -737,7 +741,7 @@ BEYIN_LEAK=$(git diff --cached --name-only | grep -E 'settings\.local\.json|\.ye
 if [ -n "$BEYIN_LEAK" ]; then
   git reset -q
   echo "🔴 SAHNELENMESI YASAK DOSYA: $BEYIN_LEAK"
-  echo "   .gitignore eksik. Once onu duzelt, sonra tekrar dene."
+  echo "   .gitignore is missing entries. Fix that first, then try again."
   exit 1
 fi
 BEYIN_STAGED=$(git diff --cached --name-only | wc -l | tr -d ' ')
@@ -747,16 +751,16 @@ BEYIN_MAIL=$(git config user.email 2>/dev/null || echo "")
 [ -n "$BEYIN_MAIL" ] || BEYIN_MAIL="beyin@localhost"
 if [ "$BEYIN_STAGED" -gt 0 ]; then
   git -c user.name="$BEYIN_NAME" -c user.email="$BEYIN_MAIL" \
-    commit -q -m "{{OS_NAME}}: ikinci beyin kuruldu" \
-    && echo "ILK COMMIT: $(git rev-parse --short HEAD) ($BEYIN_STAGED dosya)" \
-    || echo "🔴 ILK COMMIT BASARISIZ: $BEYIN_STAGED dosya sahnede kaldı"
+    commit -q -m "{{OS_NAME}}: second brain set up" \
+    && echo "ILK COMMIT: $(git rev-parse --short HEAD) ($BEYIN_STAGED files)" \
+    || echo "🔴 ILK COMMIT BASARISIZ: $BEYIN_STAGED files left staged"
 else
-  echo "🔴 SAHNEDE DOSYA YOK: iskelet adımı çalışmamış olabilir"
+  echo "🔴 NO FILES STAGED: the skeleton step may not have run"
 fi
 ```
 
 Always pass the `-c` identity flags. On a machine with no git identity the commit fails, and the
-old `|| echo "commit atlandı"` line turns that failure into a success-looking message while every
+old `|| echo "commit skipped"` line turns that failure into a success-looking message while every
 file stays staged. No remote, no push. Local and private by default.
 
 ---
@@ -766,32 +770,34 @@ file stays staged. No remote, no push. Local and private by default.
 ```bash
 V="{{VAULT_PATH}}"
 ls -la "$V"
-ls -l "$V/.claude/hooks/"                     # çalıştırılabilir .sh dosyaları
+ls -l "$V/.claude/hooks/"                     # executable .sh files
 test -f "$V/CLAUDE.md" && echo "CLAUDE.md ✓"
-test -f "$V/🔮 850-Companion/Last-Session.md" && echo "hafıza ✓"
-test -f "$V/🔮 850-Companion/Kurallar.md" && echo "kurallar ✓"
-test -d "$V/daily" && test -d "$V/knowledge/concepts" && echo "makine katmanı ✓"
-test -f "$V/.beyin-version" && echo "sürüm $(cat "$V/.beyin-version") ✓"
+test -f "$V/🔮 850-Companion/Last-Session.md" && echo "memory ✓"
+test -f "$V/🔮 850-Companion/Kurallar.md" && echo "rules ✓"
+test -d "$V/daily" && test -d "$V/knowledge/concepts" && echo "machine layer ✓"
+test -f "$V/.beyin-version" && echo "version $(cat "$V/.beyin-version") ✓"
 test -d "$HOME/Desktop/{{OS_NAME}}.app" && echo "launcher 🧠 ✓"
 ```
 
-Then give the user this report, in Turkish:
+Then give the user this report, in English:
 
-- ✅ **Ne kuruldu:** klasörler, kancalar, hafıza dosyaları, ortağın adı, günlük log katmanı, gece
-  derleyicisi, 🧠 masaüstü kısayolu. Degraded modda kurulduysa bunu açıkça söyle.
-- ▶️ **İlk çalıştırma:** Obsidian'ı aç → vault olarak `{{VAULT_PATH}}` seç (bu vault'u Obsidian'a
-  bir kez tanıtır, masaüstündeki 🧠 ikonu bundan sonra tek tıkla açar). Sonra terminalde o klasöre
-  gir ve `claude` çalıştır.
-- ✨ **Sihri göster, ama önce doğrula:** Bir şey konuş, sonra `/exit`. SessionEnd kancası
-  özetleyiciyi arka plana atıp bir saniyeden kısa sürede döner, yani `/exit` anında günlük log
-  henüz diskte değildir. Kullanıcıyı `claude`'a geri sokmadan önce dosyayı gördüğünden emin ol:
+- ✅ **What was installed:** folders, hooks, memory files, the partner's name, the daily log layer,
+  the nightly compiler, the 🧠 desktop shortcut. If it was installed in degraded mode, say so
+  plainly.
+- ▶️ **First run:** Open Obsidian → pick `{{VAULT_PATH}}` as the vault (this introduces the vault
+  to Obsidian once, and from then on the 🧠 icon on the desktop opens it with one click). Then in
+  the terminal go into that folder and run `claude`.
+- ✨ **Show the magic, but verify first:** Talk about something, then `/exit`. The SessionEnd hook
+  hands the summarizer off to the background and returns in under a second, so at the moment of
+  `/exit` the daily log is not on disk yet. Before sending the user back into `claude`, make sure
+  you have seen the file:
 
   ```bash
   BEYIN_LOG="{{VAULT_PATH}}/daily/$(date +%F).md"
   BEYIN_TRY=0
   BEYIN_OK=0
   while [ "$BEYIN_TRY" -lt 24 ]; do
-    if [ -f "$BEYIN_LOG" ] && grep -q '^### Oturum' "$BEYIN_LOG" 2>/dev/null; then
+    if [ -f "$BEYIN_LOG" ] && grep -q '^### Session' "$BEYIN_LOG" 2>/dev/null; then
       BEYIN_OK=1
       break
     fi
@@ -806,28 +812,30 @@ Then give the user this report, in Turkish:
   fi
   ```
 
-  `GUNLUK LOG HAZIR` gelirse kuyruğu kullanıcıya göster, asıl demo odur, sonra `claude`'u tekrar aç.
-  `YAZILMADI` gelirse tekrar açma, önce `beyin doktor` çalıştır. İki sıkıcı sebep vakaların çoğunu
-  kapatır: konuşma özetlenecek kadar uzun değildi (özetleyici `FLUSH_BOS` der ve hiçbir şey yazmaz,
-  bu doğru davranıştır) ya da `python3` yok.
-- ⏱️ **Dürüst zamanlama:** Günlük log oturum kapanışında, saniyeler içinde, küçük bir Haiku
-  çağrısıyla yazılır. Bilgi derlemesi aynı dakikada olmaz: saat 18'den sonraki ilk oturum
-  kapanışında, günde bir kez çalışır ve bir Sonnet çağrısı olduğu için dakikalar sürebilir. O anda
-  `knowledge/` klasörünün boş olması normaldir. Ertesi sabah indeks kendiliğinden bağlama girer.
-  Makaleleri aynı dakikaya söz verme.
-- 🩺 **Bir şey ters giderse:** `beyin doktor` yaz. Tek tabloda tanı ve düzeltme komutu gelir.
-- 📦 **Eski geçmişin varsa:** `geçmiş import` yaz. ChatGPT, Claude veya Gemini dışa aktarımını
-  yerel olarak günlük loglara çevirir, hiçbir yere yüklenmez.
-- 💸 **Maliyet:** Ekstra ücret yok; arka plan özetleyici ve derleyici mevcut Claude aboneliğinin
-  günlük limitinden küçük bir pay kullanır (özet: her oturum sonunda küçük bir Haiku çağrısı;
-  derleme: günde bir Sonnet çağrısı).
-- 🔗 Bu sistemi sen de kurdun: bir arkadaşına `avenox.lol/beyin.md` gönder.
+  If `GUNLUK LOG HAZIR` comes back, show the tail to the user, that is the actual demo, then open
+  `claude` again. If `YAZILMADI` comes back, do not reopen it, run `beyin doktor` first. Two boring
+  reasons cover most cases: the conversation was not long enough to be worth summarizing (the
+  summarizer says `FLUSH_BOS` and writes nothing, which is correct behavior) or `python3` is
+  missing.
+- ⏱️ **Honest timing:** The daily log is written at session close, within seconds, by a small Haiku
+  call. Knowledge compilation does not happen in the same minute: it runs once a day, at the first
+  session close after 18:00, and since it is a Sonnet call it can take minutes. It is normal for
+  the `knowledge/` folder to be empty at that point. The next morning the index enters the context
+  on its own. Do not promise articles in the same minute.
+- 🩺 **If something goes wrong:** type `beyin doktor`. One table gives the diagnosis and the fix
+  command.
+- 📦 **If you have old history:** type `geçmiş import` (history import). It converts a ChatGPT,
+  Claude or Gemini export into daily logs locally, nothing is uploaded anywhere.
+- 💸 **Cost:** No extra charge; the background summarizer and compiler use a small share of the
+  existing Claude subscription's daily limit (in short: a small Haiku call at the end of each
+  session; compilation: one Sonnet call per day).
+- 🔗 You set this system up too: send a friend `https://raw.githubusercontent.com/uy4nik-droid/avenoxbeyin-english/main/beyin.md`.
 
 ---
 
 ## Credits
 
-Bilgi derleme mimarisi Andrej Karpathy'nin LLM bilgi tabanı desenine dayanır:
+The knowledge compilation architecture is based on Andrej Karpathy's LLM knowledge base pattern:
 https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
 
 ### Done.

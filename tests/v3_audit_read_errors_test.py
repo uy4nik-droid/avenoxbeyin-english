@@ -73,7 +73,7 @@ class AuditReadErrorsTest(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
                 self.assertEqual(result.stdout, '')
                 if flag == ['--human']:
-                    self.assertIn('Islem tamamlanamadi: audit source scan failed', result.stderr)
+                    self.assertIn('Operation failed: audit source scan failed', result.stderr)
                     self.assertNotIn('hafiza durumu dengeli', result.stderr)
                 else:
                     self.assertEqual(json.loads(result.stderr), self.ERROR)

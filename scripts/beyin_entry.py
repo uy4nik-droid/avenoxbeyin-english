@@ -9,32 +9,32 @@ sys.dont_write_bytecode = True
 
 
 
-JEV_MODES = {'off': 'kapali', 'shadow': 'golge', 'on': 'acik'}
+JEV_MODES = {'off': 'off', 'shadow': 'shadow', 'on': 'on'}
 
 
 def jev_mode(mode, provider):
     """Laya is shadow-only: a saved or hand-edited `on` still runs as shadow."""
     if provider == 'laya' and mode in ('shadow', 'on'):
-        return 'golge (yalniz)'
-    return JEV_MODES.get(mode, 'bilinmiyor')
+        return 'shadow (only)'
+    return JEV_MODES.get(mode, 'unknown')
 
 
 def update_lines(result):
     status = result.get('status', 'unknown')
     if status == 'available':
         command = 'py -3' if sys.platform == 'win32' else 'python3'
-        lines = ['Yeni surum: ' + result['version'],
-                 'Surum notlari: ' + result['release_url'],
-                 'Guncelle: ' + command + ' beyin.py update']
+        lines = ['New version: ' + result['version'],
+                 'Release notes: ' + result['release_url'],
+                 'Update: ' + command + ' beyin.py update']
     else:
-        messages = {'disabled': 'Surum bildirimleri kapali.', 'unknown': 'Surum kontrolu henuz yapilmadi.',
-                'unavailable': 'Surum kontrolu yapilamadi; guncellik dogrulanmadi.',
-                'up_to_date': 'Beyin guncel: ' + str(result.get('current_version', '?')),
-                'ahead': 'Kurulu surum resmi stable surumden ileride.'}
-        lines = [messages.get(status, 'Surum bilgisi alinamadi.')]
+        messages = {'disabled': 'Release notifications are off.', 'unknown': 'No release check has run yet.',
+                'unavailable': 'The release check failed; whether Beyin is up to date is unverified.',
+                'up_to_date': 'Beyin is up to date: ' + str(result.get('current_version', '?')),
+                'ahead': 'The installed version is ahead of the official stable release.'}
+        lines = [messages.get(status, 'Release information unavailable.')]
     if result.get('checked_at'):
         from datetime import datetime, timezone
-        lines.append('Son kontrol: ' + datetime.fromtimestamp(result['checked_at'], timezone.utc).isoformat())
+        lines.append('Last check: ' + datetime.fromtimestamp(result['checked_at'], timezone.utc).isoformat())
     return lines
 
 
@@ -43,33 +43,33 @@ def jev_lines(result):
     lines = []
     laya = result.get('provider') == 'laya'
     if result.get('automatic_model_calls'):
-        lines.append('Otomatik baglam acik: her turda istemin ve en fazla 8 aday ic/kamu notunun basligi ile'
-                     ' ilk 600 karakteri ' + ('yerel Laya sunucusuna' if laya else 'saglayiciya') +
-                     ' gider. Ozel notlar gonderilmez.')
+        lines.append('Automatic context is on: every turn sends the prompt plus the title and'
+                     ' first 600 characters of up to 8 candidate internal/public notes ' + ('to the local Laya server' if laya else 'to the provider') +
+                     '. Private notes are not sent.')
         if result.get('context_mode_notice'):
-            lines.append("Uyari: otomatik baglam yalniz 'context_mode: turn' ile calisir; su anki ayar '" +
-                         ascii_text(result.get('context_mode', '?')) + "' (etkinlestirmek icin: beyin.py preferences --context-mode turn).")
+            lines.append("Warning: automatic context works only with 'context_mode: turn'; the current setting is '" +
+                         ascii_text(result.get('context_mode', '?')) + "' (to enable: beyin.py preferences --context-mode turn).")
         if laya and not result.get('auto_context_applied'):
-            lines.append('Laya yalniz golge modda calisir: otomatik baglam puanlari yalniz kaydedilir, baglami degistirmez.')
+            lines.append('Laya runs in shadow mode only: automatic context scores are only logged and do not change the context.')
     if laya:
         if result.get('mode_refused') == 'laya_shadow_only':
-            lines.append('jev.json acik mod istiyor ama Laya yalniz golge modda calisir; sonuclar degismez.'
-                         ' Acik mod icin: jev on --provider typesafe.')
+            lines.append('jev.json asks for on mode, but Laya runs in shadow mode only; results do not change.'
+                         ' For on mode: jev on --provider typesafe.')
         if result.get('mode', 'off') != 'off':
-            lines.append('Laya yerel sunucusu: ' + ascii_text(result.get('laya', {}).get('base_url')) +
-                         '; LAYA_HOST=127.0.0.1 ile baslat. Puanlar olcum icin kaydedilir, sonuclari degistirmez.')
+            lines.append('Local Laya server: ' + ascii_text(result.get('laya', {}).get('base_url')) +
+                         '; start it with LAYA_HOST=127.0.0.1. Scores are logged for measurement and do not change results.')
     elif result.get('mode', 'off') != 'off' and not result.get('key_present'):
-        lines.append('TYPESAFE_API_KEY yok: cagrilar yerel sonuca duser.')
+        lines.append('TYPESAFE_API_KEY is not set: calls fall back to local results.')
     server = result.get('server')
     if isinstance(server, dict) and server.get('checked'):
         if server.get('reachable') and server.get('pinned_model_loaded'):
-            lines.append('Laya sunucusu hazir (' + ascii_text(server.get('device')) + ').')
+            lines.append('Laya server ready (' + ascii_text(server.get('device')) + ').')
         elif server.get('reachable'):
-            lines.append('Laya sunucusu cevap veriyor ama sabitlenen model yuklu degil.')
+            lines.append('The Laya server responds, but the pinned model is not loaded.')
         else:
-            lines.append('Laya sunucusuna ulasilamadi: cagrilar yerel sonuca duser.')
+            lines.append('Laya server unreachable: calls fall back to local results.')
     elif isinstance(server, dict) and server.get('reason') == 'not_applicable':
-        lines.append('--check yalniz laya saglayicisinda sunucuyu yoklar.')
+        lines.append('--check probes the server only for the laya provider.')
     return lines
 
 
@@ -94,38 +94,38 @@ def state_location_lines(location):
     if not isinstance(location, dict):
         return []
     codes = {str(warning).split(':', 1)[0] for warning in location.get('warnings') or []}
-    prefix = 'State konumu (bilgi): '
+    prefix = 'State location (info): '
     lines = []
     if 'state_split' in codes:
-        lines.append(prefix + 'bu vault icin paket yonlendirmesinin iki tarafinda da kurulu state var (' +
+        lines.append(prefix + 'this vault has installed state on both sides of the package redirection (' +
                      ', '.join(plain_text(root) for root in location.get('sibling_state_roots') or []) +
-                     '). Oturumun hangi yariyi okudugu paket icinde calisip calismamasina bagli;'
-                     ' guncel olani secip tasi: https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/UPDATE.md')
+                     '). Which half a session reads depends on whether it runs inside the package;'
+                     ' pick the current one and move it: https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/UPDATE.md')
     if 'pinned_in_package_container' in codes:
-        lines.append(prefix + 'sabitlenmis state koku MSIX paket kapsayicisinin (Packages\\...\\LocalCache) icinde;'
-                     ' paket sifirlanir ya da baska kimlikle kurulursa bu yol kaybolur. Tasima: https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/UPDATE.md')
+        lines.append(prefix + 'the pinned state root is inside the MSIX package container (Packages\\...\\LocalCache);'
+                     ' if the package is reset or installed under another identity, this path is lost. Moving it: https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/UPDATE.md')
     if 'pin_resolves_elsewhere' in codes:
-        lines.append(prefix + 'sabitlenmis yol bu surecte baska bir dizine cozumleniyor (' +
+        lines.append(prefix + 'the pinned path resolves to a different directory in this process (' +
                      plain_text(location.get('pinned_resolves_here_to')) +
-                     '). doctor komutunu paket icinden ve disindan calistirip karsilastir.')
+                     '). Run doctor inside and outside the package and compare.')
     if 'pinned_state_not_absolute' in codes:
-        lines.append(prefix + '.beyin-runtime.json icindeki state yolu bu makinede mutlak bir yol degil; baska bir'
-                     ' isletim sisteminden esitlenmis olabilir. beyin.py bu makinenin varsayilan state dizinini'
-                     ' kullaniyor. Kurulum dosyalari makineye ozeldir, esitleme: https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/MULTI-MACHINE.md')
+        lines.append(prefix + 'the state path in .beyin-runtime.json is not an absolute path on this machine; it may have been'
+                     ' synced from another operating system. beyin.py is using the default state directory'
+                     ' of this machine. Installation files are machine-specific; syncing: https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/MULTI-MACHINE.md')
     if 'pinned_state_empty' in codes:
-        lines.append(prefix + 'sabitlenmis state kokunde kurulum bulunamadi. State tasindiysa kurucuyu yeni'
-                     ' --state ile yeniden calistir.')
+        lines.append(prefix + 'no installation was found in the pinned state root. If the state was moved, rerun the installer'
+                     ' with the new --state.')
     if 'effective_state_differs' in codes:
-        lines.append(prefix + 'bu calisma sabitlenmis kok yerine baska bir state dizinini okuyor.')
+        lines.append(prefix + 'this run reads a different state directory instead of the pinned root.')
     return lines
 
 
 def receipt_line_endings_lines(report):
     """Doctor line for the receipt line-ending warning (#205); information only, never a status."""
     if isinstance(report, dict) and report.get('status') == 'warning':
-        return ['Receipt satir sonu (bilgi): core.autocrlf=true ve receipts/ sabitlenmemis; baska makineden gelen'
-                ' receipt CRLF ile cikip ayni receipt\'in "event id collision" vermesine yol acabilir.'
-                ' .gitattributes dosyasina "receipts/** -text" ekle: https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/MULTI-MACHINE.md']
+        return ['Receipt line endings (info): core.autocrlf=true and receipts/ is not pinned; a receipt from another machine'
+                ' can be checked out with CRLF and make the same receipt report "event id collision".'
+                ' Add "receipts/** -text" to .gitattributes: https://github.com/uy4nik-droid/avenoxbeyin-english/blob/main/docs/v3/MULTI-MACHINE.md']
     return []
 
 
@@ -134,16 +134,16 @@ def sync_copy_lines(result):
     lines = []
     stamped = [w for w in result.get('warnings') or [] if isinstance(w, dict) and str(w.get('reason', '')).startswith('file sync')]
     for warning in stamped:
-        lines.append('Senkron cakisma kopyasi indekse alinmadi: ' + plain_text(warning.get('source')) +
-                     '. Asil notla karsilastir, dogru tarafi tut, digerini sil.')
+        lines.append('Sync conflict copy left out of the index: ' + plain_text(warning.get('source')) +
+                     '. Compare it with the original note, keep the correct version, delete the other.')
     for candidate in result.get('sync_copy_candidates') or []:
         same = candidate.get('same_content')
-        lines.append('Olasi senkron kopyasi: ' + plain_text(candidate.get('source')) + ' / ' + plain_text(candidate.get('original')) +
-                     {True: ' (icerik ayni)', False: ' (icerik farkli)'}.get(same, '') +
-                     '. Ikisi de indekste; gercek bir notsa adini degistir, kopyaysa birini sil.')
+        lines.append('Possible sync copy: ' + plain_text(candidate.get('source')) + ' / ' + plain_text(candidate.get('original')) +
+                     {True: ' (same content)', False: ' (different content)'}.get(same, '') +
+                     '. Both are indexed; if it is a real note, rename it; if it is a copy, delete one of them.')
     extra = (result.get('sync_copy_candidate_count') or 0) - len(result.get('sync_copy_candidates') or [])
     if extra > 0:
-        lines.append('+' + str(extra) + ' olasi kopya daha; ayrinti icin --json.')
+        lines.append('+' + str(extra) + ' more possible copies; see --json for details.')
     return lines
 
 
@@ -158,19 +158,19 @@ def supersedes_lines(issues, count):
         text = plain_text(value)
         return text[:157] + '...' if len(text) > 160 else text
 
-    reasons = {'ambiguous supersedes reference': 'birden fazla notla eslesiyor',
-               'unresolved supersedes reference': 'hedef bulunamadi',
-               'supersedes reference points to the note itself': 'notun kendisine isaret ediyor',
-               'supersedes reference is part of a cycle': 'dongunun parcasi'}
-    lines = ['Supersedes uyarisi: ' + str(count) + ' referans su anda hicbir notu emekli etmiyor; '
-             'daha once emekli edilen notlar yeniden baglama girebilir.']
+    reasons = {'ambiguous supersedes reference': 'matches more than one note',
+               'unresolved supersedes reference': 'target not found',
+               'supersedes reference points to the note itself': 'points to the note itself',
+               'supersedes reference is part of a cycle': 'part of a cycle'}
+    lines = ['Supersedes warning: ' + str(count) + ' references currently retire no note; '
+             'notes retired earlier can enter the context again.']
     for issue in issues[:3]:
         reason = issue.get('reason')
         lines.append('  - ' + field(issue.get('source')) + ' -> ' + field(issue.get('value')) +
                      ' (' + field(reasons.get(reason, reason)) + ')')
     if count > min(3, len(issues)):
-        lines.append('+' + str(count - min(3, len(issues))) + ' referans daha.')
-    lines.append('Hedefi ve yonu kontrol et; dogru notu acik id veya tam vault yoluyla belirt. Ayrinti: --json.')
+        lines.append('+' + str(count - min(3, len(issues))) + ' more references.')
+    lines.append('Check the target and direction; name the right note by explicit id or full vault path. Details: --json.')
     return lines
 
 
@@ -179,16 +179,16 @@ def index_exclusion_lines(report, pruned=False):
     if not isinstance(report, dict):
         return []
     if report.get('status') == 'unavailable':
-        return ['Indeks kapsami denetlenemedi (' + plain_text(report.get('error', 'unknown')) +
-                '); indeks dislama ayarlari ve klasor ipuclari dogrulanamadi.']
+        return ['Index scope could not be checked (' + plain_text(report.get('error', 'unknown')) +
+                '); index exclusion settings and folder hints could not be verified.']
     lines = []
     if report.get('excluded_dirs'):
-        lines.append('Indeks disi klasor adlari (senin listen, her derinlikte): ' +
+        lines.append('Folder names excluded from the index (your list, at any depth): ' +
                      ', '.join(plain_text(name) for name in report['excluded_dirs']) +
-                     (' (bu taramada ' + str(report.get('pruned', 0)) + ' klasor atlandi)' if pruned else '') + '.')
+                     (' (' + str(report.get('pruned', 0)) + ' folders skipped in this scan)' if pruned else '') + '.')
     if report.get('error'):
-        lines.append('index.json gecersiz (' + plain_text(report['error']) +
-                     '); klasor haric tutma listesi uygulanmiyor, her sey indeksleniyor.')
+        lines.append('index.json is invalid (' + plain_text(report['error']) +
+                     '); the folder exclusion list is not applied, everything is indexed.')
     return lines
 
 
@@ -199,48 +199,48 @@ def megabytes(value):
 def rewrite_note(entry):
     """#168: the rewrite instruction, said only once the full text is safe in the archive."""
     if entry.get('backup') in ('written', 'exists'):
-        return ' (tam metin arsive yedeklendi: ' + str(entry.get('archive')) + '); dosyayi sinir icinde yeniden yaz.'
+        return ' (full text backed up to the archive: ' + str(entry.get('archive')) + '); rewrite the file within the limit.'
     if entry.get('backup') == 'planned':
-        return '; once --dry-run olmadan calistir, tam metin arsive yedeklenir; sonra dosyayi sinir icinde yeniden yaz.'
-    return '; dosyayi sinir icinde yeniden yaz.'
+        return '; first run without --dry-run so the full text is backed up to the archive; then rewrite the file within the limit.'
+    return '; rewrite the file within the limit.'
 
 
 def human_result(result, command, installed_version=None):
     status = result.get('status', '')
     if command == 'scheduled-check' and 'status' in result:
         # Exit 4 (needs attention) prints here like a finished check: the check ran and found something.
-        texts = {'ok': 'Zamanlanmis denetim: saglikli.',
-                 'needs_attention': 'Zamanlanmis denetim: kontrol gerektiren bir sorun var; ayrinti icin beyin.py doctor.',
-                 'already_running': 'Zamanlanmis denetim: baska bir denetim hala calisiyor; bu kosu atlandi.',
-                 'error': 'Zamanlanmis denetim tamamlanamadi (' + ascii_text(result.get('error')) + '); beyin.py doctor ile bak.'}
-        lines = [texts.get(status, 'Zamanlanmis denetim: ' + ascii_text(status))]
-        notification = {'shown': 'Bildirim gonderildi.',
-                        'failed': 'Bildirim gonderilemedi.',
-                        'unavailable': 'Bu makinede bildirim araci yok.'}
+        texts = {'ok': 'Scheduled check: healthy.',
+                 'needs_attention': 'Scheduled check: there is a problem that needs attention; see beyin.py doctor for details.',
+                 'already_running': 'Scheduled check: another check is still running; this run was skipped.',
+                 'error': 'Scheduled check could not finish (' + ascii_text(result.get('error')) + '); check with beyin.py doctor.'}
+        lines = [texts.get(status, 'Scheduled check: ' + ascii_text(status))]
+        notification = {'shown': 'Notification sent.',
+                        'failed': 'Notification could not be sent.',
+                        'unavailable': 'No notification tool on this machine.'}
         if result.get('notification') in notification:
             lines.append(notification[result['notification']])
         if status == 'needs_attention' and result.get('session_notice_pending') is True:
-            lines.append('Sonraki ajan oturumunun acilisinda da tek satir olarak soylenecek.')
+            lines.append('It will also be reported in one line when the next agent session opens.')
         return '\n'.join(lines)
     if result.get('error'):
-        return ('Islem tamamlanamadi: ' + str(result.get('message', result['error'])) +
+        return ('Operation failed: ' + str(result.get('message', result['error'])) +
                 ('\n' + ascii_text(result['hint']) if result.get('hint') else ''))
     if command == 'hook-reconcile':
         status = result.get('status')
         if status in ('ok', 'noop'):
-            return 'Hook yollari zaten guncel; hicbir dosya degistirilmedi.'
+            return 'Hook paths are already current; no file was changed.'
         if status == 'not_installed':
-            return 'Bu vault\'ta kurulu hook dosyasi bulunamadi.'
-        lines = ['Hook mutabakati tamamlandi: ' + str(len(result.get('files', []))) + ' dosya guncellendi (' +
-                 str(result.get('reconciled_count', 0)) + ' hook komutu bu makineye uyarlandi).']
+            return 'No installed hook file found in this vault.'
+        lines = ['Hook reconciliation finished: ' + str(len(result.get('files', []))) + ' files updated (' +
+                 str(result.get('reconciled_count', 0)) + ' hook commands adapted to this machine).']
         for entry in result.get('files', []):
-            lines.append('- ' + entry['file'] + ' (yedek: ' + entry.get('backup', '') + ', ' +
-                         str(entry.get('reconciled', 0)) + ' hook yenilendi)')
+            lines.append('- ' + entry['file'] + ' (backup: ' + entry.get('backup', '') + ', ' +
+                         str(entry.get('reconciled', 0)) + ' hooks renewed)')
             for change in entry.get('changes', []):
                 lines.append('  * ' + change['event'] + ':')
-                lines.append('    Eski: ' + plain_text(change.get('old_summary', change.get('old_command', ''))[:80]))
-                lines.append('    Yeni: ' + plain_text(change.get('new_summary', change.get('new_command', ''))[:80]))
-        lines.append('Eski komutlar bu makinenin Python ve vault yollariyla degistirildi.')
+                lines.append('    Old: ' + plain_text(change.get('old_summary', change.get('old_command', ''))[:80]))
+                lines.append('    New: ' + plain_text(change.get('new_summary', change.get('new_command', ''))[:80]))
+        lines.append('Old commands were replaced with the Python and vault paths of this machine.')
         return '\n'.join(lines)
     if command == 'triage':
         try:
@@ -258,191 +258,191 @@ def human_result(result, command, installed_version=None):
         features = result.get('features', {})
         provider = result.get('provider')
         lines = ['Jev: ' + jev_mode(result.get('mode'), provider) +
-                 (' (kayitli: ' + jev_mode(result.get('saved_mode'), provider) + ')'
+                 (' (saved: ' + jev_mode(result.get('saved_mode'), provider) + ')'
                   if result.get('kill_switch') else ''),
-                 'Ozellikler: ' + (', '.join(name + ' ' + ('acik' if value else 'kapali')
-                                             for name, value in features.items()) or 'yok')]
+                 'Features: ' + (', '.join(name + ' ' + ('on' if value else 'off')
+                                             for name, value in features.items()) or 'none')]
         if result.get('provider') == 'laya':
-            lines += ['Saglayici: laya (yerel, model ' + ascii_text(result.get('laya', {}).get('model')) + ')',
-                      'Anahtar: gerekmez' + (' (LAYA_API_KEY var)' if result.get('key_present') else '')]
+            lines += ['Provider: laya (local, model ' + ascii_text(result.get('laya', {}).get('model')) + ')',
+                      'Key: not needed' + (' (LAYA_API_KEY is set)' if result.get('key_present') else '')]
         else:
-            lines.append('Anahtar: ' + ('var' if result.get('key_present') else 'yok'))
-        lines += ['Acil kapatma: ' + ('acik' if result.get('kill_switch') else 'kapali'),
-                  'Son 24 saat: ' + str(result.get('last_24h', {}).get('calls', 0)) + ' cagri']
+            lines.append('Key: ' + ('set' if result.get('key_present') else 'not set'))
+        lines += ['Kill switch: ' + ('on' if result.get('kill_switch') else 'off'),
+                  'Last 24 hours: ' + str(result.get('last_24h', {}).get('calls', 0)) + ' calls']
         if not result.get('config_valid', True):
-            lines.append('Ayar dosyasi bozuk; jev.json elle duzeltilmeli.')
+            lines.append('The settings file is corrupt; jev.json must be fixed by hand.')
         return '\n'.join(lines + jev_lines(result))
     if command == 'preferences':
         prefs = result['preferences']
-        lines = ['Otomatik kontrol: ' + ('acik' if prefs['auto_sync'] else 'kapali'),
-                 'Kontrol araligi: ' + str(prefs['interval_minutes']) + ' dakika (0 = her olay)',
-                 'Otomatik baglam: ' + prefs['context_mode'],
-                 'Baglam ust siniri: ' + str(prefs['context_chars']) + ' karakter',
-                 'Sir suzgeci: ' + ('acik' if prefs['secret_filter'] else 'kapali'),
-                 'Surum bildirimi: ' + ('acik' if result.get('update_notifications', {}).get('effective') else 'kapali'),
-                 'Proje oturum basi baglami: ' + ('acik' if result.get('project_context') == 'on' else 'kapali')]
+        lines = ['Automatic check: ' + ('on' if prefs['auto_sync'] else 'off'),
+                 'Check interval: ' + str(prefs['interval_minutes']) + ' minutes (0 = every event)',
+                 'Automatic context: ' + prefs['context_mode'],
+                 'Context limit: ' + str(prefs['context_chars']) + ' characters',
+                 'Secret filter: ' + ('on' if prefs['secret_filter'] else 'off'),
+                 'Release notifications: ' + ('on' if result.get('update_notifications', {}).get('effective') else 'off'),
+                 'Project session-start context: ' + ('on' if result.get('project_context') == 'on' else 'off')]
         if result.get('daily_layout') in ('flat', 'v3'):
             layout = result['daily_layout']
-            lines.append('Daily duzeni: ' + layout + ' (' +
+            lines.append('Daily layout: ' + layout + ' (' +
                          ('daily/YYYY-MM-DD.md' if layout == 'flat' else 'daily/v3/YYYY-MM-DD.md') + ')')
         opening = (result.get('companion_context') or {}).get('context_chars')
         if opening is not None:
-            lines.append('Oturum basi hafiza baglami: ' + (str(opening) + ' karakter' if opening else 'baglam ust siniri kadar'))
+            lines.append('Session-start memory context: ' + (str(opening) + ' characters' if opening else 'up to the context limit'))
         if result.get('companion_context_notice'):
             lines.append(result['companion_context_notice'])
         for name, value in (result.get('companion_limits') or {}).items():
-            lines.append('Hafiza dosyasi siniri, ' + name + ': ' + (str(value) + ' karakter' if value else 'kapali'))
+            lines.append('Memory file limit, ' + name + ': ' + (str(value) + ' characters' if value else 'off'))
         hygiene = result.get('hygiene') or {}
         if hygiene:
-            lines.append('Hijyen sinyalleri (varsayilan kapali): kelime tavani uyarisi ' +
-                         ('acik (' + str(hygiene.get('max_words')) + ' kelime)' if hygiene.get('word_cap_warning') else 'kapali') +
-                         ', klasor sorulari ' + ('acik' if hygiene.get('folder_questions') else 'kapali') +
-                         ', terfi raporu ' + ('acik' if hygiene.get('promotion') else 'kapali'))
+            lines.append('Hygiene signals (off by default): word cap warning ' +
+                         ('on (' + str(hygiene.get('max_words')) + ' words)' if hygiene.get('word_cap_warning') else 'off') +
+                         ', folder questions ' + ('on' if hygiene.get('folder_questions') else 'off') +
+                         ', promotion report ' + ('on' if hygiene.get('promotion') else 'off'))
         if result.get('hygiene_notice'):
             lines.append(result['hygiene_notice'])
         inbox = result.get('inbox_report') or {}
         if inbox:
-            lines.append('Gelen kutusu raporu (varsayilan kapali): ' +
-                         ('acik (' + str(inbox.get('max_items')) + ' not / ' + str(inbox.get('max_days')) + ' gun; ' +
-                          ('klasorler: ' + ', '.join(plain_text(name) for name in inbox['folders'])
-                           if inbox.get('folders') else 'klasor adindan tanima') + ')'
-                          if inbox.get('enabled') else 'kapali'))
+            lines.append('Inbox report (off by default): ' +
+                         ('on (' + str(inbox.get('max_items')) + ' notes / ' + str(inbox.get('max_days')) + ' days; ' +
+                          ('folders: ' + ', '.join(plain_text(name) for name in inbox['folders'])
+                           if inbox.get('folders') else 'recognized by folder name') + ')'
+                          if inbox.get('enabled') else 'off'))
         if result.get('inbox_report_notice'):
             lines.append(result['inbox_report_notice'])
         if result.get('parallel_sessions'):
-            lines.append('Paralel oturum bildirimi: ' + ('acik' if result['parallel_sessions'] == 'on' else 'kapali'))
+            lines.append('Parallel session notice: ' + ('on' if result['parallel_sessions'] == 'on' else 'off'))
         if result.get('parallel_sessions_notice'):
             lines.append(result['parallel_sessions_notice'])
         if result.get('context_dedupe'):
-            lines.append('Oturum ici tekrar onleme: ' + ('acik' if result['context_dedupe'] == 'on' else 'kapali'))
+            lines.append('In-session repeat prevention: ' + ('on' if result['context_dedupe'] == 'on' else 'off'))
         if result.get('context_dedupe_notice'):
             lines.append(result['context_dedupe_notice'])
         hermes_p = result.get('hermes_platforms') or {}
         if hermes_p.get('attended') or hermes_p.get('unattended'):
             h_parts = []
             if hermes_p.get('attended'):
-                h_parts.append('gozetimli: ' + ', '.join(hermes_p['attended']))
+                h_parts.append('attended: ' + ', '.join(hermes_p['attended']))
             if hermes_p.get('unattended'):
-                h_parts.append('gozetimsiz: ' + ', '.join(hermes_p['unattended']))
-            lines.append('Hermes platform ayarlari: ' + '; '.join(h_parts))
+                h_parts.append('unattended: ' + ', '.join(hermes_p['unattended']))
+            lines.append('Hermes platform settings: ' + '; '.join(h_parts))
         if result.get('hermes_platforms_notice'):
             lines.append(result['hermes_platforms_notice'])
         if result.get('excluded_components'):
-            lines.append('Haric tutulan bilesenler: ' + ', '.join(result['excluded_components']))
+            lines.append('Excluded components: ' + ', '.join(result['excluded_components']))
         if result.get('exclusion_notice'):
             lines.append(result['exclusion_notice'])
         lines += index_exclusion_lines(result.get('index_exclusions'))
         if result.get('index_exclusions_notice') and not (result.get('index_exclusions') or {}).get('error'):
             lines.append(result['index_exclusions_notice'])
-        lines.append('Acikken gunde en fazla bir kez GitHub surum bilgisi okunur; notlar gonderilmez.')
-        lines.append('Yerel kontroller model cagirmaz. Zamanlayici kurulmaz.')
+        lines.append('When on, GitHub release information is read at most once a day; notes are not sent.')
+        lines.append('Local checks make no model calls. No scheduler is installed.')
         return '\n'.join(lines)
     if command == 'recap':
         # --since/--until select local calendar days (as daily/v3 is named); the --days window stays UTC.
         local = result.get('timezone') == 'local'
-        lines = ['Kaynakli etkinlik: ' + (result['from'] or 'baslangic siniri yok') + ' - ' + result['through'] +
-                 (' (yerel gun; ' if local else ' (UTC; ') + 'ajan kayitlari, bagimsiz dogrulanmis olgular degil)']
+        lines = ['Sourced activity: ' + (result['from'] or 'no start limit') + ' - ' + result['through'] +
+                 (' (local days; ' if local else ' (UTC; ') + 'agent records, not independently verified facts)']
         if not result['items']:
-            lines.append('Bu aralikta tarihli kayit yok.')
+            lines.append('No dated records in this range.')
         for item in result['items']:
             lines.append('\n' + (item.get('day') or item['created_at'][:10]) + '  ' + plain_text(item['summary']))
-            lines.append('Kaynak: ' + plain_text(item['source']))
+            lines.append('Source: ' + plain_text(item['source']))
             for ref in item.get('refs', []):
                 lines.append('  - ' + plain_text(ref))
             withheld = item.get('refs_withheld') or {}
             if withheld.get('private'):
-                lines.append('  (' + str(withheld['private']) + ' ozel kaynak baglantisi gizlendi)')
+                lines.append('  (' + str(withheld['private']) + ' private source links hidden)')
             if withheld.get('missing'):
-                lines.append('  (' + str(withheld['missing']) + ' kaynak artik yok)')
+                lines.append('  (' + str(withheld['missing']) + ' sources no longer exist)')
         if result['truncated']:
-            lines.append('Yalniz en yeni ' + str(result['shown']) + '/' + str(result['total']) +
-                         ' kayit gosterildi; --limit ile artirabilirsin.')
+            lines.append('Showing only the newest ' + str(result['shown']) + '/' + str(result['total']) +
+                         ' records; raise this with --limit.')
         if result['undated_omitted']:
-            lines.append(str(result['undated_omitted']) + ' tarihsiz/eski bicimli kayit atlandi.')
+            lines.append(str(result['undated_omitted']) + ' undated/old-format records skipped.')
         if result.get('missing_source_omitted'):
-            lines.append(str(result['missing_source_omitted']) + ' kaydin makbuz dosyasi artik yok; atlandi.')
+            lines.append(str(result['missing_source_omitted']) + ' records skipped: their receipt file no longer exists.')
         if result.get('partial') or result.get('source_sync', {}).get('status') == 'degraded':
-            lines.append('Uyari: kaynak esitlemesi kismi; ayrinti icin --json kullan.')
+            lines.append('Warning: source sync is partial; use --json for details.')
         if any(w.get('kind') == 'receipt_view' for w in result.get('source_sync', {}).get('warnings', [])):
-            lines.append('Uyari: receipt view yerel duzenlemesi korundu; arsivleyip yenilemek icin beyin.py sync --recover-views kullan.')
+            lines.append('Warning: a local edit to a receipt view was kept; to archive and regenerate it, use beyin.py sync --recover-views.')
         return '\n'.join(lines)
     if command == 'companion-compact':
         lines = []
         for name, entry in result.get('files', {}).items():
             if entry.get('status') in ('compacted', 'planned'):
-                lines.append(name + ': ' + str(entry.get('chars')) + ' -> ' + str(entry.get('chars_after')) + ' karakter' +
-                             (' olacak' if entry['status'] == 'planned' else '') + ', ' + str(entry.get('moved_chars')) +
-                             ' karakter arsive ' + ('tasinacak' if entry['status'] == 'planned' else 'tasindi') + '.')
+                lines.append(name + ': ' + str(entry.get('chars')) + ' -> ' + str(entry.get('chars_after')) + ' characters' +
+                             (' (planned)' if entry['status'] == 'planned' else '') + ', ' + str(entry.get('moved_chars')) +
+                             ' characters ' + ('will move to the archive' if entry['status'] == 'planned' else 'moved to the archive') + '.')
                 if not entry.get('within_limit_after'):
-                    lines.append(name + ' hala sinirin (' + str(entry.get('limit')) + ') ustunde' + rewrite_note(entry))
+                    lines.append(name + ' is still above the limit (' + str(entry.get('limit')) + ')' + rewrite_note(entry))
             elif entry.get('status') == 'needs_rewrite':
-                lines.append(name + ': tasinacak tarihli eski kayit yok' + rewrite_note(entry))
+                lines.append(name + ': no old dated entries to move' + rewrite_note(entry))
             elif entry.get('status') == 'conflict':
-                lines.append(name + ': islem sirasinda dosya degisti; hicbir sey tasinmadi, tekrar dene.')
+                lines.append(name + ': the file changed during the operation; nothing was moved, try again.')
             elif entry.get('status') == 'needs_attention':
-                lines.append(name + ': ' + str(entry.get('reason', 'kontrol gerekiyor')) + '.')
+                lines.append(name + ': ' + str(entry.get('reason', 'needs attention')) + '.')
             elif entry.get('status') in ('within_limit', 'limit_off'):
-                lines.append(name + ': sinir icinde, degisiklik yok.')
+                lines.append(name + ': within the limit, no change.')
         if result.get('status') == 'needs_attention' and not result.get('files'):
-            lines.append('Sinir ayari okunamadi; hicbir sey tasinmadi.' if result.get('limits_file') == 'invalid'
-                         else 'Birden fazla companion klasoru var; hicbir sey tasinmadi.')
-        return '\n'.join(lines + ['Hicbir metin silinmedi; model cagrilmadi.'])
+            lines.append('The limit setting could not be read; nothing was moved.' if result.get('limits_file') == 'invalid'
+                         else 'There is more than one companion folder; nothing was moved.')
+        return '\n'.join(lines + ['No text was deleted; no model was called.'])
     if command == 'state-compact':
         if status == 'planned':
-            return ('Eski olay kaydi: ' + str(result.get('events_prunable', 0)) + ' (yaklasik ' +
-                    megabytes(result.get('event_bytes_prunable', 0)) + ' MB), eski gecici dosya: ' +
-                    str(result.get('stale_temp_files', 0)) + ', suresi dolmus Jev onbellegi: ' +
-                    str(result.get('expired_jev_cache', 0)) + '. Hicbir sey degismedi.')
-        lines = ['Silinen eski olay kaydi: ' + str(result.get('events_removed', 0)) + ', eski gecici dosya: ' +
-                 str(result.get('temp_files_removed', 0)) + ', suresi dolmus Jev onbellegi: ' +
+            return ('Old event records: ' + str(result.get('events_prunable', 0)) + ' (about ' +
+                    megabytes(result.get('event_bytes_prunable', 0)) + ' MB), old temp files: ' +
+                    str(result.get('stale_temp_files', 0)) + ', expired Jev cache: ' +
+                    str(result.get('expired_jev_cache', 0)) + '. Nothing changed.')
+        lines = ['Old event records deleted: ' + str(result.get('events_removed', 0)) + ', old temp files: ' +
+                 str(result.get('temp_files_removed', 0)) + ', expired Jev cache: ' +
                  str(result.get('jev_cache_removed', 0)) + '.']
         if result.get('vacuum') == 'done':
-            lines.append('Yerel indeks ' + megabytes(result.get('database_bytes_before', 0)) + ' MB -> ' +
+            lines.append('Local index ' + megabytes(result.get('database_bytes_before', 0)) + ' MB -> ' +
                          megabytes(result.get('database_bytes_after', 0)) + ' MB.')
         elif result.get('vacuum') == 'busy':
-            lines.append('Indeks su an kullaniliyor; VACUUM yapilamadi. Acik oturumlar bitince tekrar dene.')
+            lines.append('The index is in use right now; VACUUM could not run. Try again when open sessions end.')
         else:
-            lines.append('VACUUM tamamlanamadi: ' + ascii_text(result.get('vacuum')))
-        return '\n'.join(lines + ['Vault dosyalarina dokunulmadi.'])
+            lines.append('VACUUM did not finish: ' + ascii_text(result.get('vacuum')))
+        return '\n'.join(lines + ['Vault files were not touched.'])
     if command == 'mutation-queue':
         if isinstance(result.get('enabled'), bool):
-            return ('Cevrimdisi mutasyon kuyrugu: ' + ('acik' if result['enabled'] else 'kapali (acmak icin: beyin.py mutation-queue --enable)') +
-                    '; ' + str(result.get('pending_count', 0)) + ' bekleyen, ' + str(result.get('conflict_count', 0)) +
-                    ' cakisma, ' + str(result.get('failed_count', 0)) + ' basarisiz.')
+            return ('Offline mutation queue: ' + ('on' if result['enabled'] else 'off (to turn on: beyin.py mutation-queue --enable)') +
+                    '; ' + str(result.get('pending_count', 0)) + ' pending, ' + str(result.get('conflict_count', 0)) +
+                    ' conflicts, ' + str(result.get('failed_count', 0)) + ' failed.')
         if 'replayed' in result:
-            text = ('Kuyruk yeniden oynatildi: ' + str(result.get('applied', 0)) + ' uygulandi, ' +
-                    str(result.get('conflicts', 0)) + ' cakisma, ' + str(result.get('failed', 0)) + ' basarisiz.')
+            text = ('Queue replayed: ' + str(result.get('applied', 0)) + ' applied, ' +
+                    str(result.get('conflicts', 0)) + ' conflicts, ' + str(result.get('failed', 0)) + ' failed.')
             if result.get('source_sync', {}).get('status') in ('error', 'degraded', 'conflict'):
-                text += ('\nKaynak esitlemesi dikkat gerektiriyor; tanilamak ve indeksi yenilemek icin '
-                         'beyin.py sync calistir. Uygulanan kayitlari yeniden kuyruga ekleme.')
+                text += ('\nSource sync needs attention; to diagnose it and refresh the index, '
+                         'run beyin.py sync. Do not queue the applied records again.')
             return text
         if 'pruned' in result:
-            return 'Kuyruktan ' + str(result['pruned']) + ' kayit temizlendi; ' + str(result.get('remaining', 0)) + ' kayit kaldi.'
+            return 'Removed ' + str(result['pruned']) + ' records from the queue; ' + str(result.get('remaining', 0)) + ' records remain.'
         if result.get('mutation_id'):
-            return ('Kuyruk kaydi ' + plain_text(result['mutation_id']) + ': ' + plain_text(result.get('status', '')) +
-                    (' (zaten kuyrukta)' if result.get('duplicate') else '') + '.')
+            return ('Queue record ' + plain_text(result['mutation_id']) + ': ' + plain_text(result.get('status', '')) +
+                    (' (already queued)' if result.get('duplicate') else '') + '.')
     if command == 'doctor':
-        labels = {'never_seen': 'Henuz gercek istemci oturumu gozlenmedi.',
-                  'observed_metadata': 'Oturum olaylari gozleniyor.',
-                  'pending': 'Bekleyen isler var.', 'needs_attention': 'Kontrol gerektiren bir sorun var.'}
-        lines = ['Beyin ' + (installed_version or 'surumu bilinmiyor'), labels.get(status, 'Saglik kontrolu tamamlandi.'),
-                 'Bekleyen is: ' + str(result.get('pending_events', 0))]
+        labels = {'never_seen': 'No real client session observed yet.',
+                  'observed_metadata': 'Session events are being observed.',
+                  'pending': 'There is pending work.', 'needs_attention': 'There is a problem that needs attention.'}
+        lines = ['Beyin ' + (installed_version or 'version unknown'), labels.get(status, 'Health check finished.'),
+                 'Pending work: ' + str(result.get('pending_events', 0))]
         for name, details in result.get('lifecycle', {}).items():
-            lines.append(name + ': ' + ('olay goruldu' if details.get('status') == 'observed_metadata' else 'henuz dogrulanmadi'))
+            lines.append(name + ': ' + ('event seen' if details.get('status') == 'observed_metadata' else 'not verified yet'))
         jev = result.get('jev') or {}
         if jev.get('mode', 'off') == 'off':
-            lines.append('Jev: kapali')
+            lines.append('Jev: off')
         else:
             lines.append('Jev: ' + jev_mode(jev['mode'], jev.get('provider')) +
-                         (', saglayici: laya (' if jev.get('provider') == 'laya' else ' (') + 'otomatik baglam: ' +
-                         ('acik' if jev.get('automatic_model_calls') else 'kapali') + '), son 24 saat ' +
-                         str(jev.get('last_24h', {}).get('calls', 0)) + ' cagri')
+                         (', provider: laya (' if jev.get('provider') == 'laya' else ' (') + 'automatic context: ' +
+                         ('on' if jev.get('automatic_model_calls') else 'off') + '), last 24 hours ' +
+                         str(jev.get('last_24h', {}).get('calls', 0)) + ' calls')
             if jev.get('context_mode_notice'):
                 cm = ascii_text(jev.get('context_mode', (result.get('preferences') or {}).get('context_mode', '?')))
-                lines.append("Jev otomatik baglam yalniz 'context_mode: turn' ile calisir; su an '" +
-                             cm + "' modunda. Etkinlestirmek icin: beyin.py preferences --context-mode turn")
+                lines.append("Jev automatic context works only with 'context_mode: turn'; currently in '" +
+                             cm + "' mode. To enable: beyin.py preferences --context-mode turn")
         if result.get('secrets_redacted'):
-            lines.append('Sir suzgeci ' + str(result['secrets_redacted']) + ' eslesmeyi [REDACTED] olarak yazdi.')
+            lines.append('Secret filter wrote ' + str(result['secrets_redacted']) + ' matches as [REDACTED].')
         cov = result.get('receipt_coverage')
         if isinstance(cov, dict) and cov.get('total', 0) > 0:
             ratio = cov.get('ratio')
@@ -450,159 +450,159 @@ def human_result(result, command, installed_version=None):
             d7 = cov.get('last_7d', {})
             d7_text = ''
             if d7.get('total', 0) > 0 and d7.get('ratio') is not None:
-                d7_text = ', son 7 gun: %' + str(int(round(d7['ratio'] * 100)))
+                d7_text = ', last 7 days: ' + str(int(round(d7['ratio'] * 100))) + '%'
             # A question-only session needs no receipt; name how many of the missing ones saw no edit (#212).
             unobserved = cov.get('missing_no_observed_edit')
-            unobserved_text = ('; ' + str(unobserved) + ' eksik oturumda duzenleme gozlenmedi'
+            unobserved_text = ('; ' + str(unobserved) + ' of the missing sessions showed no edit'
                                if isinstance(unobserved, int) and unobserved > 0 else '')
-            lines.append('Makbuz kapsami: %' + str(pct) + ' (' + str(cov['covered']) + '/' + str(cov['total']) + ' oturum' + d7_text + ')'
+            lines.append('Receipt coverage: ' + str(pct) + '% (' + str(cov['covered']) + '/' + str(cov['total']) + ' sessions' + d7_text + ')'
                          + unobserved_text)
         kf = result.get('knowledge_freshness')
         if isinstance(kf, dict) and kf.get('status') == 'unavailable':
-            lines.append('Son bilgi damitmasi: olculemedi (' + str(kf.get('error') or 'hata') + ')')
+            lines.append('Last knowledge distillation: not measurable (' + str(kf.get('error') or 'error') + ')')
         elif isinstance(kf, dict):
             if kf.get('last_distilled_at') is not None:
                 days = kf.get('days_ago', 0)
-                time_text = 'bugun' if days == 0 else ('1 gun once' if days == 1 else str(days) + ' gun once')
-                lines.append('Son bilgi damitmasi: ' + time_text + ' (o tarihten beri ' + str(kf.get('receipts_since', 0)) + ' makbuz)')
+                time_text = 'today' if days == 0 else ('1 day ago' if days == 1 else str(days) + ' days ago')
+                lines.append('Last knowledge distillation: ' + time_text + ' (' + str(kf.get('receipts_since', 0)) + ' receipts since then)')
             else:
-                lines.append('Son bilgi damitmasi: henuz kavram notu damitilmadi (toplam ' + str(kf.get('receipts_since', 0)) + ' makbuz)')
+                lines.append('Last knowledge distillation: no concept note distilled yet (' + str(kf.get('receipts_since', 0)) + ' receipts in total)')
         scheduled = result.get('scheduled_check') or {}
         if scheduled.get('status') in ('ok', 'needs_attention', 'error'):
-            lines.append('Zamanlanmis denetim (bilgi): son kosu ' + str(scheduled.get('age_hours', '?')) + ' saat once, ' +
-                         {'ok': 'saglikli', 'needs_attention': 'dikkat gerekiyor', 'error': 'denetim tamamlanamadi'}[scheduled['status']] + '.')
+            lines.append('Scheduled check (info): last run ' + str(scheduled.get('age_hours', '?')) + ' hours ago, ' +
+                         {'ok': 'healthy', 'needs_attention': 'needs attention', 'error': 'check did not finish'}[scheduled['status']] + '.')
         for conflict in result.get('instruction_conflicts', []):
-            lines.append('Talimat celiskisi: ' + conflict['file'] + ' icinde V2 derleyici ifadesi var ("' + conflict.get('snippet', '') + '"). Bu metin V3 ajan damitmasiyla celisiyor; eski derleyici talimatlarini kaldir.')
+            lines.append('Instruction conflict: ' + conflict['file'] + ' contains a V2 compiler statement ("' + conflict.get('snippet', '') + '"). This text conflicts with V3 agent distillation; remove the old compiler instructions.')
         if result.get('receipt_view_conflicts'):
-            lines.append('Receipt gorunumu cakismasi: ' + ', '.join(plain_text(c['source']) for c in result['receipt_view_conflicts']) +
-                         '. Gorunumleri arsivleyip yeniden uretmek icin: ' +
+            lines.append('Receipt view conflict: ' + ', '.join(plain_text(c['source']) for c in result['receipt_view_conflicts']) +
+                         '. To archive and regenerate the views: ' +
                          ('py -3' if sys.platform == 'win32' else 'python3') + ' beyin.py sync --recover-views')
         if result.get('skill_conflicts'):
-            lines.append('Skill kopyalari ayristi: ' + ', '.join(result['skill_conflicts']) + '. Iki surum de korundu.')
+            lines.append('Skill copies diverged: ' + ', '.join(result['skill_conflicts']) + '. Both versions were kept.')
         if result.get('skill_unmanaged'):
-            lines.append('Skill klasorundeki yonetilmeyen girdiler (bilgi): ' + ', '.join(result['skill_unmanaged']) + '.')
+            lines.append('Unmanaged entries in the skill folder (info): ' + ', '.join(result['skill_unmanaged']) + '.')
         if result.get('excluded_components'):
-            lines.append('Haric tutulan bilesenler: ' + ', '.join(result['excluded_components']) + '.')
+            lines.append('Excluded components: ' + ', '.join(result['excluded_components']) + '.')
         if result.get('pending_exclusions') or result.get('exclusions_pending'):
-            lines.append('Haric tutma degisikligi bekliyor (' + ', '.join(result.get('pending_exclusions', [])) +
-                         '): bir sonraki kurulum ya da guncellemede uygulanir.')
+            lines.append('Exclusion change pending (' + ', '.join(result.get('pending_exclusions', [])) +
+                         '): applied at the next install or update.')
         if result.get('exclusions_error'):
-            lines.append('.beyin-exclusions.json gecersiz; guncelleme duzeltilene kadar durur: ' + result['exclusions_error'])
+            lines.append('.beyin-exclusions.json is invalid; updates stop until it is fixed: ' + result['exclusions_error'])
         hygiene = result.get('companion_hygiene') or {}
         for name in hygiene.get('over_limit', []):
             entry = hygiene['files'][name]
-            lines.append('Hafiza hijyeni: ' + name + ' ' + str(entry['chars']) + ' karakter (sinir ' + str(entry['limit']) +
-                         '). Ajanina "' + ('py -3' if sys.platform == 'win32' else 'python3') +
-                         ' beyin.py companion-compact" calistirmasini soyle; eski kayitlar arsive tasinir, metin silinmez.')
+            lines.append('Memory hygiene: ' + name + ' ' + str(entry['chars']) + ' characters (limit ' + str(entry['limit']) +
+                         '). Ask your agent to run "' + ('py -3' if sys.platform == 'win32' else 'python3') +
+                         ' beyin.py companion-compact"; old entries move to the archive, no text is deleted.')
         storage = result.get('state_storage') or {}
         if storage.get('compact_suggested'):
-            lines.append('Yerel indeks (bilgi): ' + megabytes(storage['database_bytes']) + ' MB, bunun ' +
-                         megabytes(storage['free_bytes']) + ' MB bos sayfa. Diske geri vermek icin: ' +
+            lines.append('Local index (info): ' + megabytes(storage['database_bytes']) + ' MB, of which ' +
+                         megabytes(storage['free_bytes']) + ' MB is free pages. To return the space to disk: ' +
                          ('py -3' if sys.platform == 'win32' else 'python3') + ' beyin.py state-compact')
         rules_opening = result.get('companion_rules_opening') or {}
         if rules_opening.get('status') == 'stale':
-            lines.append('Kurallar.md kaynak dogrulamasi guncel degil (bilgi); acilis olcumu icin beyin.py sync calistir.')
+            lines.append('Kurallar.md source verification is out of date (info); run beyin.py sync to measure the opening.')
         if rules_opening.get('status') == 'clipped':
-            lines.append('Kurallar.md acilista kirpiliyor (bilgi): kural metni ' + str(rules_opening['chars']) +
-                         ' karakter; Claude Code acilisi bu ayarlarla (' + str(rules_opening['budget']) +
-                         ' karakter) en fazla ' + str(rules_opening['share']) + ' karakterini tam gosterir, aradaki kurallar atlanir' +
-                         (' (gerekceler de cikarildi)' if rules_opening.get('reasons_omitted') else '') +
-                         '. Kurallari kisa tut; uzun gerekceyi ve ayrintiyi ayri bir nota (or. Kurallar-Detay.md) tasi.')
+            lines.append('Kurallar.md is clipped at session opening (info): the rules text is ' + str(rules_opening['chars']) +
+                         ' characters; with these settings the Claude Code opening (' + str(rules_opening['budget']) +
+                         ' characters) shows at most ' + str(rules_opening['share']) + ' characters of it whole, and the rules in between are skipped' +
+                         (' (reasons were also left out)' if rules_opening.get('reasons_omitted') else '') +
+                         '. Keep the rules short; move long reasons and details to a separate note (e.g. Kurallar-Detay.md).')
         references = result.get('instruction_references') or {}
         if references.get('status') == 'unavailable':
-            lines.append('Talimat ve skill baglanti denetimi tamamlanamadi (bilgi): ' +
+            lines.append('Instruction and skill link check could not finish (info): ' +
                          plain_text(references.get('error', 'unknown')) + '.')
         elif references.get('dead_count'):
             shown = ', '.join(entry['file'] + ':' + str(entry['line']) + ' -> ' + entry['target']
                               for entry in references['dead'][:3])
             more = references['dead_count'] - min(3, len(references['dead']))
-            lines.append('Talimat ve skill dosyalarinda kirik baglanti (bilgi): ' + shown +
-                         (' ve ' + str(more) + ' tane daha' if more > 0 else '') + '.')
+            lines.append('Broken links in instruction and skill files (info): ' + shown +
+                         (' and ' + str(more) + ' more' if more > 0 else '') + '.')
         supersedes = result.get('supersedes') or {}
         lines += supersedes_lines(supersedes.get('dead'), supersedes.get('dead_count'))
         boundary_report = result.get('boundary') or {}
         boundary_lines = {
-            'parent_obsidian_index': 'Kok siniri (bilgi): ust klasorde de bir .obsidian var; Obsidian ust klasoru acip bu vault\'u alt klasor sayabilir.',
-            'no_root_obsidian': 'Kok siniri (bilgi): vault kokunde .obsidian yok; Obsidian\'da tam olarak bu klasoru ac.',
+            'parent_obsidian_index': 'Root boundary (info): the parent folder also has a .obsidian; Obsidian may open the parent folder and treat this vault as a subfolder.',
+            'no_root_obsidian': 'Root boundary (info): there is no .obsidian in the vault root; open exactly this folder in Obsidian.',
         }
         for finding in boundary_report.get('findings') or []:
             code = str(finding).split(':', 1)[0]
             if code == 'kasa_excluded':
-                lines.append('Kasa sinifi klasor (bilgi): ' + ', '.join(plain_text(name) for name in boundary_report.get('sensitive_excluded') or []) +
-                             '; hijyen taramalari bunlari atlar, tam garanti icin kaynaklarina visibility: private ekle.')
+                lines.append('Sensitive folders (info): ' + ', '.join(plain_text(name) for name in boundary_report.get('sensitive_excluded') or []) +
+                             '; hygiene scans skip them; for a full guarantee, add visibility: private to their sources.')
             elif code == 'code_inside_vault':
-                lines.append('Kok siniri (bilgi): vault icinde kod klasoru var (' + ', '.join(plain_text(name) for name in boundary_report.get('code_dirs', [])[:5]) +
-                             '); kod repo\'sunu hafiza vault\'unun disinda tut.')
+                lines.append('Root boundary (info): there are code folders inside the vault (' + ', '.join(plain_text(name) for name in boundary_report.get('code_dirs', [])[:5]) +
+                             '); keep the code repository outside the memory vault.')
             elif code == 'nested_git_repository':
-                lines.append('Kok siniri (bilgi): vault icinde ayri git deposu var (' + ', '.join(plain_text(name) for name in boundary_report.get('nested_repositories', [])[:3]) + ').')
+                lines.append('Root boundary (info): there is a separate git repository inside the vault (' + ', '.join(plain_text(name) for name in boundary_report.get('nested_repositories', [])[:3]) + ').')
             elif code == 'backup_artifacts':
-                lines.append('Kok siniri (bilgi): kokte yedek ya da esitleme kopyasi var (' + ', '.join(plain_text(name) for name in boundary_report.get('backup_artifacts', [])[:5]) +
-                             '); ozel bir kopya tasiyor olabilir.')
+                lines.append('Root boundary (info): the root holds backup or sync copies (' + ', '.join(plain_text(name) for name in boundary_report.get('backup_artifacts', [])[:5]) +
+                             '); they may carry a private copy.')
             elif code in boundary_lines:
                 lines.append(boundary_lines[code])
         review = result.get('review') or {}
         if review.get('due_count'):
-            shown = ', '.join(plain_text(entry['source']) + ' (' + str(entry['days_overdue']) + ' gun)' for entry in review['due'][:3])
+            shown = ', '.join(plain_text(entry['source']) + ' (' + str(entry['days_overdue']) + ' days)' for entry in review['due'][:3])
             more = review['due_count'] - min(3, len(review['due']))
-            lines.append('Yeniden bakma tarihi gelen not (review_at, bilgi): ' + shown +
-                         (' ve ' + str(more) + ' tane daha' if more > 0 else '') + '.')
+            lines.append('Notes due for review (review_at, info): ' + shown +
+                         (' and ' + str(more) + ' more' if more > 0 else '') + '.')
         if review.get('invalid_count'):
-            lines.append('Gercek tarih olmayan review_at (bilgi): ' +
+            lines.append('review_at values that are not real dates (info): ' +
                          ', '.join(plain_text(entry['source']) for entry in review['invalid'][:3]) + '.')
         closed = result.get('closed_tasks') or {}
         if closed.get('closed_count'):
-            shown = ', '.join(plain_text(entry['source']) + ' (' + str(entry['days_old']) + ' gun)' for entry in closed.get('closed')[:3])
+            shown = ', '.join(plain_text(entry['source']) + ' (' + str(entry['days_old']) + ' days)' for entry in closed.get('closed')[:3])
             more = closed['closed_count'] - min(3, len(closed.get('closed') or []))
-            lines.append(str(closed.get('days', 30)) + ' gunden eski kapali gorev tasks/ altinda duruyor (bilgi, tasima senin kararin): ' + shown +
-                         (' ve ' + str(more) + ' tane daha' if more > 0 else '') + '.')
+            lines.append('Closed tasks older than ' + str(closed.get('days', 30)) + ' days are still under tasks/ (info, moving them is your call): ' + shown +
+                         (' and ' + str(more) + ' more' if more > 0 else '') + '.')
         cap = result.get('word_cap') or {}
         if cap.get('over_count'):
-            shown = ', '.join(plain_text(entry['file']) + ' (' + str(entry['words']) + ' kelime)' for entry in cap.get('over', [])[:3])
+            shown = ', '.join(plain_text(entry['file']) + ' (' + str(entry['words']) + ' words)' for entry in cap.get('over', [])[:3])
             more = cap['over_count'] - min(3, len(cap.get('over') or []))
-            lines.append('Kelime tavani (' + str(cap['cap']) + ') asan not (bilgi): ' + shown +
-                         (' ve ' + str(more) + ' tane daha' if more > 0 else '') + '.')
+            lines.append('Notes over the word cap (' + str(cap['cap']) + ') (info): ' + shown +
+                         (' and ' + str(more) + ' more' if more > 0 else '') + '.')
         promo = result.get('promotion') or {}
         if promo.get('hot'):
-            lines.append('Sicak klasorler (son ' + str(promo.get('window_days', 30)) + ' gun dokunma): ' +
+            lines.append('Hot folders (touches in the last ' + str(promo.get('window_days', 30)) + ' days): ' +
                          ', '.join(plain_text(entry['folder']) + ' (' + str(entry['touches']) + ')' for entry in promo['hot'][:3]))
         if promo.get('cold'):
-            lines.append('Soguk klasorler (terfi karari senin): ' +
-                         ', '.join(plain_text(entry['folder']) + ' (' + str(entry['days_quiet']) + ' gun)' for entry in promo['cold'][:3]))
+            lines.append('Cold folders (promotion is your call): ' +
+                         ', '.join(plain_text(entry['folder']) + ' (' + str(entry['days_quiet']) + ' days)' for entry in promo['cold'][:3]))
         waiting = [entry for entry in (result.get('inbox') or {}).get('folders') or []
                    if entry.get('attention') or entry.get('error')]
         if waiting:
-            lines.append('Gelen kutusunda bekleyen (bilgi, isleme karari senin): ' + ', '.join(
-                plain_text(entry['folder']) + (' (okunamadi: ' + plain_text(entry['error']) + ')' if entry.get('error') else
-                                               ' (' + str(entry['notes']) + ' not, en eskisi ' + str(entry['oldest_days']) + ' gun)')
-                for entry in waiting[:3]) + (' ve ' + str(len(waiting) - 3) + ' klasor daha' if len(waiting) > 3 else '') + '.')
+            lines.append('Waiting in inbox folders (info, processing is your call): ' + ', '.join(
+                plain_text(entry['folder']) + (' (unreadable: ' + plain_text(entry['error']) + ')' if entry.get('error') else
+                                               ' (' + str(entry['notes']) + ' notes, oldest ' + str(entry['oldest_days']) + ' days)')
+                for entry in waiting[:3]) + (' and ' + str(len(waiting) - 3) + ' more folders' if len(waiting) > 3 else '') + '.')
         parallel = result.get('parallel_sessions') or {}
         if parallel.get('enabled'):
-            lines.append('Paralel oturum bildirimi: acik (son 45 dakikada etkin ' + str(parallel.get('active', 0)) + ' oturum isareti)')
+            lines.append('Parallel session notice: on (' + str(parallel.get('active', 0)) + ' session markers active in the last 45 minutes)')
         elif parallel.get('valid') is False:
-            lines.append('parallel-sessions.json gecersiz; paralel oturum bildirimi kapali sayiliyor.')
+            lines.append('parallel-sessions.json is invalid; the parallel session notice is treated as off.')
         dedupe = result.get('context_dedupe') or {}
         if dedupe.get('enabled'):
-            lines.append('Oturum ici tekrar onleme: acik (' + str(dedupe.get('sessions', 0)) + ' oturum defteri)')
+            lines.append('In-session repeat prevention: on (' + str(dedupe.get('sessions', 0)) + ' session ledgers)')
         elif dedupe.get('valid') is False:
-            lines.append('context-dedupe.json gecersiz; oturum ici tekrar onleme kapali sayiliyor.')
+            lines.append('context-dedupe.json is invalid; in-session repeat prevention is treated as off.')
         queue = result.get('mutation_queue') or {}
         if queue.get('valid') is False:
-            lines.append('mutation-queue-settings.json gecersiz; cevrimdisi kuyruk kapali sayiliyor.')
+            lines.append('mutation-queue-settings.json is invalid; the offline queue is treated as off.')
         if queue.get('enabled') or queue.get('queue_exists'):
-            lines.append('Cevrimdisi mutasyon kuyrugu: ' + ('acik' if queue.get('enabled') else 'kapali') +
-                         (' (kuyruk dosyasi okunamadi)' if queue.get('status') == 'invalid' else
-                          ' (' + str(queue.get('pending_count', 0)) + ' bekleyen, ' + str(queue.get('conflict_count', 0)) +
-                          ' cakisma, ' + str(queue.get('failed_count', 0)) + ' basarisiz)'))
+            lines.append('Offline mutation queue: ' + ('on' if queue.get('enabled') else 'off') +
+                         (' (queue file unreadable)' if queue.get('status') == 'invalid' else
+                          ' (' + str(queue.get('pending_count', 0)) + ' pending, ' + str(queue.get('conflict_count', 0)) +
+                          ' conflicts, ' + str(queue.get('failed_count', 0)) + ' failed)'))
         index_scope = result.get('index_exclusions') or {}
         lines += index_exclusion_lines(index_scope)
         hint = index_scope.get('vendored_hint') or {}
         if hint.get('notes'):
             more = len(hint.get('dirs') or []) - 3
-            lines.append('Indeks kapsami (bilgi): baska projelerin kod kopyasi gibi gorunen klasorlerde ' + str(hint['notes']) +
-                         ' not indeksli (' + ', '.join(plain_text(entry['dir']) + ': ' + str(entry['notes'])
+            lines.append('Index scope (info): folders that look like code copies of other projects have ' + str(hint['notes']) +
+                         ' notes indexed (' + ', '.join(plain_text(entry['dir']) + ': ' + str(entry['notes'])
                                                        for entry in (hint.get('dirs') or [])[:3]) +
-                         (' ve baska klasorler' if more > 0 or hint.get('truncated') else '') +
-                         '). Senin notun degilse indeks disinda tut: ' + ('py -3' if sys.platform == 'win32' else 'python3') +
+                         (' and other folders' if more > 0 or hint.get('truncated') else '') +
+                         '). If they are not your notes, keep them out of the index: ' + ('py -3' if sys.platform == 'win32' else 'python3') +
                          ' beyin.py preferences ' + ' '.join('--index-exclude-dir ' + plain_text(name)
                                                             for name in hint.get('names') or []))
         arch_hint = index_scope.get('archive_hint') or {}
@@ -611,153 +611,153 @@ def human_result(result, command, installed_version=None):
             py_cmd = 'py -3' if sys.platform == 'win32' else 'python3'
             exclude_args = ' '.join('--index-exclude-dir ' + (('"' + plain_text(name) + '"') if ' ' in name else plain_text(name))
                                     for name in arch_hint.get('names') or [])
-            lines.append('Arsiv kapsami (bilgi): arsiv klasorlerinde emekli edilmemis (canli sayilan) ' + str(arch_hint['notes']) +
-                         ' not indeksli (' + ', '.join(plain_text(entry['dir']) + ': ' + str(entry['notes'])
+            lines.append('Archive scope (info): notes in archive folders that are not retired count as live; ' + str(arch_hint['notes']) +
+                         ' notes indexed (' + ', '.join(plain_text(entry['dir']) + ': ' + str(entry['notes'])
                                                        for entry in (arch_hint.get('dirs') or [])[:3]) +
-                         (' ve baska klasorler' if more > 0 or arch_hint.get('truncated') else '') +
-                         '). Baglamdan uzak tutmak icin notlara "status: archived" yaz veya klasoru indeks disinda tut: ' +
+                         (' and other folders' if more > 0 or arch_hint.get('truncated') else '') +
+                         '). To keep them out of the context, write "status: archived" in the notes or keep the folder out of the index: ' +
                          py_cmd + ' beyin.py preferences ' + exclude_args)
         lines += state_location_lines(result.get('state_location'))
         lines += receipt_line_endings_lines(result.get('receipt_line_endings'))
         backup = result.get('backup') or {}
         if backup.get('status') == 'remote_configured':
-            lines.append('Yedek (bilgi): Git uzak adresi ayarli; guncel ve geri yuklenebilir ikinci kopya dogrulanmadi. docs/v3/BACKUP.md')
+            lines.append('Backup (info): a Git remote is set; a current, restorable second copy was not verified. docs/v3/BACKUP.md')
         elif backup:
-            lines.append('Yedek (bilgi): Bu kasanin ikinci kopyasi dogrulanamadi; baska yolla aldiginiz yedek burada gorunmez. Disk arizasina karsi ayri bir kopya tutun. docs/v3/BACKUP.md')
+            lines.append('Backup (info): no second copy of this vault could be verified; a backup you make another way does not show here. Keep a separate copy in case of disk failure. docs/v3/BACKUP.md')
 
         paths = result.get('hook_paths') or {}
         if paths.get('status') == 'stale':
-            lines.append('Hook yollari baska bir kuruluma isaret ediyor (' + str(len(paths.get('stale', []))) + ' eski yol). ' +
-                         'Guncellemek icin: ' + ('py -3' if sys.platform == 'win32' else 'python3') + ' beyin.py hook-reconcile')
+            lines.append('Hook paths point to another installation (' + str(len(paths.get('stale', []))) + ' old paths). ' +
+                         'To update: ' + ('py -3' if sys.platform == 'win32' else 'python3') + ' beyin.py hook-reconcile')
         tracked = result.get('tracked_machine_files') or {}
         bridges = result.get('global_bridge_paths') or {}
         if bridges.get('status') == 'stale':
             harnesses = sorted({row.get('harness') for row in bridges.get('stale', [])
                                 if row.get('harness') in ('claude', 'codex', 'antigravity', 'opencode')})
             commands = ', '.join('bridge --harness ' + harness + ' ... --install' for harness in harnesses)
-            lines.append('Genel kopru yollari eski kuruluma isaret ediyor (bilgi): ' + commands +
-                         '. Yeni vault icinden onceki --project-root, --event ve --context-chars secimlerini koruyarak '
-                         'yeniden kur. Genel ayarlar degistirilmedi.')
+            lines.append('Global bridge paths point to an old installation (info): ' + commands +
+                         '. Reinstall them from inside the new vault, keeping the earlier --project-root, --event and --context-chars choices'
+                         '. Global settings were not changed.')
         if tracked.get('status') == 'warning':
-            lines.append('Git makineye ozel kurulum dosyalarini izliyor (bilgi): ' +
+            lines.append('Git tracks machine-specific installation files (info): ' +
                          ', '.join(plain_text(name) for name in tracked.get('tracked', [])) +
-                         '. Her makinenin kendi yedegini koruyarak docs/v3/MULTI-MACHINE.md rehberini incele; otomatik degisiklik yapilmadi.')
+                         '. Keeping a backup for each machine, read the docs/v3/MULTI-MACHINE.md guide; nothing was changed automatically.')
         elif tracked.get('status') in ('unavailable', 'skipped'):
-            lines.append('Git kurulum dosyasi kontrolu (bilgi): ' + plain_text(tracked.get('status')) +
+            lines.append('Git installation file check (info): ' + plain_text(tracked.get('status')) +
                          ' (' + plain_text(tracked.get('reason', 'unknown')) + ').')
         scopes = result.get('project_scopes') or {}
         if scopes.get('status') == 'error' and scopes.get('error'):
-            lines.append('Proje kapsamlari (.beyin-projects.json) gecersiz: ' + plain_text(scopes['error']))
+            lines.append('Project scopes (.beyin-projects.json) are invalid: ' + plain_text(scopes['error']))
         elif scopes.get('status') in ('error', 'warning'):
-            # Entry-level problems: name each entry instead of a bare "hata" (#419).
+            # Entry-level problems: name each entry instead of a bare "error" (#419).
             details = []
             if scopes.get('missing_folders'):
-                details.append('kasada bulunamayan klasorler: ' + ', '.join(plain_text(f) for f in scopes['missing_folders']))
+                details.append('folders not found in the vault: ' + ', '.join(plain_text(f) for f in scopes['missing_folders']))
             if scopes.get('duplicate_folders'):
-                details.append('birden fazla projeye atanan klasorler: ' + ', '.join(plain_text(f) for f in scopes['duplicate_folders']))
+                details.append('folders assigned to more than one project: ' + ', '.join(plain_text(f) for f in scopes['duplicate_folders']))
             if scopes.get('invalid_entries'):
-                details.append('gecersiz girdiler: ' + ', '.join(plain_text(f) for f in scopes['invalid_entries']))
+                details.append('invalid entries: ' + ', '.join(plain_text(f) for f in scopes['invalid_entries']))
             if scopes.get('duplicate_folders') or scopes.get('invalid_entries'):
-                details.append('bu girdiler atlaniyor, adlandirdiklari kasa klasorleri hicbir projeye acilmiyor' +
-                               (' ve shared_unscoped duzeltilene kadar kapali' if scopes.get('shared_unscoped') else ''))
-            lines.append('Proje kapsamlari (.beyin-projects.json) dikkat gerektiriyor: ' + '; '.join(details) +
-                         '. Duzenlemek veya temizlemek icin: ' + ('py -3' if sys.platform == 'win32' else 'python3') +
+                details.append('these entries are skipped, and the vault folders they name are open to no project' +
+                               (' and shared_unscoped is off until they are fixed' if scopes.get('shared_unscoped') else ''))
+            lines.append('Project scopes (.beyin-projects.json) need attention: ' + '; '.join(details) +
+                         '. To fix or clean up: ' + ('py -3' if sys.platform == 'win32' else 'python3') +
                          ' beyin.py project-scope prune')
         if status in ('needs_attention', 'pending'):
-            lines.append('Ajanina "beyin doktor" diyerek ayrintiyi inceletebilirsin.')
+            lines.append('Say "beyin doktor" to your agent to have the details examined.')
         return '\n'.join(lines + update_lines(result.get('updates', {})))
     if result.get('verification') == 'metadata_only':
-        return '\n'.join(update_lines(result) + ['Yalniz surum bilgisi kontrol edildi; paket kurulumu denenmedi.'])
+        return '\n'.join(update_lines(result) + ['Only release information was checked; no package install was attempted.'])
     if status == 'updated':
-        message = 'Beyin guncellendi: ' + str(result.get('from_version', installed_version or '?')) + ' -> ' + str(result['version'])
+        message = 'Beyin updated: ' + str(result.get('from_version', installed_version or '?')) + ' -> ' + str(result['version'])
         if result.get('removed'):
-            message += '\nHaric tutulan bilesenler kaldirildi: ' + ', '.join(result['removed']) + '.'
+            message += '\nExcluded components removed: ' + ', '.join(result['removed']) + '.'
         if result.get('preserved_excluded'):
-            message += '\nHaric tutulan ancak degistirilmis dosyalar korundu: ' + ', '.join(result['preserved_excluded']) + '.'
+            message += '\nExcluded but modified files were kept: ' + ', '.join(result['preserved_excluded']) + '.'
         if result.get('orphaned_legacy_state'):
-            message += ('\nYarida kesilmis ' + str(len(result['orphaned_legacy_state'])) + ' V2 flush kaydi var (durumu inflight,'
-                        ' yazan surec artik calismiyor); engel sayilmadi, dosyalara dokunulmadi.'
-                        ' O oturumlarin ozeti daily/ altina yazilmamis olabilir.')
+            message += ('\nThere are ' + str(len(result['orphaned_legacy_state'])) + ' interrupted V2 flush records (status inflight,'
+                        ' and the writing process no longer runs); not treated as a blocker, the files were not touched.'
+                        ' The summaries of those sessions may not have been written to daily/.')
         if result.get('stale_legacy_locks'):
-            message += ('\nSahipsiz kalmis ' + str(len(result['stale_legacy_locks'])) + ' V2 kilit klasoru var (prompt_count.*.lock,'
-                        ' sekiz gunden eski); engel sayilmadi, dokunulmadi.')
+            message += ('\nThere are ' + str(len(result['stale_legacy_locks'])) + ' orphaned V2 lock folders (prompt_count.*.lock,'
+                        ' older than eight days); not treated as a blocker, not touched.')
     elif status == 'available':
-        message = 'Yeni surum var: ' + str(result.get('current_version', '?')) + ' -> ' + str(result['version']) + '\nGuncellemek icin: python beyin.py update'
+        message = 'New version available: ' + str(result.get('current_version', '?')) + ' -> ' + str(result['version']) + '\nTo update: python beyin.py update'
     elif status == 'noop':
-        message = 'Beyin guncel: ' + str(result.get('version', installed_version or '?'))
+        message = 'Beyin is up to date: ' + str(result.get('version', installed_version or '?'))
     elif status == 'dismissed':
-        message = 'Bu surumun oturum bildirimi susturuldu: ' + result['version']
+        message = 'Session notice muted for this version: ' + result['version']
     elif status == 'uninstalled':
-        message = 'Kurulum geri alindi. Kullanici notlari korundu.'
+        message = 'Installation removed. User notes were kept.'
     elif status == 'rolled_back':
-        message = 'Onceki surume donuldu: ' + str(result.get('version', '?'))
+        message = 'Rolled back to the previous version: ' + str(result.get('version', '?'))
     elif status == 'recovered':
-        message = 'Yarim kalan islem kurtarildi. Surum: ' + str(result.get('version', '?'))
+        message = 'Interrupted operation recovered. Version: ' + str(result.get('version', '?'))
     elif command == 'context':
         records = result.get('records', [])
-        message = '\n\n'.join(str(r.get('source', '')) + '\n' + str(r.get('text', '')) for r in records) or 'Eslesen kaynak bulunamadi.'
+        message = '\n\n'.join(str(r.get('source', '')) + '\n' + str(r.get('text', '')) for r in records) or 'No matching source found.'
     elif command == 'project-scope':
         action = result.get('action', 'list')
         if action == 'list':
             if result.get('status') == 'absent':
-                return 'Proje kapsamlari (.beyin-projects.json) bulunamadi.'
+                return 'Project scopes (.beyin-projects.json) not found.'
             if result.get('error'):
-                return 'Proje kapsamlari (.beyin-projects.json) gecersiz: ' + plain_text(result['error'])
-            lines = ['Proje kapsamlari (.beyin-projects.json):']
+                return 'Project scopes (.beyin-projects.json) are invalid: ' + plain_text(result['error'])
+            lines = ['Project scopes (.beyin-projects.json):']
             folders = result.get('folders', {})
             missing = set(result.get('missing_folders', []))
             for f, p in sorted(folders.items()):
-                extra = ' (kasada bulunamadi)' if f in missing else ''
+                extra = ' (not found in the vault)' if f in missing else ''
                 lines.append('  ' + plain_text(f) + ' -> ' + plain_text(p) + extra)
             for f in result.get('missing_folders', []):
                 if f not in folders:
-                    lines.append('  ' + plain_text(f) + ' (kasada bulunamadi)')
+                    lines.append('  ' + plain_text(f) + ' (not found in the vault)')
             # Skipped entries (#419): named here, closed to every project until fixed.
             for entry in result.get('invalid_entries', []) + result.get('duplicate_folders', []):
-                lines.append('  ' + plain_text(entry) + ' (atlandi)')
+                lines.append('  ' + plain_text(entry) + ' (skipped)')
             shared = result.get('shared_unscoped')
             if shared and result.get('shared_unscoped_effective') is False:
-                lines.append('  shared_unscoped: kapali (atlanan girdiler duzeltilene kadar)')
+                lines.append('  shared_unscoped: off (until the skipped entries are fixed)')
             else:
-                lines.append('  shared_unscoped: ' + ('acik' if shared else 'kapali'))
+                lines.append('  shared_unscoped: ' + ('on' if shared else 'off'))
             return '\n'.join(lines)
         elif action == 'add':
             # add is the only command that changes shared_unscoped (#607): show the saved value.
-            return ('Klasor proje kapsamina eklendi: ' + plain_text(result.get('folder', '')) + ' -> ' +
+            return ('Folder added to project scope: ' + plain_text(result.get('folder', '')) + ' -> ' +
                     plain_text(result.get('project', '')) +
-                    '\n  shared_unscoped: ' + ('acik' if result.get('shared_unscoped') else 'kapali'))
+                    '\n  shared_unscoped: ' + ('on' if result.get('shared_unscoped') else 'off'))
         elif action == 'remove':
-            return 'Klasor proje kapsamindan cikarildi: ' + plain_text(result.get('folder', ''))
+            return 'Folder removed from project scope: ' + plain_text(result.get('folder', ''))
         elif action == 'prune':
             pruned = result.get('pruned', [])
             if not pruned:
-                return 'Temizlenecek eksik klasor bulunmadi; tum klasorler kasada mevcut.'
-            return 'Kasada bulunmayan ' + str(len(pruned)) + ' klasor kapsamdan cikarildi: ' + ', '.join(plain_text(f) for f in pruned)
+                return 'No missing folders to clean up; all folders exist in the vault.'
+            return 'Removed ' + str(len(pruned)) + ' folders that no longer exist in the vault from the project scope: ' + ', '.join(plain_text(f) for f in pruned)
     elif command == 'bridge':
         status = result.get('status')
-        harness = result.get('harness', 'bilinmiyor')
+        harness = result.get('harness', 'unknown')
         if status == 'installed':
-            lines = ['Global kopru kuruldu (' + harness + '):']
+            lines = ['Global bridge installed (' + harness + '):']
             if result.get('hook_file'):
-                lines.append('  Hook ayari: ' + plain_text(result['hook_file']))
+                lines.append('  Hook settings: ' + plain_text(result['hook_file']))
             if result.get('gemini_md'):
-                lines.append('  Global yonerge: ' + plain_text(result['gemini_md']))
+                lines.append('  Global instructions: ' + plain_text(result['gemini_md']))
             if result.get('project_roots'):
-                lines.append('  Kapsanan proje kokleri: ' + ', '.join(plain_text(r) for r in result['project_roots']))
-            lines.append('Mevcut kullanici ayarlari korundu; .bak yedegi alindi.')
+                lines.append('  Covered project roots: ' + ', '.join(plain_text(r) for r in result['project_roots']))
+            lines.append('Existing user settings were kept; a .bak backup was made.')
             return '\n'.join(lines)
         elif status == 'uninstalled':
-            lines = ['Global kopru kaldirildi (' + harness + '):']
+            lines = ['Global bridge removed (' + harness + '):']
             if result.get('hook_file'):
-                lines.append('  Hook ayari: ' + plain_text(result['hook_file']))
-            lines.append('  Kaldirilan kopru girdisi sayisi: ' + str(result.get('removed_count', 0)))
-            lines.append('Kullaniciya ait diger ayarlar korundu.')
+                lines.append('  Hook settings: ' + plain_text(result['hook_file']))
+            lines.append('  Bridge entries removed: ' + str(result.get('removed_count', 0)))
+            lines.append('Other user settings were kept.')
             return '\n'.join(lines)
     else:
-        message = 'Islem sonucu: ' + str(status or 'tamamlandi')
+        message = 'Result: ' + str(status or 'done')
         if command in ('sync', 'recover-views'):
             if result.get('recovered_views'):
-                recovered_lines = ['Cakisan receipt gorunumleri arsivlendi ve yeniden uretildi:']
+                recovered_lines = ['Conflicting receipt views were archived and regenerated:']
                 for item in result['recovered_views']:
                     recovered_lines.append('  - ' + plain_text(item['source']) + ' -> ' + plain_text(item['archive']))
                 message = '\n'.join([message] + recovered_lines)
@@ -767,16 +767,16 @@ def human_result(result, command, installed_version=None):
     if result.get('trust_review_required'):
         message += '\n' + trust_review_line(result.get('trust_review_files'))
     if result.get('view_conflicts'):
-        message += '\nReceipt gorunumleri korundu: ' + ', '.join(plain_text(c['source']) for c in result['view_conflicts']) + '. Kurtarma: beyin.py sync --recover-views'
+        message += '\nReceipt views kept: ' + ', '.join(plain_text(c['source']) for c in result['view_conflicts']) + '. Recovery: beyin.py sync --recover-views'
     return message
 
 
 # Hook definition file -> the step its client needs before the new hooks run (SETUP-V3.md step 5).
 TRUST_REVIEW = {
-    '.codex/hooks.json': 'Codex: /hooks guven incelemesi',
-    '.kiro/hooks/beyin-v3.json': 'Kiro: Agent Hooks paneli veya CLI /hooks incelemesi',
-    '.agents/hooks.json': 'Antigravity: vault klasorune guven',
-    '.claude/settings.local.json': 'Claude Code: ek inceleme yok',
+    '.codex/hooks.json': 'Codex: /hooks trust review',
+    '.kiro/hooks/beyin-v3.json': 'Kiro: review in the Agent Hooks panel or with CLI /hooks',
+    '.agents/hooks.json': 'Antigravity: trust the vault folder',
+    '.claude/settings.local.json': 'Claude Code: no extra review',
 }
 
 
@@ -784,9 +784,9 @@ def trust_review_line(files):
     """Name only the clients whose hook definitions changed; an older updater gives no list."""
     changed = [name for name in TRUST_REVIEW if name in (files or ())]
     if not changed:
-        return 'Hook tanimi degisti: kullandigin istemcide guven incelemesini tamamla ve yeni oturum ac.'
-    return ('Hook tanimi degisti (' + ', '.join(changed) + '). ' +
-            '; '.join(TRUST_REVIEW[name] for name in changed) + '. Ardindan yeni oturum ac.')
+        return 'Hook definitions changed: complete the trust review in the client you use and open a new session.'
+    return ('Hook definitions changed (' + ', '.join(changed) + '). ' +
+            '; '.join(TRUST_REVIEW[name] for name in changed) + '. Then open a new session.')
 
 
 def print_error(error):
@@ -840,11 +840,11 @@ def main(argv=None):
         installed_version = stamp.read_text(encoding='utf-8').strip() if stamp.is_file() else None
         config_path = vault / '.beyin-runtime.json'
         if not config_path.is_file():
-            raise ValueError('Kurulum ayari eksik; resmi V3 installer ile bu vault kurulumunu tamamlayin.')
+            raise ValueError('Installation settings are missing; finish installing this vault with the official V3 installer.')
         try:
             config = json.loads(config_path.read_text(encoding='utf-8'))
         except ValueError as exc:  # JSONDecodeError or UnicodeDecodeError: name the file (#587)
-            raise ValueError('Kurulum ayari okunamadi: .beyin-runtime.json gecerli JSON degil (' + str(exc) + ').') from None
+            raise ValueError('Installation settings could not be read: .beyin-runtime.json is not valid JSON (' + str(exc) + ').') from None
         directory = vault / '.claude/scripts'
         sys.path.insert(0, str(directory))
         cli = None
@@ -857,8 +857,8 @@ def main(argv=None):
             except (OSError, ValueError, RuntimeError):
                 pinned_state = None
             if state != pinned_state:
-                print('Uyari: yabanci varsayilan state yolu bu makinenin yerel state klasorune cozumlendi: ' +
-                      plain_text(state) + '. Kalici duzeltme: bu makinede install_v3.py ile kur.', file=sys.stderr)
+                print('Warning: a foreign default state path was resolved to the local state folder of this machine: ' +
+                      plain_text(state) + '. Permanent fix: install with install_v3.py on this machine.', file=sys.stderr)
         else:
             # The installer always pins a resolved absolute path. A pin that is not absolute
             # here came from another OS through a synced vault (a Windows C:\ path on POSIX,
@@ -868,10 +868,10 @@ def main(argv=None):
             # so on stderr (#205): stdout stays the command's own result, JSON included.
             cli = load_cli(directory)
             state = cli.default_state(vault)
-            print('Uyari: .beyin-runtime.json icindeki state yolu (' + plain_text(raw_state) + ') bu makinede '
-                  'mutlak bir yol degil; vault baska bir isletim sisteminden esitlenmis olabilir. Bu makinenin '
-                  'varsayilan state klasoru kullaniliyor: ' + plain_text(state) + '. Kalici duzeltme: bu makinede '
-                  'install_v3.py ile kur; hook komutlari da boylece bu makineye baglanir.', file=sys.stderr)
+            print('Warning: the state path in .beyin-runtime.json (' + plain_text(raw_state) + ') is not an absolute path '
+                  'on this machine; the vault may have been synced from another operating system. Using the default '
+                  'state folder of this machine: ' + plain_text(state) + '. Permanent fix: install with '
+                  'install_v3.py on this machine; that also binds the hook commands to this machine.', file=sys.stderr)
         if argv and argv[0] == 'yakala':
             # Optional capture tool: its own small CLI, no index or sync engine.
             import beyin_v3_yakala as yakala
@@ -923,7 +923,7 @@ def main(argv=None):
             except (ValueError, TypeError, AttributeError):
                 # A result human_result cannot shape (history returns a list) prints as the JSON
                 # the captured path below shows, not as a failed command.
-                message = ('Islem tamamlanamadi; ayrinti icin ayni komutu --json ile calistir.' if code
+                message = ('Operation failed; run the same command with --json for details.' if code
                            else json.dumps(result, ensure_ascii=True, indent=2))
         else:
             from contextlib import redirect_stdout, redirect_stderr
@@ -936,7 +936,7 @@ def main(argv=None):
                 result = json.loads(value)
                 message = human_result(result, command, installed_version)
             except (ValueError, TypeError, AttributeError):
-                message = 'Islem tamamlanamadi; ayrinti icin ayni komutu --json ile calistir.' if code else value.strip()
+                message = 'Operation failed; run the same command with --json for details.' if code else value.strip()
         print(message, file=sys.stderr if code else sys.stdout)
         return code
     except Exception as exc:

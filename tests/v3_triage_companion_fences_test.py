@@ -102,7 +102,7 @@ class CompanionFenceSummaryTest(unittest.TestCase):
                 self.assertEqual(report['companion']['active_threads'], 1)
                 self.assertEqual(report['threads']['open_count'], 1)
             else:
-                self.assertIn('Acik is parcaciklari: 1 thread', result.stdout)
+                self.assertIn('Open threads: 1', result.stdout)
         self.assertEqual(before, {p.relative_to(self.vault): p.read_bytes()
                                  for p in self.vault.rglob('*') if p.is_file()})
 

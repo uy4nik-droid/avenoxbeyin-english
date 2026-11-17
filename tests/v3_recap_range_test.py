@@ -161,15 +161,15 @@ class RecapRangeProjectionTest(unittest.TestCase):
 
     def test_human_view_names_local_days_and_an_open_start(self):
         text = entry.human_result(self.recap(until=DAY), 'recap')
-        self.assertEqual(text.splitlines()[0], 'Kaynakli etkinlik: baslangic siniri yok - 2026-09-24 '
-                                              '(yerel gun; ajan kayitlari, bagimsiz dogrulanmis olgular degil)')
+        self.assertEqual(text.splitlines()[0], 'Sourced activity: no start limit - 2026-09-24 '
+                                              '(local days; agent records, not independently verified facts)')
         self.assertIn('\n2026-09-24  day-0001\n', text)  # stamped 2026-09-23 in UTC
         self.assertNotIn('2026-09-23  day-0001', text)
         ranged = entry.human_result(self.recap(since=DAY, until=DAY), 'recap')
-        self.assertTrue(ranged.startswith('Kaynakli etkinlik: 2026-09-24 - 2026-09-24 (yerel gun; '), ranged)
+        self.assertTrue(ranged.startswith('Sourced activity: 2026-09-24 - 2026-09-24 (local days; '), ranged)
         # The --days window keeps its UTC header and UTC item dates.
         window = entry.human_result(projections.recent_receipts(self.db, today=date(2026, 9, 25)), 'recap')
-        self.assertTrue(window.startswith('Kaynakli etkinlik: 2026-09-19 - 2026-09-25 (UTC; '), window)
+        self.assertTrue(window.startswith('Sourced activity: 2026-09-19 - 2026-09-25 (UTC; '), window)
         self.assertIn('\n2026-09-23  day-0001\n', window)
 
 
@@ -285,8 +285,8 @@ class InstalledRecapRange:
         view = (self.vault / 'daily/v3/2026-09-24.md').read_bytes().decode('utf-8')
         self.assertEqual({name for name, stamp in self.stamps.items() if '## ' + stamp in view}, set(self.names(result)))
         lines = self.human('--since', DAY, '--until', DAY)
-        self.assertEqual(lines[0], 'Kaynakli etkinlik: 2026-09-24 - 2026-09-24 '
-                                   '(yerel gun; ajan kayitlari, bagimsiz dogrulanmis olgular degil)')
+        self.assertEqual(lines[0], 'Sourced activity: 2026-09-24 - 2026-09-24 '
+                                   '(local days; agent records, not independently verified facts)')
         self.assertEqual([line for line in lines if line[:4] == '2026'],
                          ['2026-09-24  day-2359', '2026-09-24  ' + TURKISH, '2026-09-24  day-0001'])
 
@@ -296,8 +296,8 @@ class InstalledRecapRange:
         self.assertIsNone(result['from'])
         self.assertEqual(result['through'], '2026-09-23')
         lines = self.human('--until', '2026-09-23')
-        self.assertEqual(lines[0], 'Kaynakli etkinlik: baslangic siniri yok - 2026-09-23 '
-                                   '(yerel gun; ajan kayitlari, bagimsiz dogrulanmis olgular degil)')
+        self.assertEqual(lines[0], 'Sourced activity: no start limit - 2026-09-23 '
+                                   '(local days; agent records, not independently verified facts)')
         self.assertEqual([line for line in lines if line[:4] == '2026'], ['2026-09-23  prev-2359'])
 
     def test_since_alone_runs_through_today_and_the_days_window_is_unchanged(self):

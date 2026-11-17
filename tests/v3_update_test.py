@@ -212,12 +212,12 @@ class OfflineUpdateTest(unittest.TestCase):
         report = {'status': 'updated', 'from_version': '3.0.0', 'version': '3.0.1'}
         self.assertNotIn('flush', entry.human_result(report, 'update'))
         message = entry.human_result(dict(report, orphaned_legacy_state=['a.json', 'b.json']), 'update')
-        self.assertIn('Yarida kesilmis 2 V2 flush kaydi var (durumu inflight', message)
-        self.assertIn('daily/ altina yazilmamis olabilir', message)
+        self.assertIn('There are 2 interrupted V2 flush records (status inflight', message)
+        self.assertIn('may not have been written to daily/', message)
         self.assertTrue(message.isascii())
-        self.assertNotIn('kilit klasoru', message)
+        self.assertNotIn('lock folder', message)
         message = entry.human_result(dict(report, stale_legacy_locks=['a.lock']), 'update')
-        self.assertIn('Sahipsiz kalmis 1 V2 kilit klasoru var (prompt_count.*.lock, sekiz gunden eski)', message)
+        self.assertIn('There are 1 orphaned V2 lock folders (prompt_count.*.lock, older than eight days)', message)
         self.assertNotIn('flush', message)
         self.assertTrue(message.isascii())
 
@@ -537,10 +537,10 @@ class OfflineUpdateTest(unittest.TestCase):
                 'release_id': 1,
                 'version': '3.0.0',
                 'published_at': '2026-09-01T00:00:00Z',
-                'release_url': 'https://github.com/avenoxai/avenoxbeyin/releases/tag/v3.0.0',
+                'release_url': 'https://github.com/uy4nik-droid/avenoxbeyin-english/releases/tag/v3.0.0',
                 'asset_id': 1,
                 'asset_name': 'beyin-v3-3.0.0.zip',
-                'asset_url': 'https://github.com/avenoxai/avenoxbeyin/releases/download/v3.0.0/beyin-v3-3.0.0.zip',
+                'asset_url': 'https://github.com/uy4nik-droid/avenoxbeyin-english/releases/download/v3.0.0/beyin-v3-3.0.0.zip',
                 'asset_size': 1000,
                 'asset_sha256': '00' * 32,
                 'checksum_url': None,
@@ -558,10 +558,10 @@ class OfflineUpdateTest(unittest.TestCase):
             'release_id': 2,
             'version': '3.0.1',
             'published_at': '2026-09-10T00:00:00Z',
-            'release_url': 'https://github.com/avenoxai/avenoxbeyin/releases/tag/v3.0.1',
+            'release_url': 'https://github.com/uy4nik-droid/avenoxbeyin-english/releases/tag/v3.0.1',
             'asset_id': 2,
             'asset_name': 'beyin-v3-3.0.1.zip',
-            'asset_url': 'https://github.com/avenoxai/avenoxbeyin/releases/download/v3.0.1/beyin-v3-3.0.1.zip',
+            'asset_url': 'https://github.com/uy4nik-droid/avenoxbeyin-english/releases/download/v3.0.1/beyin-v3-3.0.1.zip',
             'asset_size': 1000,
             'asset_sha256': '11' * 32,
             'checksum_url': None,
@@ -580,9 +580,9 @@ class OfflineUpdateTest(unittest.TestCase):
         self.module.update(self.vault, self.state, self.package)
         stamped = (self.vault / '.beyin-version').stat().st_mtime
         release = {'release_id': 1, 'version': '3.0.0', 'published_at': '2026-09-01T00:00:00Z',
-                   'release_url': 'https://github.com/avenoxai/avenoxbeyin/releases/tag/v3.0.0',
+                   'release_url': 'https://github.com/uy4nik-droid/avenoxbeyin-english/releases/tag/v3.0.0',
                    'asset_id': 1, 'asset_name': 'beyin-v3-3.0.0.zip',
-                   'asset_url': 'https://github.com/avenoxai/avenoxbeyin/releases/download/v3.0.0/beyin-v3-3.0.0.zip',
+                   'asset_url': 'https://github.com/uy4nik-droid/avenoxbeyin-english/releases/download/v3.0.0/beyin-v3-3.0.0.zip',
                    'asset_size': 1000, 'asset_sha256': '00' * 32, 'checksum_url': None}
         cache = self.state / 'release-cache.json'
         def doctor():

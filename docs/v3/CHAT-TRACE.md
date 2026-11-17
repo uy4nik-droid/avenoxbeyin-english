@@ -1,144 +1,170 @@
-# Sohbet izi: opt-in prototip
+# Chat trace: opt-in prototype
 
-Bu öneri, dosya düzenlenmeyen anlamlı bir sohbetin kısa özetini yeniden bulunabilir
-bir Markdown kaynağına dönüştürmeyi dener. Tasarım kararı bakımcıya aittir. Varsayılan
-kapalıdır; transcript toplamaz, model çağırmaz, yeni Stop engeli koymaz. Eski Claude Code
-oturumları yalnız aşağıdaki açık geri aktarım komutuyla okunur.
+This proposal tries to turn a short summary of a meaningful chat, one in which no
+file was edited, into a re-findable Markdown source. The design decision belongs
+to the maintainer. It is off by default; it does not collect transcripts, does
+not call a model and adds no new Stop blocker. Old Claude Code sessions are read
+only through the explicit backfill command below.
 
-## Kullanım
+## Usage
 
-Kurulu vault içinde:
+Inside an installed vault:
 
 ```sh
 python beyin.py chat-trace status
 python beyin.py chat-trace on
-python beyin.py chat-trace write --harness claude --session RECEIPT_SESSION --file iz.txt
+python beyin.py chat-trace write --harness claude --session RECEIPT_SESSION --file trace.txt
 python beyin.py chat-trace off
 ```
 
-`RECEIPT_SESSION`, ipucunun verdiği 24 haneli hash'tir. `iz.txt` kullanıcının/ajanın
-bilerek hazırladığı kısa UTF-8 özettir; `--file -` stdin, `--text` kısa metin kabul
-eder. Tarih dahil **tek paragraf en fazla 450 karakterdir**; uzun metin kesilmez,
-reddedilir. Hangi konuşmanın anlamlı olduğu kod tarafından tahmin edilmez.
+`RECEIPT_SESSION` is the 24-digit hash the hint gives. `trace.txt` is a short
+UTF-8 summary that the user or agent prepared on purpose; `--file -` accepts
+stdin and `--text` accepts a short text. **A single paragraph, date included, is
+at most 450 characters**; a longer text is rejected, not truncated. The code does
+not guess which conversation is meaningful.
 
-Yazılan kaynak `knowledge/conversations/YYYY-MM.md` olur. Her kayıt boş satırla
-ayrılır; mevcut pasaj araması ayrı paragrafları değerlendirebilir. Aynı gün aynı
-paragrafın yeniden gönderilmesi kopya üretmez. Yeni bir sonuç için başka kısa bir
-paragraf yazılabilir. Aylık dosya 256.000 baytı aşınca otomatik budama yapılmaz;
-kullanıcıdan gözden geçirme istenir. Önceden var olan, bu prototipe ait olmayan
-aynı adlı dosyaya dokunulmaz.
+The source it writes is `knowledge/conversations/YYYY-MM.md`. Each entry is
+separated by a blank line; the existing passage search can evaluate separate
+paragraphs. Sending the same paragraph again on the same day produces no
+duplicate. For a new outcome, another short paragraph can be written. When a
+monthly file passes 256,000 bytes, no automatic pruning happens; the user is
+asked to review it. An existing file of the same name that does not belong to
+this prototype is not touched.
 
-Yazım, mevcut `note-read`/`note-edit` kilidi, SHA karşılaştırması, gizli veri filtresi
-ve kaynak doğrulamasını kullanır. Özetler doğrulanmış karar olarak sunulmaz.
-`visibility: internal` normal yerel aramaya izin verir; `remote_allowed: false`
-Jev'in ek sağlayıcı adaylarından çıkarır. Normal istemci bağlamına giren bir iz,
-kullanılan AI istemcisinin kendi veri akışına tabidir.
+Writing uses the existing `note-read`/`note-edit` lock, SHA comparison, secret
+filter and source validation. Summaries are not presented as verified decisions.
+`visibility: internal` allows normal local search; `remote_allowed: false` removes
+the note from Jev's extra provider candidates. A trace that enters normal client
+context is subject to the data flow of the AI client in use.
 
-## İpuçları
+## Hints
 
-Yalnız `UserPromptSubmit` sayılır. İlk ipucu 2. kayıtsız insan turunda, sonraki
-ipuçları 8'er tur arayla çıkar; oturum boyunca en fazla 3 ipucu vardır. Bu bir
-prompt sayacıdır; iki tamamlanmış yanıtı veya anlamlı sonucu doğruladığı iddia
-edilmez. Aynı oturuma ait yeni receipt veya doğrulanmış açık iz yazımı önceki
-sayaçları kapsar; yeni kayıtsız aralık yeniden 2 turdan başlar, toplam 3 sınırı
-sıfırlanmaz. Event/turn kimliği varsa anlık tekrar teslim sayılmaz.
+Only `UserPromptSubmit` is counted. The first hint comes on the 2nd unrecorded
+human turn, and later hints come 8 turns apart; there are at most 3 hints per
+session. This is a prompt counter; it does not claim to verify two completed
+responses or a meaningful outcome. A new receipt for the same session, or a
+verified explicit trace write, covers the earlier counters; a new unrecorded
+interval starts again from 2 turns, and the total limit of 3 is not reset. If an
+event/turn ID exists, an immediate repeat delivery is not counted.
 
-İnsan ayrımı, erişim güvenlik kapısı değil, dar bir **pilot köken politikasıdır**:
+The human distinction is a narrow **pilot origin policy**, not an access security
+gate:
 
-| İstemci | Sayılan köken | Sessiz kalan |
+| Client | Origin counted | Stays silent |
 | --- | --- | --- |
-| Claude | `CLAUDE_CODE_ENTRYPOINT=claude-desktop` veya attended=`1/true` | `sdk-cli`, `cli`, attended=`0/false`, bilinen sentetik istemler ve belirsiz köken |
-| Codex | Hook'un verdiği dosyanın ilk `session_meta` satırında eşleşen `id`, `originator=codex_cli_rs`, `source=cli` | `codex_exec`, alt ajan, diğer/belirsiz köken, yok/bozuk/aşırı büyük metadata |
+| Claude | `CLAUDE_CODE_ENTRYPOINT=claude-desktop` or attended=`1/true` | `sdk-cli`, `cli`, attended=`0/false`, known synthetic prompts and unclear origin |
+| Codex | In the first `session_meta` line of the file the hook provides: a matching `id`, `originator=codex_cli_rs`, `source=cli` | `codex_exec`, sub-agent, other/unclear origin, missing/corrupt/oversized metadata |
 
-Codex 0.163.0 hook JSON'u doğrudan `originator` taşımaz. Yalnız ilk metadata satırı
-en fazla 65.536 bayt okunur; sohbet satırları okunmaz veya saklanmaz. Bu kural bir
-programın etkileşimli CLI'ı otomatik başlatmasını kesin biçimde ayırt edemez.
-Claude `cli` kökenindeki gerçek insan oturumları da bu ihtiyatlı pilotta sessizdir.
-Canlı Windows köken ölçümü yapılmadan bütün istemciler için destek iddiası yoktur.
+The Codex 0.163.0 hook JSON does not carry `originator` directly. Only the first
+metadata line is read, up to 65,536 bytes; chat lines are not read or stored.
+This rule cannot reliably tell apart a program that starts the interactive CLI
+automatically. Real human sessions with a Claude `cli` origin are also silent in
+this conservative pilot. Until live Windows origin measurement is done, there is
+no support claim for all clients.
 
-`[kaydetme]` bu özelliğin oturum ipuçlarını susturur; o oturumun açık iz yazımı da
-reddedilir. Mevcut aramayı/Jev'i kapatmaz, daha önce yazılmış kaydı silmez ve ürün
-genelinde bir gizlilik modu değildir. `--metadata-only`, `no_memory`, devre dışı
-otomatik senkronizasyon ve mevcut skip kapıları sessiz kalır.
+`[kaydetme]` ("do not record") silences this feature's session hints; explicit
+trace writing for that session is also rejected. It does not turn off existing
+search/Jev, does not delete a record written earlier and is not a product-wide
+privacy mode. `--metadata-only`, `no_memory`, disabled automatic sync and the
+existing skip gates stay silent.
 
-## Eski Claude Code oturumlarını geri aktarma
+## Backfilling old Claude Code sessions
 
-Claude Code yerel oturum kayıtlarını `cleanupPeriodDays` sonunda (varsayılan 30 gün) siler.
-İz yazılmamış eski oturumlardan, silinmeden önce kısa iz çıkarmak için açık bir komut vardır.
-Hiçbir kanca veya arka plan işi bunu çalıştırmaz; model çağrılmaz.
+Claude Code deletes its local session records after `cleanupPeriodDays` (30 days
+by default). There is an explicit command for extracting a short trace, before
+deletion, from old sessions that have no trace written. No hook or background job
+runs it; no model is called.
 
 ```sh
-python beyin.py chat-trace backfill                                   # deneme: yalnız sayı, hash ve tarih
+python beyin.py chat-trace backfill                                   # dry run: only counts, hashes and dates
 python beyin.py chat-trace on
-python beyin.py chat-trace backfill --session OTURUM --show           # tek oturumun temizlenmiş dökümü
-python beyin.py chat-trace backfill --session OTURUM --file iz.txt    # açıkça yazılan özet
-python beyin.py chat-trace backfill --session OTURUM --skip           # kaydedilecek bir şey yok
+python beyin.py chat-trace backfill --session SESSION --show          # sanitized dump of one session
+python beyin.py chat-trace backfill --session SESSION --file trace.txt  # explicitly written summary
+python beyin.py chat-trace backfill --session SESSION --skip          # nothing to record
 ```
 
-- Varsayılan çağrı bir denemedir: vault'a ve state'e yazmaz. En eski oturum önce gelir;
-  yalnız oturum hash'i, ilk gün, son etkinlik günü, insan turu sayısı ve boyut listelenir
-  (`--limit`, varsayılan 20, en çok 200). Ham oturum kimliği, dosya yolu ve metin basılmaz.
-- Kapsam `~/.claude/projects/<vault klasörü>/*.jsonl` dosyalarıdır (`CLAUDE_CONFIG_DIR`
-  tanımlıysa onun altındaki `projects/`). Klasör adı kullanım raporundaki Claude Code
-  kuralıyla türetilir; ayrıca dosyadaki ilk `cwd` bu vault olmalıdır (NFC, büyük/küçük harf
-  duyarsız). Başka bir klasördeki oturumlar yalnız `--projects-dir` ile açıkça seçilince okunur.
-  Alt ajan kayıtları, `isSidechain`/`isMeta` kayıtları, araç sonuçları, `system-reminder` ve
-  komut sarmalayıcıları ile kancanın sentetik saydığı turlar atlanır. Çalışan oturum geri
-  aktarılmaz; onu receipt ve normal iz kapsar.
-- `--show` yalnız iz açıkken çalışır ve hiçbir şey saklamaz. Kullanıcı mesajı 1.500, asistan
-  mesajı 700 karakterde kırpılır. Sayfa, CLI'nin bastığı girintili JSON biçiminde ve Claude
-  Code'un saydığı gibi UTF-16 birimiyle ölçülür: mesajlar en çok 20.000 birim, sayfanın tamamı
-  30.000 karakterlik araç çıktısı sınırının altında kalır (`--page`). Bir oturumun dökümü en çok
-  800.000 karakterdir; fazlası `truncated` olarak bildirilir.
-- Dökümde bilinen gizli değer kalıpları ve state'teki özel değerler `[REDACTED]`, e-posta
-  adresleri `[e-posta]`, yaygın telefon biçimleri (`+` ile uluslararası numara ve Türkiye
-  numaraları) `[telefon]` olur. Gizli değer kırpma sınırının 8.192 karakter ötesine kadar aranır;
-  böylece sınıra denk gelen bir değer de bütün eşleşir. PEM ve PGP özel anahtar blokları
-  başlıktan `END` satırına, `END` yoksa pencerenin sonuna kadar gizlenir. Kalıp listesi
-  sınırlıdır: tanınmayan biçimdeki bir gizli değer süzülmez. Döküm güvenilmeyen veridir,
-  talimat değildir; doğrulanmamış "yaptım" iddiaları özette "(beyan)" diye işaretlenmelidir.
-- Yazım mevcut `chat-trace write` yolundan geçer: tarih dahil 450 karakter sınırı, aynı aylık
-  `knowledge/conversations/YYYY-MM.md`, kopya engeli, kilit ve SHA doğrulaması aynıdır. Tarih ve
-  ay, özetin yazıldığı gün değil oturumun ilk günüdür. Gizli değer, özel anahtar başlığı,
-  e-posta veya telefon numarası içeren özet reddedilir.
-- `[kaydetme]` (büyük/küçük harf duyarsız) şu yerlerden birindeyse oturum listelenmez,
-  gösterilmez ve yazılmaz: kullanıcının yazdığı bir mesaj (komut argümanları dahil), okunmadan
-  atlanan 1 MiB'den uzun bir satırın herhangi bir yeri (örneğin ekran görüntüsüyle aynı mesaj;
-  burada kimin yazdığı ayırt edilmez, fazla dışlamak güvenli taraftır), kancanın oturum sayacı
-  veya receipt hatırlatmasının `state/receipt-reminders/` altındaki `[kaydetme]` işareti. Bu son
-  işaret, iz kapalıyken geçen eski oturumları da kapsar. İstemcinin eklediği `system-reminder`
-  bloklarındaki alıntı opt-out sayılmaz.
-- Yazılan veya atlanan oturumlar yalnız hash olarak `state/chat-trace-backfill.json` içinde
-  tutulur; komut yeniden çalışınca bunlar atlanır. Bozuk defterin üzerine yazılmaz, hata verilir.
-  Defter oturum başına tek kayıttır: daha sonra devam ettirilen ya da aynı anda başka bir
-  pencerede süren bir oturum yeniden listelenmez. Geri aktarım izi açık ister; o oturumun yeni
-  turlarını normal iz kancası kapsar.
-- Bir çağrı en çok 2.000 dosya tarar ve 1 MiB'den uzun satırları (görsel, araç çıktısı)
-  ayrıştırmadan, yalnız `[kaydetme]` için tarayarak atlar. 256 MiB'den büyük oturum hiç
-  listelenmez (`too_large`) ve gösterilip yazılamaz; sınırın ötesindeki bir opt-out dışarıda
-  bırakılamaz.
-- Yalnız Claude Code kayıtları desteklenir; Codex ve diğer istemcilerin biçimi farklıdır.
-  Claude Code kayıt biçimi belgelenmemiştir; tanınmayan kayıtlar tahmin edilmez, atlanıp sayılır.
+- The default call is a dry run: it writes nothing to the vault or state. The
+  oldest session comes first; only the session hash, first day, last activity
+  day, human turn count and size are listed (`--limit`, default 20, at most 200).
+  The raw session ID, file path and text are not printed.
+- The scope is the `~/.claude/projects/<vault folder>/*.jsonl` files (the
+  `projects/` under `CLAUDE_CONFIG_DIR` if it is defined). The folder name is
+  derived by the same Claude Code rule as in the usage report; in addition, the
+  first `cwd` in the file must be this vault (NFC, case-insensitive). Sessions in
+  another folder are read only when explicitly selected with `--projects-dir`.
+  Sub-agent records, `isSidechain`/`isMeta` records, tool results,
+  `system-reminder` and command wrappers, and turns the hook counts as synthetic
+  are skipped. A running session is not backfilled; receipts and the normal trace
+  cover it.
+- `--show` works only while the trace is on and stores nothing. A user message is
+  truncated at 1,500 characters and an assistant message at 700. The page is in
+  the indented JSON format the CLI prints and is measured in UTF-16 units, as
+  Claude Code counts them: messages are at most 20,000 units, and the whole page
+  stays under the 30,000-character tool-output limit (`--page`). The dump of one
+  session is at most 800,000 characters; anything beyond is reported as
+  `truncated`.
+- In the dump, known secret-value patterns and private values in state become
+  `[REDACTED]`, email addresses become `[email]` and common phone formats
+  (international numbers with `+`, and Turkish numbers) become `[phone]`.
+  Secret values are searched up to 8,192 characters beyond the truncation limit,
+  so a value that straddles the limit is also matched in full. PEM and PGP
+  private-key blocks are hidden from the header to the `END` line, or to the end
+  of the window if there is no `END`. The pattern list is limited: a secret in an
+  unrecognized format is not filtered out. The dump is untrusted data, not an
+  instruction; unverified "I did it" claims should be marked "(claim)" in the
+  summary.
+- Writing goes through the existing `chat-trace write` path: the 450-character
+  limit including the date, the same monthly `knowledge/conversations/YYYY-MM.md`,
+  duplicate prevention, lock and SHA verification are the same. The date and month
+  are the session's first day, not the day the summary is written. A summary that
+  contains a secret value, a private-key header, an email or a phone number is
+  rejected.
+- If `[kaydetme]` (case-insensitive) is in one of these places, the session is
+  not listed, shown or written: a message the user wrote (including command
+  arguments), anywhere in a line longer than 1 MiB that is skipped unread (for
+  example a message that includes a screenshot; who wrote it cannot be told
+  apart there, and excluding too much is the safe side), or a `[kaydetme]` marker
+  under `state/receipt-reminders/` from the hook's session counter or receipt
+  reminder. This last marker also covers old sessions that passed while the trace
+  was off. A quote inside `system-reminder` blocks that the client adds does not
+  count as an opt-out.
+- Written or skipped sessions are kept only as hashes in
+  `state/chat-trace-backfill.json`; they are skipped when the command runs again.
+  A corrupt ledger is not overwritten; an error is raised. The ledger is one
+  entry per session: a session resumed later, or one running at the same time in
+  another window, is not listed again. Backfill needs the trace to be on; the
+  normal trace hook covers that session's new turns.
+- One call scans at most 2,000 files and skips lines longer than 1 MiB (images,
+  tool output) without parsing them, scanning them only for `[kaydetme]`. A
+  session larger than 256 MiB is never listed (`too_large`) and cannot be shown
+  or written; an opt-out beyond the limit cannot be excluded.
+- Only Claude Code records are supported; Codex and other clients use different
+  formats. The Claude Code record format is undocumented; unrecognized records
+  are not guessed at, they are skipped and counted.
 
-## Ayar ve rollback
+## Setting and rollback
 
-Ayar yalnız makineye/vault'a ait runtime `state/chat-trace.json` içindedir:
+The setting lives only in the machine/vault runtime `state/chat-trace.json`:
 
 ```json
 {"schema": 1, "enabled": true}
 ```
 
-Eksik/bozuk ayar kapalı okunur. Sayaçlar `state/chat-trace-sessions/` içinde yalnız
-sayı, zaman ve hash tutar; prompt, ham oturum kimliği veya dosya yolu saklanmaz.
-Kilit meşgulse hook beklemez. Bozuk sayaç sessizce atlanır ve üzerine yazılmaz.
-Kapalıyken sayaç veya iz kaydı oluşturulmaz; `.beyin-preferences.json` değişmez.
+A missing/corrupt setting is read as off. Counters under
+`state/chat-trace-sessions/` hold only a count, a time and a hash; no prompt, raw
+session ID or file path is stored. If the lock is busy, the hook does not wait. A
+corrupt counter is skipped silently and not overwritten. While off, no counter or
+trace record is created; `.beyin-preferences.json` does not change.
 
-Kapatma ve eski sürüme rollback, kullanıcı tarafından yazılmış Markdown izlerini ve
-geri aktarım defterini silmez. Eski sürüm state ayarını ve `backfill` komutunu tanımaz;
-izler sıradan Markdown olarak aranabilir kalır. Gerçek 0be8f99 paketinden aday pakete güncelleme ve rollback,
-Linux'ta eski hook baytlarının geri gelmesi, yeni modülün kaldırılması, eski
-preferences/doctor/sync/context komutlarıyla denenmiştir. Windows/macOS için canlı
-doğrulama beklenir. Yerel test paketindeki 3.12.1 numarası yayın iddiası değildir.
+Turning it off and rolling back to an older version does not delete the Markdown
+traces the user wrote, nor the backfill ledger. An older version does not
+recognize the state setting or the `backfill` command; the traces stay
+searchable as ordinary Markdown. Updating from the real 0be8f99 package to the
+candidate package, and rolling back, was tried on Linux with: the old hook bytes
+returning, the new module being removed, and the old preferences/doctor/sync/
+context commands. Live verification is awaited for Windows/macOS. The 3.12.1
+number in the local test suite is not a release claim.
 
-Bu prototip receipts/daily/private dizinlerini genel aramaya açmaz, bağlam bütçesini
-büyütmez, Kararlar.md'yi otomatik doldurmaz. Bunlar ayrı ürün kararlarıdır.
+This prototype does not open the receipts/daily/private directories to general
+search, does not enlarge the context budget and does not fill Kararlar.md
+automatically. Those are separate product decisions.

@@ -18,12 +18,12 @@ import urllib.parse
 import urllib.request
 sys.dont_write_bytecode = True
 
-OFFICIAL = 'https://api.github.com/repos/avenoxai/avenoxbeyin/releases/latest'
-WEB = 'https://github.com/avenoxai/avenoxbeyin/releases/'
+OFFICIAL = 'https://api.github.com/repos/uy4nik-droid/avenoxbeyin-english/releases/latest'
+WEB = 'https://github.com/uy4nik-droid/avenoxbeyin-english/releases/'
 # Exact official repository slugs. A GitHub rename (avenoxai/avenoxbeyin -> avenoxai/beyin)
 # keeps the old API URL working through a redirect, but the API then reports asset URLs under
 # the new name. Both names are accepted, nothing broader: the old name must never be recreated.
-OFFICIAL_WEBS = tuple('https://github.com/' + slug + '/releases/' for slug in ('avenoxai/avenoxbeyin', 'avenoxai/beyin'))
+OFFICIAL_WEBS = tuple('https://github.com/' + slug + '/releases/' for slug in ('uy4nik-droid/avenoxbeyin-english',))
 MAX_PACKAGE = 32 * 1024 * 1024
 DAY = 86400
 FRESH = 7 * DAY
@@ -327,8 +327,8 @@ def notification(vault, state, now=None):
             changed = db.execute('INSERT OR IGNORE INTO notices VALUES (?,?)', (vault_key(vault), result['version'])).rowcount
         if not changed: return ''
         command = 'py -3' if os.name == 'nt' else 'python3'
-        return ('Beyin ' + result['version'] + ' hazir. Surum notlari: ' + result['release_url'] +
-                '\nGuncelle: ' + command + ' beyin.py update (vault klasorunde) veya ajanina "beynimi guncelle" de.\n')
+        return ('Beyin ' + result['version'] + ' is available. Release notes: ' + result['release_url'] +
+                '\nUpdate: ' + command + ' beyin.py update (in the vault folder) or tell your agent "update my brain".\n')
     except (ValueError, OSError, sqlite3.Error):
         return ''
 

@@ -14,16 +14,16 @@ import beyin_v3_yakala as yakala  # noqa: E402
 class SkillConsentTest(unittest.TestCase):
     def test_skill_enables_the_agent_only_on_an_explicit_user_request(self):
         skill = yakala.SKILL_MD
-        self.assertNotIn('kullanici baska istemedikce `--ajan otomatik` kullanir', skill)
-        self.assertIn('Arka plan ajanini yalniz kullanici acikca isterse ac', skill)
-        self.assertIn('kendiliginden `--ajan`', skill)
+        self.assertNotIn('uses `--ajan otomatik` unless the user says otherwise', skill)
+        self.assertIn('Turn on the background agent only if the user explicitly asks', skill)
+        self.assertIn('do not add `--ajan` on your own', skill)
 
     def test_skill_never_lets_an_agent_grant_send_batch_or_audio_permissions(self):
         skill = ' '.join(yakala.SKILL_MD.split())
         for flag in ('`ajan-gonder`', '`ajan-toplu --gonder --plan`', '`--ses-isle`', '`--tani-servise-gonder`'):
             self.assertIn(flag, skill)
-        self.assertIn('kullanici istemeden bunlari calistirma veya ekleme', skill)
-        self.assertIn('onizlemeyi kullaniciya goster', skill)
+        self.assertIn('do not run or add them unless the user asks', skill)
+        self.assertIn('show the preview to the user', skill)
 
 
 if __name__ == '__main__':

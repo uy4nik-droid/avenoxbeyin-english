@@ -26,7 +26,7 @@ class EnqueueBoundaryTest(base.AgentFiles):
             return changed_queue_lock(path) if path.name == 'queue.lock' else original_lock(path)
 
         with patch.object(y, '_AgentFileLock', side_effect=changed_lock):
-            with self.assertRaisesRegex(ValueError, 'Ajan kapali'):
+            with self.assertRaisesRegex(ValueError, 'The agent is off'):
                 y.enqueue_agent(self.vault, self.state, saved['id'], 'Do not submit after off.')
         self.assertEqual(card['path'].read_bytes(), before)
         self.assertEqual(y._agent_jobs(self.vault, self.state), [])
@@ -50,7 +50,7 @@ class EnqueueBoundaryTest(base.AgentFiles):
         card = y.find_card(self.vault, saved['id'], self.state)
         card['meta']['durum'] = 'bekliyor'
         y.write_card(card['path'], card['meta'], card['body'])
-        with self.assertRaisesRegex(ValueError, 'zaten sirada'):
+        with self.assertRaisesRegex(ValueError, 'already queued or running'):
             y.enqueue_agent(self.vault, self.state, alias, 'Duplicate request.')
         self.assertEqual([job['id'] for job in y._agent_jobs(self.vault, self.state)], [first['job_id']])
 
@@ -69,7 +69,7 @@ class EnqueueBoundaryTest(base.AgentFiles):
             return changed_queue_lock(path) if path.name == 'queue.lock' else original_lock(path)
 
         with patch.object(y, '_AgentFileLock', side_effect=changed_lock):
-            with self.assertRaisesRegex(ValueError, 'Ses isleme'):
+            with self.assertRaisesRegex(ValueError, 'Audio processing'):
                 y.enqueue_agent(self.vault, self.state, saved['id'], 'Identify this source.',
                                 music={'schema': 1, 'extract': True, 'upload': None})
         self.assertEqual(y._agent_jobs(self.vault, self.state), [])

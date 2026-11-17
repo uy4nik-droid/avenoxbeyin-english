@@ -49,7 +49,7 @@ class FileCardFolderTest(unittest.TestCase):
                      inbox + '/baska-kart-notu.md'):
             self.relink(link)
             with self.subTest(link=link):
-                with self.assertRaisesRegex(ValueError, 'kartin dosyalar klasorunde degil'):
+                with self.assertRaisesRegex(ValueError, "not in the card's dosyalar folder"):
                     yakala.extract(self.vault, self.card, NO_TOOLS)
                 with patch.object(yakala, 'tools', return_value=NO_TOOLS):
                     entry = yakala.process(self.vault, [self.new['id']], retry=True)['kartlar'][0]
@@ -75,7 +75,7 @@ class FileCardFolderTest(unittest.TestCase):
         except (OSError, NotImplementedError):
             self.skipTest('symlinks not supported')
         self.relink(files.relative_to(self.vault).as_posix() + '/Şifreler.md')
-        with self.assertRaisesRegex(ValueError, 'kartin dosyalar klasorunde degil'):
+        with self.assertRaisesRegex(ValueError, "not in the card's dosyalar folder"):
             yakala.extract(self.vault, self.card, NO_TOOLS)
 
     @unittest.skipUnless(os.name == 'nt', 'junction is Windows only')
@@ -86,7 +86,7 @@ class FileCardFolderTest(unittest.TestCase):
         _winapi.CreateJunction(str(self.vault / '🔐 Kasa'), str(files))
         self.addCleanup(os.rmdir, files)
         self.relink(files.relative_to(self.vault).as_posix() + '/Şifreler.md')
-        with self.assertRaisesRegex(ValueError, 'kartin dosyalar klasorunde degil'):
+        with self.assertRaisesRegex(ValueError, "not in the card's dosyalar folder"):
             yakala.extract(self.vault, self.card, NO_TOOLS)
 
 

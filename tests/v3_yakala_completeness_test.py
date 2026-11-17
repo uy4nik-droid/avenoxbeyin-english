@@ -86,7 +86,7 @@ class CompletenessTest(unittest.TestCase):
         self.assertEqual(meta['uyari'], entry['not'])
         self.assertIn('10', entry['not'])
         self.assertIn('4', entry['not'])
-        self.assertIn('eksik olabilir', entry['not'])
+        self.assertIn('may be incomplete', entry['not'])
         self.assertIn(entry['not'], y.human({'kartlar': [entry]}, 'isle'))
         self.assertIn(text, raw)
         self.assertNotIn(HEADINGS[-1], raw)
@@ -253,8 +253,8 @@ class CompletenessTest(unittest.TestCase):
         for md in ('[' * size, '`' * 2_000 + 'a' * size, '[a](' * (size // 4), '<' * size, '<a@' * (size // 3)):
             with self.subTest(md=md[:8]):
                 started = time.monotonic()
-                self.assertEqual(y._completeness_check(source(), extracted(HEADINGS[:6]) + '\n\n' + md)['uyari'][:20],
-                                 'Metin eksik olabilir')
+                self.assertEqual(y._completeness_check(source(), extracted(HEADINGS[:6]) + '\n\n' + md)['uyari'][:26],
+                                 'The text may be incomplete')
                 self.assertLess(time.monotonic() - started, 2)
         self.assertEqual(y._completeness_check(source(), 'x' * 5_000_001), {})  # larger than any source it came from
 
@@ -344,7 +344,7 @@ class CompletenessTest(unittest.TestCase):
         entry, meta, raw, _ = self.run_capture(self.with_notes(), extracted())
         self.assertEqual((entry['durum'], entry['yontem']), ('cikarildi', 'defuddle'))
         self.assertIn('empty:hidden', meta['uyari'])
-        self.assertIn(' 3 metin blogu', meta['uyari'])
+        self.assertIn(' 3 text blocks', meta['uyari'])
         self.assertNotIn('h2/h3', meta['uyari'])
         self.assertEqual(entry['not'], meta['uyari'])
         self.assertIn(extracted(), raw)
@@ -358,9 +358,9 @@ class CompletenessTest(unittest.TestCase):
 
     def test_both_signals_are_reported_together(self):
         check = y._completeness_check(self.with_notes(), extracted(HEADINGS[:6]))
-        self.assertIn('10 farkli h2/h3 basliginin 4 tanesi', check['uyari'])
-        self.assertIn('(empty:hidden) 3 metin blogu', check['uyari'])
-        self.assertEqual(check['uyari'].count('Metin eksik olabilir'), 1)
+        self.assertIn('4 of the 10 distinct h2/h3 headings', check['uyari'])
+        self.assertIn('3 text blocks in the main content that show only when filled (empty:hidden)', check['uyari'])
+        self.assertEqual(check['uyari'].count('The text may be incomplete'), 1)
 
     def test_notes_alone_need_same_page_evidence_and_follow_defuddles_class_rule(self):
         few = HEADINGS[:4]
@@ -387,7 +387,7 @@ class CompletenessTest(unittest.TestCase):
         md = extracted() + '\n\nBefore you start, read these rules carefully.\n\n' + '\n'.join(
             f'{n}. {note}' for n, note in enumerate(self.NOTES, 1))
         self.assertEqual(y._completeness_check(html, md), {'uyari': None})  # list numbers do not split a match
-        self.assertIn('(empty:hidden) 4 metin blogu', y._completeness_check(html, extracted())['uyari'])
+        self.assertIn('4 text blocks in the main content that show only when filled (empty:hidden)', y._completeness_check(html, extracted())['uyari'])
         nested = source().replace('</main>', '<div class="empty:hidden"><p>Keep each <code>question</code> '
                                   'atomic, with <a href="/x">one decision</a> per question.</p></div></main>')
         md = extracted() + '\n\nKeep each `question` atomic, with [one decision](/x) per question.'
@@ -399,7 +399,7 @@ class CompletenessTest(unittest.TestCase):
                 patch.object(y, '_fetch_html', return_value=source()):
             text, method, warning = y.extract(self.vault, card, self.found)
         self.assertEqual((text, method), (extracted(HEADINGS[:6]), 'defuddle'))
-        self.assertIn('eksik olabilir', warning)
+        self.assertIn('may be incomplete', warning)
 
     @unittest.skipUnless(os.name == 'posix', 'the installed npx stand-in is a shell wrapper')
     def test_real_installed_cli_warns_with_one_guarded_source_retrieval(self):
@@ -479,7 +479,7 @@ class CompletenessTest(unittest.TestCase):
         self.assertEqual(len((bin_dir / 'calls.txt').read_text().splitlines()), 1)
         meta = y.find_card(vault, added['id'])['meta']
         self.assertEqual(entry['not'], meta['uyari'])
-        self.assertIn('eksik olabilir', entry['not'])
+        self.assertIn('may be incomplete', entry['not'])
         self.assertIn(entry['not'], y.human({'kartlar': [entry]}, 'isle'))
         self.assertNotIn(HEADINGS[-1], (vault / entry['ham']).read_text())
 

@@ -220,17 +220,17 @@ def project_context(vault, state, project_id, project_name, budget=1200, today_i
     if not summary and not current and not other_due:
         return ''
     header = f'Project context ({project_name}):'
-    tail = f'(bu proje disinda {other_due} tarihi gelmis gorev)' if other_due else ''
+    tail = f'({other_due} due tasks outside this project)' if other_due else ''
     room = budget - len(header) - (len(tail) + 1 if tail else 0)
     body = []
     if summary:
         # With due tasks present, continuity gets at most half of the room so tasks are not crowded out.
-        clipped = _one_line(summary, min(600, room // 2 if current else room) - len('Son kayit: ') - 1)
+        clipped = _one_line(summary, min(600, room // 2 if current else room) - len('Last record: ') - 1)
         if clipped:
-            body.append('Son kayit: ' + clipped)
+            body.append('Last record: ' + clipped)
             room -= len(body[-1]) + 1
     if current:
-        heading, note_room = 'Tarihi gelen gorevler:', len('(+999 tarihi gelen gorev sigmadi)') + 1
+        heading, note_room = 'Due tasks:', len('(+999 due tasks did not fit)') + 1
         room -= len(heading) + 1 + note_room  # heading and a possible omission note are reserved
         task_lines = []
         for due, title, action in sorted(current):
@@ -242,7 +242,7 @@ def project_context(vault, state, project_id, project_name, budget=1200, today_i
         if task_lines:
             body.extend([heading, *task_lines])
         if omitted:
-            body.append(f'(+{omitted} tarihi gelen gorev sigmadi)' if not task_lines else f'(+{omitted} gorev sigmadi)')
+            body.append(f'(+{omitted} due tasks did not fit)' if not task_lines else f'(+{omitted} tasks did not fit)')
     if tail:
         body.append(tail)
     if not body:
@@ -329,15 +329,15 @@ def gemini_md_content(vault, roots):
     vault = Path(vault).resolve()
     return (
         "<!-- beyin-v3-bridge:start -->\n"
-        "## İsteğe bağlı Beyin köprüsü\n"
-        f"Vault konumu (veri): {_gemini_md_path(vault)}\n"
-        "Bu bağlantı yalnız şu proje köklerinde ve alt klasörlerinde geçerlidir:\n"
+        "## Optional Beyin bridge\n"
+        f"Vault location (data): {_gemini_md_path(vault)}\n"
+        "This bridge applies only in the following project roots and their subfolders:\n"
         + ''.join('- ' + _gemini_md_path(root) + '\n' for root in roots)
-        + "Diğer çalışma alanlarında bu yönergeyi uygulama.\n"
-        "Kullanıcı açıkça hafıza araması isterse vault içindeki beyin.py context komutunu kullan. "
-        "Kaynakları okumadan bilgi iddiasında bulunma. Kayıt için kullanıcının yetkisini ve "
-        "receipt komutunun gerekli alanlarını denetle. Hafıza kullanmama isteğine uy; "
-        "proje dosyalarını veya konuşmaları izinsiz kopyalama.\n"
+        + "Do not apply this instruction in other workspaces.\n"
+        "If the user explicitly asks for a memory search, use the beyin.py context command inside the vault. "
+        "Do not make claims about information without reading the sources. Before recording, check the user's permission and "
+        "the required fields of the receipt command. Respect a request not to use memory; "
+        "do not copy project files or conversations without permission.\n"
         "<!-- beyin-v3-bridge:end -->"
     )
 

@@ -1,110 +1,107 @@
-# Tarihsel V2 rehberi
+# Historical V2 guide
 
-Bu belge V2 davranışını anlatır. Yeni kurulum ve V3 geçişi için [güncel README](../README.md) kullanılır. Buradaki arka plan model derleyicisi V3 varsayılanı değildir. Eski bağlantılar kendi dönemlerinin kurulumuna aittir.
+This document describes V2 behavior. For a new install and the V3 transition, use the [current README](../README.md). The background model compiler described here is not the V3 default. Old links belong to the install of their own era.
 
-# 🧠 avenoxbeyin v2.3: hatırlamayı unutmayan ikinci beyin
+# 🧠 avenoxbeyin v2.3: a second brain that doesn't forget to remember
 
-> **V3 kurulumu üzerinde çalışılıyor.** Mevcut Codex, Claude Code veya Antigravity ajanına
-> “Bu repodaki [SETUP-V3.md](../SETUP-V3.md) dosyasını takip ederek vault'umu kur” diyebilirsin.
-> Python dışında ek paket, servis veya Mem0 hesabı gerekmez. Platform doğrulama durumu
-> [burada](v3/PLATFORM-TESTS.md) açıkça listelenir.
+> **The V3 install is being worked on.** You can tell your existing Codex, Claude Code or Antigravity agent
+> "Set up my vault by following the [SETUP-V3.md](../SETUP-V3.md) file in this repo."
+> Apart from Python, no extra package, service or Mem0 account is needed. The platform verification status
+> is listed openly [here](v3/PLATFORM-TESTS.md).
 
 
-[Obsidian](https://obsidian.md) + Claude Code, Codex veya Google Antigravity üstünde çalışan,
-açık kaynak bir **ikinci beyin**. Yerel bir Markdown vault, kalıcı hafıza, sıfır bağımlılık,
-sıfır ekstra ücret. Dosya yönetmezsin, konuşursun.
+An open-source **second brain** that runs on [Obsidian](https://obsidian.md) plus Claude Code, Codex or Google Antigravity.
+A local Markdown vault, persistent memory, zero dependencies,
+zero extra cost. You don't manage files, you talk.
 
-**v1'in tezi devamlılıktı: oturum açılınca geçen oturum bağlama giriyordu.** İşe yarıyordu ama tek
-bir kırılgan varsayıma dayanıyordu: modelin oturum biterken hafıza dosyalarını güncellemeyi
-hatırlaması. Hatırlamadığı her seferde o gün kayboluyordu. **v2'nin tezi şu: hafıza rica değil,
-mekanizmadır.** Artık oturum kapanışını bir kanca yakalıyor, konuşmayı arka planda özetleyip
-`daily/` altına günlük log olarak yazıyor, akşamları günde bir kez bir derleyici o logları
-`knowledge/` altında birbirine bağlanan makalelere dönüştürüyor. Ertesi sabah bu bilgi tabanının
-indeksi kendiliğinden bağlama giriyor. Kimsenin bir şey yazmayı hatırlaması gerekmiyor.
+**v1's thesis was continuity: when a session opened, the previous session went into context.** It worked, but it rested on a single
+fragile assumption: that the model would remember to update the memory files when a session ended. Every time it didn't
+remember, that day was lost. **v2's thesis is this: memory is a mechanism, not a request.** Now a hook catches
+the session close, summarizes the conversation in the background and writes it under `daily/` as a daily log, and
+once a day in the evening a compiler turns those logs into interlinked articles under `knowledge/`. The next
+morning the index of that knowledge base goes into context on its own. Nobody has to remember to write anything.
 
-Video izlemene gerek yok, kurulum videosu da yok. Aşağıdaki tek satırı yapıştır, kurulumu Claude
-Code'un kendisi yapar.
+You don't need to watch a video, and there is no install video. Paste the single line below and Claude
+Code does the install itself.
 
 ---
 
-## Hızlı başlangıç
+## Quick start
 
-Terminalde `claude` çalıştır ve şunu yapıştır:
+Run `claude` in a terminal and paste this:
 
 ```
-Read https://avenox.lol/beyin.md and follow it exactly to build my second brain.
+Read https://raw.githubusercontent.com/uy4nik-droid/avenoxbeyin-english/main/beyin.md and follow it exactly to build my second brain.
 ```
 
-Bu tek satırlık giriş önce platformu ayırır: macOS/Linux mevcut `SETUP.md` yolunda kalır, yerel
-Windows `SETUP-WINDOWS.md` + PowerShell kurucusuna geçer, WSL ise tamamen aynı Linux dağıtımı
-içinde kalan POSIX yolunu kullanır. Böylece Windows'ta Bash/macOS komutları çalıştırılmaz.
+This one-line entry first tells platforms apart: macOS/Linux stay on the existing `SETUP.md` path, native
+Windows moves to `SETUP-WINDOWS.md` + the PowerShell installer, and WSL uses the POSIX path that stays entirely
+inside the same Linux distribution. That way no Bash/macOS commands get run on Windows.
 
-Ya da macOS, Linux veya WSL'de repoyu doğrudan klonla, üç komut:
+Or on macOS, Linux or WSL, clone the repo directly, three commands:
 
 ```bash
-git clone https://github.com/avenoxai/avenoxbeyin.git
+git clone https://github.com/uy4nik-droid/avenoxbeyin-english.git avenoxbeyin
 cd avenoxbeyin
 claude "Read SETUP.md and follow it exactly to set up my second brain from this template."
 ```
 
-Claude birkaç soru sorar (adın, ne iş yaptığın, AI ortağının adı), vault'u kurar, kancaları bağlar,
-masaüstüne 🧠 ikonlu bir kısayol koyar.
+Claude asks a few questions (your name, what you do, the name of your AI partner), sets up the vault, wires the hooks,
+and puts a shortcut with a 🧠 icon on your desktop.
 
-Codex kullanıyorsan bu POSIX yolda aynı repoda `codex` açıp `SETUP.md` dosyasını
-uygulatabilirsin. Kurulum
-`AGENTS.md`, `.agents/skills` ve mutlak yollu `.codex/hooks.json` üretir. İlk açılışta Codex'in
-`/hooks` ekranından proje kancalarını onaylaman gerekir; güven hash'leri kullanıcı adına
-değiştirilmez. Claude Code ve Codex aynı router, skill ve kanca kodunu okur; iki ayrı kopya yoktur.
+If you use Codex, on this POSIX path you can open `codex` in the same repo and have it
+carry out `SETUP.md`. The install
+generates `AGENTS.md`, `.agents/skills` and an absolute-path `.codex/hooks.json`. On first launch you need to approve the project hooks from Codex's
+`/hooks` screen; the trust hashes are not
+changed on the user's behalf. Claude Code and Codex read the same router, skill and hook code; there are no two separate copies.
 
-Google Antigravity kullanıyorsan:
+If you use Google Antigravity:
 
 ```bash
-git clone https://github.com/avenoxai/avenoxbeyin.git
+git clone https://github.com/uy4nik-droid/avenoxbeyin-english.git avenoxbeyin
 cd avenoxbeyin
 agy -p "Read SETUP-ANTIGRAVITY.md and follow it exactly to set up my second brain."
 ```
 
-Antigravity adaptörü de aynı `.claude/scripts` motorunu kullanır; `flush.py`, `compile.py` veya
-skill'lerin ikinci kopyasını oluşturmaz. Doğrudan Gemini API anahtarı istemez.
+The Antigravity adapter also uses the same `.claude/scripts` engine; it does not create a second copy of `flush.py`, `compile.py` or
+the skills. It does not ask for a direct Gemini API key.
 
-### Yerel Windows (WSL değil)
+### Native Windows (not WSL)
 
-Yerel Windows için ayrı bir kurulum yolu vardır:
+There is a separate install path for native Windows:
 
 ```powershell
-git clone https://github.com/avenoxai/avenoxbeyin.git
+git clone https://github.com/uy4nik-droid/avenoxbeyin-english.git avenoxbeyin
 cd avenoxbeyin
 claude "Read SETUP-WINDOWS.md and follow it exactly to set up my second brain."
 ```
 
-Gereksinimler kurulumdan önce **çalıştırılarak** denetlenir (PowerShell 7,
-Python 3, Git, Claude Code) ve biri bile eksikse **diske hiçbir şey yazılmaz**.
+The requirements are checked by **running** them before the install (PowerShell 7,
+Python 3, Git, Claude Code), and if even one is missing **nothing is written to disk**.
 
-Ne yapıldığı, hangi Windows tuzaklarının ölçüldüğü ve nelerin iddia edilmediği:
+What was done, which Windows traps were measured, and what is not claimed:
 [`docs/WINDOWS-PORT.md`](WINDOWS-PORT.md).
 
-Kapsam dışı: v1 → v2 yükseltme, WSL'den taşınma, PowerShell 5.1 ile çalıştırma.
-macOS ve Linux yolları değişmedi.
+Out of scope: v1 → v2 upgrade, moving over from WSL, running with PowerShell 5.1.
+The macOS and Linux paths are unchanged.
 
-### Zaten v1, v2.0, v2.1 veya v2.2 beynin varsa
+### If you already have a v1, v2.0, v2.1 or v2.2 brain
 
-Aynı komut yeter. `SETUP.md` önce mevcut bir beyin arar, bulursa yükseltme moduna geçer ve işi
-tek bir script'e devreder: `scripts/upgrade.sh`. Yükseltme **sadece ekler**: mevcut hafıza
-dosyalarına, Dashboard'a, notlarına dokunulmaz. `daily/`, `knowledge/`, scriptler ve skill'ler
-eklenir, dört kanca dosyası yenisiyle değiştirilir, `settings.json` kanca kaydı tekrar tekrar
-çalıştırılabilecek şekilde birleştirilir.
+The same command is enough. `SETUP.md` first looks for an existing brain, and if it finds one it switches to upgrade mode and delegates the work to
+a single script: `scripts/upgrade.sh`. The upgrade **only adds**: your existing memory
+files, Dashboard and notes are not touched. `daily/`, `knowledge/`, scripts and skills
+are added, the four hook files are replaced with the new ones, and the `settings.json` hook registration is merged
+in a way that can be run again and again.
 
-Üç şeyi peşinen bilmen iyi olur:
+Three things are good to know up front:
 
-- **Hafıza klasörünün adı `🔮 850-Companion` olmak zorunda.** Kancalar ve scriptler bu sabit yolu
-  okuyor. Klasörün adı ortağının adıysa (`🔮 850-Echo` gibi) script bunu `git mv` ile değiştirmeyi
-  teklif eder. İçerik hiç değişmez, sadece klasör adı değişir. Hayır dersen yükseltme hiç
-  başlamaz ve vault'a v2 damgası vurulmaz; yarım kurulmuş bir v2'den dürüst bir v1 iyidir.
-- **İlk iş git anlık görüntüsü.** Alınamazsa yükseltme durur, devam etmez. Geri dönüş her zaman
-  açık.
-- **Sürüm damgası en sona yazılır.** Kancalar, scriptler, placeholder'lar, kanca sayısı ve
-  `.gitignore` koruması tek tek doğrulandıktan sonra. Bir kapı bile geçilmezse `.beyin-version`
-  yazılmaz.
+- **The memory folder's name must be `🔮 850-Companion`.** The hooks and scripts read this fixed path. If the folder's name is your partner's name (like `🔮 850-Echo`), the script offers to change it with `git mv`. The contents never change, only the folder name does. If you say no, the upgrade never
+  starts and the vault does not get stamped as v2; an honest v1 beats a half-installed v2.
+- **The first job is a git snapshot.** If it can't be taken, the upgrade stops and does not continue. The way back is always
+  open.
+- **The version stamp is written last.** After the hooks, scripts, placeholders, hook count and
+  `.gitignore` protection have been verified one by one. If even one gate fails, `.beyin-version` is not
+  written.
 
 ---
 
@@ -112,23 +109,23 @@ eklenir, dört kanca dosyası yenisiyle değiştirilir, `settings.json` kanca ka
 
 | | v1 | v2 |
 | --- | --- | --- |
-| Günlük hafıza | model hatırlarsa yazar | oturum kapanışında **otomatik** yazılır |
-| Kanca sayısı | 3 | 4 (`PreCompact` eklendi) |
-| Compaction | konuşma sıkıştırılınca kaybolur | sıkıştırma öncesi yakalanır |
-| Bilgi tabanı | yok | `knowledge/` altında derlenmiş, birbirine bağlı makaleler |
-| Oturum başı bağlam | son oturum + threadler | + kurallar, son journal, bilgi indeksi, bugünün logu |
-| Kalıcı kurallar | yok | `Kurallar.md`, "bunu böyle yapma" dediğinde oraya yazılır |
-| Sağlık kontrolü | yok | `beyin doktor` skill'i, tek tabloda tanı |
-| Eski geçmiş | yok | `geçmiş import`: ChatGPT, Claude, Gemini dışa aktarımları |
-| Yükseltme | yok | yerinde, ekleme yapan, tekrar çalıştırılabilir |
-| Bağımlılık | bash | bash + python3 (ikisi de sistemde var) |
+| Daily memory | written if the model remembers | written **automatically** when the session closes |
+| Hook count | 3 | 4 (`PreCompact` added) |
+| Compaction | lost when the conversation is compressed | captured before compression |
+| Knowledge base | none | compiled, interlinked articles under `knowledge/` |
+| Context at session start | last session + threads | + rules, latest journal, knowledge index, today's log |
+| Persistent rules | none | `Kurallar.md`; when you say "don't do it like this", it gets written there |
+| Health check | none | `beyin doktor` skill, diagnosis in one table |
+| Old history | none | `geçmiş import`: ChatGPT, Claude, Gemini exports |
+| Upgrade | none | in place, additive, can be re-run |
+| Dependency | bash | bash + python3 (both are on the system) |
 
 ---
 
-## Mimari
+## Architecture
 
 ```
-   oturum biter                    konuşma sıkışmak üzere
+   session ends                    conversation about to be compacted
    (SessionEnd)                         (PreCompact)
         |                                    |
         v                                    v
@@ -136,96 +133,96 @@ eklenir, dört kanca dosyası yenisiyle değiştirilir, `settings.json` kanca ka
         |                                    |
         +------------------+-----------------+
                            v
-                       flush.py           (claude -p veya agy -p)
-                  transkripti okur, Türkçe özet çıkarır
+                       flush.py           (claude -p or agy -p)
+                  reads the transcript, produces an English summary
                            v
-                 daily/YYYY-MM-DD.md      <-- makine yazar, sen değil
+                 daily/YYYY-MM-DD.md      <-- the machine writes, not you
                            |
-        (saat 18'den sonra, günde bir kez, değişen log varsa)
+        (after 18:00, once a day, if a log changed)
                            v
-                      compile.py          (claude -p veya agy -p)
+                      compile.py          (claude -p or agy -p)
                            v
    knowledge/concepts/*.md + knowledge/connections/*.md + knowledge/index.md
                            |
                            v
                    session-start.sh
-        indeksi + bugünün logunu + hafızayı bir sonraki oturuma enjekte eder
+        injects the index + today's log + memory into the next session
 ```
 
-Yazma tarafı makineye ait, ilişki katmanı sana ait: ortağın hâlâ `Last-Session.md` ve `Threads.md`
-dosyalarını kendi eliyle günceller. Makine katmanı onun yerine geçmez, altını doldurur.
+The writing side belongs to the machine, the relationship layer belongs to you: your partner still updates the `Last-Session.md` and `Threads.md`
+files by hand. The machine layer does not replace it, it fills in underneath.
 
-## Ne alıyorsun
+## What you get
 
 ```
-{Ad}OS/
-├── 📥 000-Inbox/Dump/        # ham yakalama
+{Name}OS/
+├── 📥 000-Inbox/Dump/        # raw capture
 ├── 🎯 100-Command-Center/    # Dashboard
-├── 🏰 300-Projects/          # proje başına bir klasör
-├── 🧠 500-Knowledge/         # insanın yazdığı notlar
-├── 🛠️ 600-Arsenal/           # araçlar, kişiler, kaynaklar
-├── 🔮 850-Companion/         # ortağın kalıcı hafızası (+ Kurallar.md)
-├── daily/                    # makine yazar: günlük loglar
-├── knowledge/                # makine derler: makaleler + bağlantılar + indeks
+├── 🏰 300-Projects/          # one folder per project
+├── 🧠 500-Knowledge/         # notes a human writes
+├── 🛠️ 600-Arsenal/           # tools, people, resources
+├── 🔮 850-Companion/         # the partner's persistent memory (+ Kurallar.md)
+├── daily/                    # the machine writes: daily logs
+├── knowledge/                # the machine compiles: articles + connections + index
 ├── 📦 900-Archive/
 ├── 📋 Templates/
-└── .claude/                  # kancalar, scriptler, skill'ler (süreklilik motoru)
+└── .claude/                  # hooks, scripts, skills (the continuity engine)
 ```
 
-- **İsmini sen koyduğun bir AI ortağı.** Varsayılan dili Türkçe.
-- **Süreklilik motoru.** Dört sıfır bağımlılıklı kanca, her açılışta hafızayı bağlama koyar, her
-  kapanışta oturumu diske yazar.
-- **Dosya tabanlı hafıza.** API anahtarı yok, ücretli servis yok, her şey senin diskinde.
-- **Yerel hafıza varsayılandır.** Mem0 hesabı veya API anahtarı gerekmez. Üçüncü parti
-  hafıza servisleri yalnız açık tercihle eklenir; temel sistem bunlara bağlı değildir.
-- **Tek tık başlatıcı.** macOS'ta masaüstünde 🧠 ikonlu bir uygulama vault'u anında açar. Linux'ta
-  yerine bir `.desktop` kısayolu yazılır (test edilmedi).
+- **An AI partner you name yourself.** The default language is English.
+- **A continuity engine.** Four zero-dependency hooks put memory into context on every launch and write the session to disk on every
+  close.
+- **File-based memory.** No API key, no paid service, everything is on your disk.
+- **Local memory is the default.** No Mem0 account or API key is needed. Third-party
+  memory services are added only by explicit choice; the base system does not depend on them.
+- **A one-click launcher.** On macOS, an app with a 🧠 icon on the desktop opens the vault instantly. On Linux, a `.desktop` shortcut
+  is written instead (not tested).
 
-## Maliyet, dürüst hâliyle
+## Cost, honestly
 
-Ekstra API faturası yok; arka plan özetleyici ve derleyici kullandığın Claude Code veya
-Antigravity hesabının mevcut kotasından küçük bir pay kullanır.
+There is no extra API bill; the background summarizer and compiler use a small share of the existing quota of the Claude Code or
+Antigravity account you already use.
 
-## Gereksinimler
+## Requirements
 
-Zorunlu, her platformda: [Claude Code](https://claude.com/claude-code) **veya** Google
-Antigravity CLI, [Obsidian](https://obsidian.md) ve Python 3 (macOS/Linux'ta `python3`; yerel Windows'ta çalışan
-`python` veya `python3`). Python opsiyonel değil: günlük log da gece derlemesi de onun üstünde
-çalışır.
+Required, on every platform: [Claude Code](https://claude.com/claude-code) **or** the Google
+Antigravity CLI, [Obsidian](https://obsidian.md) and Python 3 (`python3` on macOS/Linux; a working
+`python` or `python3` on native Windows). Python is not optional: both the daily log and the nightly compile
+run on top of it.
 
-| Platform | Durum | Ne çalışır, ne çalışmaz |
+| Platform | Status | What works, what doesn't |
 | --- | --- | --- |
-| macOS | **test edildi** | hepsi: kancalar, `daily/`, `knowledge/`, 🧠 masaüstü kısayolu |
-| Linux | **test edilmedi** | kurulum `uname` ile dallanır: Homebrew, Obsidian cask ve macOS `.app` adımları atlanır, yerine XDG `.desktop` kısayolu yazılır. Vault, kancalar ve scriptler taşınabilir yazıldı ama gerçek bir Linux masaüstünde doğrulanmadı. Denersen sorun aç. |
-| Windows | WSL, **veya** yerel Windows | Tek satırlık `beyin.md` girişi iki yolu ayırır. Yerel Windows için [`SETUP-WINDOWS.md`](../SETUP-WINDOWS.md). WSL'de motor ve vault aynı Linux dağıtımında, Linux dosya sisteminde kalır; Windows Obsidian ile karma çalışma doğrulanmış sayılmaz. Bkz. [`docs/WINDOWS-PORT.md`](WINDOWS-PORT.md). |
+| macOS | **tested** | everything: hooks, `daily/`, `knowledge/`, the 🧠 desktop shortcut |
+| Linux | **not tested** | the install branches on `uname`: the Homebrew, Obsidian cask and macOS `.app` steps are skipped, and an XDG `.desktop` shortcut is written instead. The vault, hooks and scripts are written to be portable but have not been verified on a real Linux desktop. If you try it, open an issue. |
+| Windows | WSL, **or** native Windows | The one-line `beyin.md` entry tells the two paths apart. For native Windows, [`SETUP-WINDOWS.md`](../SETUP-WINDOWS.md). On WSL the engine and the vault stay in the same Linux distribution, on the Linux filesystem; mixed use with Windows Obsidian is not considered verified. See [`docs/WINDOWS-PORT.md`](WINDOWS-PORT.md). |
 
-Masaüstü kısayolu macOS'ta `osacompile` ve AppKit kullanır, ikisi de Linux'ta yoktur. Vault'un
-kendisi düz Markdown, yani her yerde açılır; kurulum akışının tamamı için doğrulanmış tek platform
-şu an macOS.
+The desktop shortcut uses `osacompile` and AppKit on macOS, and neither exists on Linux. The vault
+itself is plain Markdown, so it opens anywhere; the only platform verified for the whole install flow
+right now is macOS.
 
-Kod reposu, video dosyaları ve `🏰 300-Projects/` arasındaki sınır için
-[`docs/PROJECT-WORKFLOW.md`](PROJECT-WORKFLOW.md) rehberine bak. OpenCode'un mevcut destek
-sınırı da orada açıkça yazıyor.
+For the boundary between code repos, video files and `🏰 300-Projects/`, see the
+[`docs/PROJECT-WORKFLOW.md`](PROJECT-WORKFLOW.md) guide. OpenCode's current support
+boundary is stated openly there too.
 
-## Bir şey ters giderse
+## If something goes wrong
 
-Vault klasöründe kullandığın agent'ı açıp `beyin doktor` yaz. Kancalar, scriptler, python3, model CLI,
-günlük log tazeliği, son derleme durumu, iCloud çakışma dosyaları ve git durumu tek tabloda gelir,
-her kırmızı satırın altında düzeltme komutu yazar.
+In the vault folder, open the agent you use and type `beyin doktor`. The hooks, scripts, python3, model CLI,
+daily log freshness, last compile status, iCloud conflict files and git status come back in one table,
+and under every red row it gives the fix command.
 
 ---
 
 ## Credits
 
-Bilgi derleme mimarisi Andrej Karpathy'nin LLM bilgi tabanı desenine dayanır:
+The knowledge-compilation architecture is based on Andrej Karpathy's LLM knowledge base pattern:
 https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
 
-Geri kalanı [Avenox](https://avenox.lol) günlük kullandığı sistemden, kişisel veriden arındırılıp
-herkes için genelleştirilerek çıkarıldı.
+The rest was extracted from the system [Avenox](https://avenox.lol) uses daily, stripped of personal data and
+generalized for everyone.
 
-## Lisans
+## License
 
-MIT, [LICENSE](../LICENSE) dosyasına bak. PR'lar açık.
+MIT, see the [LICENSE](../LICENSE) file. PRs are open.
 
 ---
 
@@ -239,7 +236,7 @@ to write its memory files. v2's thesis is that **memory must be a mechanism, not
 a small background Haiku call, and once a day a Sonnet compile pass turns those logs into linked
 articles under `knowledge/`. The next session starts with that knowledge index already in context.
 
-On macOS, Linux, or WSL, install with `git clone https://github.com/avenoxai/avenoxbeyin.git && cd
+On macOS, Linux, or WSL, install with `git clone https://github.com/uy4nik-droid/avenoxbeyin-english.git avenoxbeyin && cd
 avenoxbeyin && claude "Read SETUP.md and follow it exactly to set up my second brain from this
 template."` Codex can follow the same `SETUP.md`; its project hooks are rendered with absolute
 paths and require one-time approval in `/hooks`. On native Windows, use the same clone but ask
@@ -265,8 +262,8 @@ https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f. MIT licensed.
 
 ## V3 foundation preview
 
-V3 geliştirme temeli [docs/v3/QUICKSTART.md](v3/QUICKSTART.md) altında ayrı ve isteğe bağlıdır.
-Yerel SQLite ile kaynak referanslı arama, görev revizyonları ve sonuç kayıtları sunar;
-Mem0 veya model çağrısı gerekmez. Bu önizleme mevcut V2 hook/installer akışını otomatik
-olarak değiştirmez. Doğruluk senaryoları ve ölçüm sınırları:
+The V3 development foundation is separate and optional, under [docs/v3/QUICKSTART.md](v3/QUICKSTART.md).
+It offers source-referenced search, task revisions and result records with local SQLite;
+no Mem0 or model call is needed. This preview does not automatically change the existing V2 hook/installer
+flow. Accuracy scenarios and measurement limits:
 [SEMANTIC-TEST-CONTRACT.md](v3/SEMANTIC-TEST-CONTRACT.md).

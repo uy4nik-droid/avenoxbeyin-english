@@ -162,11 +162,11 @@ class DoctorIntegrationTest(unittest.TestCase):
         dead = [{'file': 'AGENTS.md', 'line': number, 'target': 'Yok %d' % number} for number in range(1, 6)]
         text = entry.human_result({'status': 'observed_metadata', 'instruction_references': {
             'checked_files': 1, 'dead_count': 5, 'dead': dead, 'truncated': False}}, 'doctor', '3.4.0')
-        self.assertIn('Talimat ve skill dosyalarinda kirik baglanti (bilgi): AGENTS.md:1 -> Yok 1, '
-                      'AGENTS.md:2 -> Yok 2, AGENTS.md:3 -> Yok 3 ve 2 tane daha.', text)
+        self.assertIn('Broken links in instruction and skill files (info): AGENTS.md:1 -> Yok 1, '
+                      'AGENTS.md:2 -> Yok 2, AGENTS.md:3 -> Yok 3 and 2 more.', text)
         quiet = entry.human_result({'status': 'observed_metadata', 'instruction_references': {
             'checked_files': 1, 'dead_count': 0, 'dead': [], 'truncated': False}}, 'doctor', '3.4.0')
-        self.assertNotIn('kirik baglanti', quiet)
+        self.assertNotIn('Broken links', quiet)
 
 
 if __name__ == '__main__':

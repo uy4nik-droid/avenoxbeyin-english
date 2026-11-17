@@ -89,7 +89,7 @@ The setting is stored in `state/hermes-platforms.json` (machine-local and rollba
 ### Receipt reminder
 
 Every `REMINDER_EVERY` (15) user turns of an interactive session the plugin appends a one-line
-`[Hafıza]` reminder to write a receipt — the same cadence the V2 Hermes adapter used. It is
+`[Memory]` reminder to write a receipt — the same cadence the V2 Hermes adapter used. It is
 plain text inside the injected context, not an instruction the adapter enforces.
 
 Retrieval semantics are identical to the other harnesses (`tests/v3_hermes_test.py` asserts the

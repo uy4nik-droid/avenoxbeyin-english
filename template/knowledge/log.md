@@ -1,4 +1,4 @@
-# Derleme Günlüğü
+# Compile Log
 
-Derleyici her çalıştığında bu dosyanın sonuna bir blok ekler: hangi günlük log işlendi, hangi
-makaleler oluştu veya güncellendi, kısa bir not.
+Every time the compiler runs it appends a block to the end of this file: which daily log was
+processed, which articles were created or updated, and a short note.

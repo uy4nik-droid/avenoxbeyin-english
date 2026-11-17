@@ -1,50 +1,49 @@
-# Avenox Beyin ile kod ve içerik projeleri
+# Code and content projects with Avenox Beyin
 
-`🏰 300-Projects/` bir proje **hafıza alanıdır**; kod deposu veya medya arşivi değildir. Projenin
-amacını, kararlarını, bağlantılarını, mevcut durumunu ve sonraki işini burada tut. Git reposu,
-`node_modules`, render çıktıları ve büyük video dosyaları vault dışında kendi klasörlerinde kalsın.
+`🏰 300-Projects/` is a project **memory area**; it is not a code repository or a media archive. Keep the
+project's purpose, decisions, links, current status and next task here. Let the Git repo,
+`node_modules`, render outputs and large video files stay outside the vault, in their own folders.
 
-Örnek ayrım:
+An example of the separation:
 
 ```text
-~/Documents/AylinOS/🏰 300-Projects/youtube-serisi.md   # bağlam ve kararlar
-~/Developer/youtube-site/                              # gerçek Git reposu
-~/Movies/youtube-serisi/                               # ham medya ve renderlar
+~/Documents/AylinOS/🏰 300-Projects/youtube-serisi.md   # context and decisions
+~/Developer/youtube-site/                              # the real Git repo
+~/Movies/youtube-serisi/                               # raw media and renders
 ```
 
-## Hangi klasörde agent açılmalı?
+## Which folder should the agent be opened in?
 
-- Planlama, araştırma, içerik takibi ve uzun dönem hafıza için agent'ı vault kökünde aç.
-- Kod değişikliği için agent'ı gerçek Git reposunda aç; o reponun `AGENTS.md`/`CLAUDE.md`
-  kuralları ve testleri geçerli olsun.
-- İki alanı tek oturumda kullanman gerekiyorsa harness'in ek çalışma alanı özelliğiyle kod reposunu
-  vault oturumuna ekle ve kod reposunun kendi talimat dosyasını ayrıca okut. Her iki taraftaki
-  dosya sınırını agent'a açıkça söyle.
-- İş bittiğinde vault'taki proje notuna yalnız kalıcı sonucu yaz: commit/PR bağlantısı, alınan
-  karar, doğrulanan durum ve sıradaki adım. Kaynak kodu vault'a kopyalama.
+- For planning, research, content tracking and long-term memory, open the agent at the vault root.
+- For code changes, open the agent in the real Git repo; let that repo's `AGENTS.md`/`CLAUDE.md`
+  rules and tests apply.
+- If you need to use both areas in one session, add the code repo to the vault session with the
+  harness's additional-workspace feature and have the agent read the code repo's own instruction file
+  separately. Tell the agent explicitly where the file boundary lies on each side.
+- When the work is done, write only the durable outcome to the project note in the vault: the commit/PR link, the
+  decision made, the verified status and the next step. Do not copy source code into the vault.
 
-Bu ayrım sandbox değildir. Avenox Beyin'in derleyicisi model değişikliklerini vault dışında geçici
-bir sahnede üretip yalnız `knowledge/` altındaki izinli Markdown dosyalarını geri taşır. Etkileşimli
-agent'ın kod reposunda ne okuyup yazabileceğini ise Claude Code, Codex veya Antigravity'nin kendi
-izin/sandbox ayarları belirler.
+This separation is not a sandbox. Avenox Beyin's compiler produces model changes in a temporary
+stage outside the vault and moves back only the permitted Markdown files under `knowledge/`. What the interactive
+agent can read and write in the code repo is determined by the permission/sandbox settings of Claude Code, Codex or Antigravity themselves.
 
-## Video ve diğer içerik projeleri
+## Video and other content projects
 
-Video için proje notunda brief, kaynaklar, başlık/thumbnail kararları, yayın durumu ve dosya
-konumları tutulabilir. Ham video, ses, proje dosyası ve final render dışarıda kalır. Böylece iCloud
-senkronizasyonu ve Obsidian indekslemesi büyük ikili dosyalarla şişmez; beyin yine hangi dosyanın
-nerede olduğunu ve hangi kararın alındığını hatırlar.
+For video, the project note can hold the brief, sources, title/thumbnail decisions, publishing status and file
+locations. Raw video, audio, project files and the final render stay outside. That way iCloud
+sync and Obsidian indexing do not bloat with large binary files; the brain still remembers which file is
+where and which decision was made.
 
-## OpenCode durumu
+## OpenCode status
 
-v2.3'ün otomatik başlangıç/flush adaptörleri Claude Code, Codex ve Google Antigravity içindir.
-OpenCode için resmi bir hook adaptörü şu anda yoktur. OpenCode vault Markdown'ını normal dosya gibi
-okuyabilir; fakat bir OpenCode oturumunun kendiliğinden `daily/` loguna yazıldığını veya başlangıçta
-hafızayı otomatik aldığını varsayma. Böyle bir destek eklenene kadar OpenCode çıktısının kalıcı
-özetini proje notuna elle ya da desteklenen bir harness oturumundan geçirerek kaydet.
+The automatic startup/flush adapters of v2.3 are for Claude Code, Codex and Google Antigravity.
+There is currently no official hook adapter for OpenCode. OpenCode can read the vault Markdown like
+ordinary files; but do not assume that an OpenCode session writes to the `daily/` log by itself or that it picks up
+memory automatically at startup. Until such support is added, record a durable
+summary of OpenCode output in the project note by hand or by passing it through a session of a supported harness.
 
-## Kısa kural
+## The short rule
 
-Vault gerçeğin ve kararların indeksidir; kod reposu uygulamanın kaynağıdır; medya klasörü ağır
-dosyaların evidir. Birbirlerine yol ve bağlantıyla referans versinler, fiziksel olarak iç içe
-girmesinler.
+The vault is the index of truth and decisions; the code repo is the source of the application; the media folder is the home of heavy
+files. Let them refer to each other by path and link, and let them not be physically nested
+inside one another.

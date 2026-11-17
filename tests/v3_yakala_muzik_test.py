@@ -375,7 +375,7 @@ class MusicReplayAndServiceTest(MusicFiles):
         with mock.patch.object(yakala, '_agent_music_info', return_value={}), mock.patch.object(yakala, '_agent_music_ytdlp') as external:
             result = yakala._agent_music_tool(self.vault, self.state, job, 'music_identify')
         self.assertEqual(result['status'], 'unavailable')
-        self.assertIn('anahtar yok', result['message'])
+        self.assertIn('no key', result['message'])
         external.assert_not_called()
 
     def test_extraction_without_upload_consent_never_sends_sample(self):

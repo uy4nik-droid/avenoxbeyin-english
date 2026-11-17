@@ -92,7 +92,7 @@ class CodexFeatureReviewTest(AgentFiles):
 
     def test_missing_strict_config_support_stops_before_loading_a_profile(self):
         with patch.object(yakala, '_run', return_value=(0, '--disable --ask-for-approval', '')) as run:
-            with self.assertRaisesRegex(ValueError, 'guvenlik bayraklarini'):
+            with self.assertRaisesRegex(ValueError, 'required security flags'):
                 yakala._agent_preflight('codex', ['codex'], self.vault)
         self.assertEqual(run.call_count, 1)
 
@@ -127,7 +127,7 @@ class CodexFeatureReviewTest(AgentFiles):
         table = '\n'.join(line.replace('stable', 'removed') if line.startswith('view_image') else line
                           for line in feature_table(True).splitlines())
         self.assertIn('removed', next(line for line in table.splitlines() if line.startswith('view_image')))
-        with self.assertRaisesRegex(ValueError, 'kaldirilmis: view_image'):
+        with self.assertRaisesRegex(ValueError, 'have been removed: view_image'):
             self.preflight(plain=table)
 
     def test_bad_duplicate_unknown_stage_or_oversized_table_is_refused(self):
@@ -154,7 +154,7 @@ class CodexFeatureReviewTest(AgentFiles):
         self.assertFalse(self.config_path.exists())
 
     def test_mcp_that_remains_enabled_is_still_rejected(self):
-        with self.assertRaisesRegex(ValueError, 'MCP sunuculari'):
+        with self.assertRaisesRegex(ValueError, 'Codex MCP servers'):
             self.preflight(mcp_enabled=True, fail_mcp_disable=True)
 
     def test_platform_and_view_matrix_keeps_tool_limits_and_compatible_filesystem_policy(self):
@@ -238,7 +238,7 @@ class CodexPermissionReviewTest(AgentFiles):
                 with self.subTest(source=path.name, text=text):
                     self.write_config(path, text)
                     try:
-                        with self.assertRaisesRegex(ValueError, 'ajan baslatilmadi') as caught:
+                        with self.assertRaisesRegex(ValueError, 'the agent was not started') as caught:
                             self.preflight()
                         self.assertTrue(str(caught.exception).isascii())
                         self.assertEqual(len(self.calls), 1)  # --help only; no model/run commands
@@ -282,14 +282,14 @@ class CodexPermissionReviewTest(AgentFiles):
         for data in (b'allowed_permission_profiles = [', b'\xff', b'#' * (1024 * 1024 + 1)):
             with self.subTest(data=data[:40]):
                 path.write_bytes(data)
-                with self.assertRaisesRegex(ValueError, 'ajan baslatilmadi'):
+                with self.assertRaisesRegex(ValueError, 'the agent was not started'):
                     self.preflight()
         path.unlink()
         path.mkdir()  # open fails on every OS, including privileged CI users
-        with self.assertRaisesRegex(ValueError, 'okunamadi'):
+        with self.assertRaisesRegex(ValueError, 'Could not read'):
             self.preflight()
         with patch.object(yakala.Path, 'open', side_effect=PermissionError('private path')):
-            with self.assertRaisesRegex(ValueError, 'okunamadi') as caught:
+            with self.assertRaisesRegex(ValueError, 'Could not read') as caught:
                 self.preflight()
         self.assertNotIn('private path', str(caught.exception))
 
@@ -344,7 +344,7 @@ class CodexPermissionReviewTest(AgentFiles):
         for data in ('{"requirements_toml": "allowed_permission_profiles = []"}', '{invalid'):
             with self.subTest(data=data):
                 path.write_text(data, encoding='utf-8')
-                with self.assertRaisesRegex(ValueError, 'ajan baslatilmadi'):
+                with self.assertRaisesRegex(ValueError, 'the agent was not started'):
                     self.preflight()
 
     def test_codex_home_and_config_layer_discovery(self):
@@ -382,7 +382,7 @@ class CodexPermissionReviewTest(AgentFiles):
             with self.assertRaisesRegex(ValueError, 'allowed_permission_profiles'):
                 self.preflight()
         with patch.object(yakala.os, 'scandir', side_effect=PermissionError('private directory')):
-            with self.assertRaisesRegex(ValueError, 'konumlari okunamadi.*ajan baslatilmadi') as caught:
+            with self.assertRaisesRegex(ValueError, 'config locations.*the agent was not started') as caught:
                 self.preflight()
         self.assertTrue(str(caught.exception).isascii())
         self.assertNotIn('private directory', str(caught.exception))
@@ -403,12 +403,12 @@ class CodexPermissionReviewTest(AgentFiles):
                 if key_index is None:
                     self.assertEqual(CodexFeatureReviewTest.preflight(self), ())
                 else:
-                    with self.assertRaisesRegex(ValueError, 'macOS.*ajan baslatilmadi'):
+                    with self.assertRaisesRegex(ValueError, 'macOS.*the agent was not started'):
                         CodexFeatureReviewTest.preflight(self)
         with self.posix(platform='darwin'), \
                 patch.object(yakala, '_agent_codex_mdm_preflight', side_effect=MDM_PREFLIGHT), \
                 patch.object(ctypes, 'CDLL', side_effect=OSError('unavailable')):
-            with self.assertRaisesRegex(ValueError, 'macOS.*ajan baslatilmadi'):
+            with self.assertRaisesRegex(ValueError, 'macOS.*the agent was not started'):
                 CodexFeatureReviewTest.preflight(self)
 
 

@@ -247,8 +247,8 @@ class ImageOfferTest(ScreenshotFiles, unittest.TestCase):
         path = Path(image['path'])
         self.assertRegex(path.name, r'^pano-goruntusu-\d{8}-\d{6}\.png$')
         self.assertEqual(decode_png(path.read_bytes())[3], self.pixels)
-        self.assertEqual(yakala.image_lines(image, True), ('Panodaki görüntü', '6×4 · Tab ile çıkar'))
-        self.assertEqual(yakala.image_lines(image, False), ('Panodaki görüntü eklenmeyecek', '6×4 · Tab ile ekle'))
+        self.assertEqual(yakala.image_lines(image, True), ('Clipboard image', '6×4 · Tab to remove'))
+        self.assertEqual(yakala.image_lines(image, False), ('Clipboard image will not be added', '6×4 · Tab to add'))
 
     def test_png_payload_is_stored_byte_for_byte_and_wins_over_the_bitmap(self):
         png = make_png(self.pixels)
@@ -263,15 +263,15 @@ class ImageOfferTest(ScreenshotFiles, unittest.TestCase):
         clip = self.shot_file(age=95)
         image, _ = self.offer(clip, {'image': True, 'png': None, 'dib': make_dib(self.pixels)})
         self.assertEqual((image['age'], image['stale'], image['on']), (95.0, False, True))
-        self.assertEqual(yakala.image_lines(image, True)[1], '6×4 · 1 dk önce · Tab ile çıkar')
+        self.assertEqual(yakala.image_lines(image, True)[1], '6×4 · 1 min ago · Tab to remove')
         quoted, _ = self.offer('"' + clip + '"', {'image': True, 'png': None, 'dib': make_dib(self.pixels)})
         self.assertTrue(quoted['on'])
 
     def test_old_screenshot_is_offered_switched_off(self):
-        for age, label in ((yakala.IMAGE_FRESH + 1, '10 dk önce'), (3 * 3600 + 20, '3 saat önce'), (3 * 86400, '3 gün önce')):
+        for age, label in ((yakala.IMAGE_FRESH + 1, '10 min ago'), (3 * 3600 + 20, '3 h ago'), (3 * 86400, '3 days ago')):
             image, _ = self.offer(self.shot_file(age=age), {'image': True, 'png': make_png(self.pixels), 'dib': None})
             self.assertEqual((image['stale'], image['on']), (True, False), age)
-            self.assertEqual(yakala.image_lines(image, False)[1], '6×4 · ' + label + ' · Tab ile ekle')
+            self.assertEqual(yakala.image_lines(image, False)[1], '6×4 · ' + label + ' · Tab to add')
         edge, _ = self.offer(self.shot_file(age=yakala.IMAGE_FRESH), {'image': True, 'png': make_png(self.pixels), 'dib': None})
         self.assertTrue(edge['on'])
         ahead, _ = self.offer(self.shot_file(age=-30), {'image': True, 'png': make_png(self.pixels), 'dib': None})
@@ -280,7 +280,7 @@ class ImageOfferTest(ScreenshotFiles, unittest.TestCase):
     def test_deleted_temp_file_means_an_old_screenshot(self):
         image, _ = self.offer(self.shot_file(age=None), {'image': True, 'png': make_png(self.pixels), 'dib': None})
         self.assertEqual((image['age'], image['stale'], image['on']), (None, True, False))
-        self.assertEqual(yakala.image_lines(image, False)[1], '6×4 · eski, geçici dosyası silinmiş · Tab ile ekle')
+        self.assertEqual(yakala.image_lines(image, False)[1], '6×4 · old, its temp file was deleted · Tab to add')
 
     def test_unreadable_bitmap_falls_back_to_the_screenshot_file(self):
         clip = self.shot_file(age=20)
@@ -338,7 +338,7 @@ class ImageOfferTest(ScreenshotFiles, unittest.TestCase):
 
     def test_age_words(self):
         self.assertEqual([yakala._ago(seconds) for seconds in (0, 59, 60, 3599, 3600, 172799, 172800)],
-                         ['az önce', 'az önce', '1 dk önce', '59 dk önce', '1 saat önce', '47 saat önce', '2 gün önce'])
+                         ['just now', 'just now', '1 min ago', '59 min ago', '1 h ago', '47 h ago', '2 days ago'])
 
 
 class Call:
@@ -718,8 +718,8 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         card = self.card(result)
         self.assertEqual((card['meta']['kaynak_turu'], card['meta']['visibility'], card['meta']['arac']), ('dosya', 'private', 'masaustu'))
         self.assertNotIn('ScreenClip', card['body'])
-        self.assertNotIn('## Secim', card['body'])
-        self.assertIn('## Neden\n\nhata ekranı', card['body'])
+        self.assertNotIn('## Selection', card['body'])
+        self.assertIn('## Why\n\nhata ekranı', card['body'])
         files = self.saved_files()
         self.assertEqual(len(files), 1)
         self.assertRegex(files[0].name, r'^pano-goruntusu-\d{8}-\d{6}\.png$')
@@ -727,13 +727,13 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         self.assertEqual(decode_png(files[0].read_bytes())[3], self.pixels)
         # The picture was on screen before anything was saved, and the temp copy is gone afterwards.
         placeholder, texts = root.seen[0]
-        self.assertEqual(placeholder, 'Neden kaydediyorsun?')
-        self.assertIn('GÖRSEL', texts)
-        self.assertIn('Panodaki görüntü', texts)
-        self.assertIn('8×5 · az önce · Tab ile çıkar', texts)
+        self.assertEqual(placeholder, 'Why are you saving this?')
+        self.assertIn('IMAGE', texts)
+        self.assertIn('Clipboard image', texts)
+        self.assertIn('8×5 · just now · Tab to remove', texts)
         self.assertEqual(len(Photo.opened), 1)
         self.assertFalse(Path(Photo.opened[0]).parent.exists())
-        self.assertIn('✓  Beyne atıldı', root.canvas.texts())
+        self.assertIn('✓  Saved to Beyin', root.canvas.texts())
 
     def test_tab_takes_the_picture_off_and_the_typed_line_is_the_note(self):
         result, root, _ = self.popup(self.shot_file(age=40), self.bitmap, [('key', '<Tab>'), ('look', None), ('type', 'yarın ara'), ('key', '<Return>')])
@@ -741,12 +741,12 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         body = self.card(result)['body']
         self.assertIn('> yarın ara', body)
         self.assertNotIn('ScreenClip', body)
-        self.assertNotIn('## Dosyalar', body)
+        self.assertNotIn('## Files', body)
         self.assertEqual(self.saved_files(), [])
         placeholder, texts = root.seen[0]
-        self.assertEqual(placeholder, 'Aklındakini yaz…')
-        self.assertIn('Panodaki görüntü eklenmeyecek', texts)
-        self.assertIn('8×5 · az önce · Tab ile ekle', texts)
+        self.assertEqual(placeholder, 'Write what\'s on your mind…')
+        self.assertIn('Clipboard image will not be added', texts)
+        self.assertIn('8×5 · just now · Tab to add', texts)
         self.assertFalse(Path(Photo.opened[0]).parent.exists())
 
     def test_old_screenshot_waits_for_tab(self):
@@ -760,12 +760,12 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
             self.assertNotIn('ScreenClip', body)
             self.assertEqual(self.saved_files(), [])
             placeholder, texts = root.seen[0]
-            self.assertEqual(placeholder, 'Aklındakini yaz…')
-            self.assertIn('Panodaki görüntü eklenmeyecek', texts)
+            self.assertEqual(placeholder, 'Write what\'s on your mind…')
+            self.assertIn('Clipboard image will not be added', texts)
         result, root, _ = self.popup(REPORTED, self.bitmap, [('key', '<Tab>'), ('look', None), ('type', 'eski hata'), ('key', '<Return>')])
         self.assertEqual(result['kaynak_turu'], 'dosya')
         self.assertEqual(len(self.saved_files()), 1)
-        self.assertIn('8×5 · eski, geçici dosyası silinmiş · Tab ile çıkar', root.seen[0][1])
+        self.assertIn('8×5 · old, its temp file was deleted · Tab to remove', root.seen[0][1])
 
     def test_picture_of_unknown_age_waits_for_tab(self):
         # No temp file next to it (a copied web image, an old PrtScn): shown, told how to add it, not attached.
@@ -774,27 +774,27 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         self.assertIn('> aklıma gelen', self.card(result)['body'])
         self.assertEqual(self.saved_files(), [])
         placeholder, texts = root.seen[0]
-        self.assertEqual(placeholder, 'Aklındakini yaz…')
-        self.assertIn('GÖRSEL', texts)
-        self.assertIn('Panodaki görüntü eklenmeyecek', texts)
-        self.assertIn('8×5 · Tab ile ekle', texts)
+        self.assertEqual(placeholder, 'Write what\'s on your mind…')
+        self.assertIn('IMAGE', texts)
+        self.assertIn('Clipboard image will not be added', texts)
+        self.assertIn('8×5 · Tab to add', texts)
         self.assertFalse(Path(Photo.opened[0]).parent.exists())
         result, root, _ = self.popup('', self.bitmap, [('key', '<Tab>'), ('look', None), ('key', '<Return>')])
         self.assertEqual(result['kaynak_turu'], 'dosya')
         self.assertEqual(len(self.saved_files()), 1)
-        self.assertIn('_(not yok)_', self.card(result)['body'])
+        self.assertIn('_(no note)_', self.card(result)['body'])
         placeholder, texts = root.seen[0]
-        self.assertEqual(placeholder, 'Neden kaydediyorsun?')
-        self.assertIn('Panodaki görüntü', texts)
-        self.assertIn('8×5 · Tab ile çıkar', texts)
+        self.assertEqual(placeholder, 'Why are you saving this?')
+        self.assertIn('Clipboard image', texts)
+        self.assertIn('8×5 · Tab to remove', texts)
 
     def test_tab_twice_puts_it_back_and_enter_alone_saves_the_picture(self):
         script = [('key', '<Tab>'), ('key', '<Tab>'), ('look', None), ('key', '<Return>')]
         result, root, _ = self.popup(self.shot_file(age=40), self.bitmap, script)
         self.assertEqual(result['kaynak_turu'], 'dosya')
         self.assertEqual(len(self.saved_files()), 1)
-        self.assertIn('_(not yok)_', self.card(result)['body'])
-        self.assertEqual(root.seen[0][0], 'Neden kaydediyorsun?')
+        self.assertIn('_(no note)_', self.card(result)['body'])
+        self.assertEqual(root.seen[0][0], 'Why are you saving this?')
 
     def test_picture_switched_off_and_nothing_typed_saves_nothing(self):
         # Off from the start (unknown age), or taken off by hand (fresh screenshot): Enter has nothing to save.
@@ -802,7 +802,7 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
             Photo.opened = []
             result, root, _ = self.popup(clip, self.bitmap, keys + [('key', '<Return>'), ('look', None), ('key', '<Escape>')])
             self.assertEqual(result, {'status': 'vazgecildi'}, clip)
-            self.assertIn('Önce bir şey yaz', root.seen[0][1])
+            self.assertIn('Write something first', root.seen[0][1])
             self.assertFalse((self.vault / INBOX).exists())
             self.assertFalse(Path(Photo.opened[0]).parent.exists())
 
@@ -818,10 +818,10 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         self.assertEqual(result['kaynak_turu'], 'metin')
         body = self.card(result)['body']
         self.assertIn('> kira 12.500', body)
-        self.assertIn('## Neden\n\nbütçe', body)
+        self.assertIn('## Why\n\nbütçe', body)
         self.assertEqual(self.saved_files(), [])
         probe.assert_not_called()
-        self.assertNotIn('GÖRSEL', root.seen[0][1])
+        self.assertNotIn('IMAGE', root.seen[0][1])
         self.assertEqual(Photo.opened, [])
 
     def test_without_a_picture_the_popup_is_unchanged(self):
@@ -829,8 +829,8 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
             result, root, _ = self.popup('', payload, [('look', None), ('type', 'aklıma gelen'), ('key', '<Return>')])
             self.assertEqual(result['kaynak_turu'], 'metin')
             self.assertIn('> aklıma gelen', self.card(result)['body'])
-            self.assertEqual(root.seen[0][0], 'Aklındakini yaz…')
-            self.assertNotIn('GÖRSEL', root.seen[0][1])
+            self.assertEqual(root.seen[0][0], 'Write what\'s on your mind…')
+            self.assertNotIn('IMAGE', root.seen[0][1])
         # The reader found no picture: the path text is retained exactly as originally.
         result, _, _ = self.popup(REPORTED, {'image': False, 'png': None, 'dib': None}, [('key', '<Return>')])
         self.assertEqual(result['kaynak_turu'], 'metin')
@@ -901,7 +901,7 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         result, root, _ = self.popup('https://example.com/copied', None,
                                     [('look', None), ('key', '<Return>')], context, windows=True, fresh=True)
         self.assertEqual(self.card(result)['meta']['url'], context['url'])
-        self.assertTrue(any('Pano bağlantısı' in text for text in root.seen[0][1]))
+        self.assertTrue(any('Clipboard link' in text for text in root.seen[0][1]))
         result, _, _ = self.popup('https://example.com/copied', None,
                                   [('key', '<Alt-p>'), ('key', '<Return>')], context, windows=True, fresh=True)
         self.assertEqual(self.card(result)['meta']['url'], context['url'])
@@ -917,16 +917,16 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         result, root, _ = self.popup('eski özel metin', None,
                                      [('look', None), ('type', 'yeni not'), ('key', '<Return>')],
                                      {'url': 'https://example.com/page'}, windows=True)
-        self.assertFalse(any('Pano metni' in text or 'eski özel metin' in text for text in root.seen[0][1]))
+        self.assertFalse(any('Clipboard text' in text or 'eski özel metin' in text for text in root.seen[0][1]))
         self.assertNotIn('eski özel metin', self.card(result)['body'])
 
     def test_windows_fresh_text_is_visible_and_can_be_added_from_the_note_field(self):
         result, root, _ = self.popup('taze metin', None,
                                      [('look', None), ('type', 'notum'), ('key', '<Alt-m>'), ('key', '<Return>')],
                                      {'url': 'https://example.com/page'}, windows=True, fresh=True)
-        self.assertTrue(any('Pano metni' in text for text in root.seen[0][1]))
+        self.assertTrue(any('Clipboard text' in text for text in root.seen[0][1]))
         self.assertIn('> taze metin', self.card(result)['body'])
-        self.assertIn('## Neden\n\nnotum', self.card(result)['body'])
+        self.assertIn('## Why\n\nnotum', self.card(result)['body'])
         self.assertEqual(self.card(result)['meta']['visibility'], 'private')
 
     def test_alt_a_in_the_note_field_keeps_the_page_and_note(self):
@@ -947,7 +947,7 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         result, root, _ = self.popup('', None,
             [('key', '<Alt-s>'), ('alt', dict(keysym='Iabovedot', keycode=73, char='İ', state=0x20002)),
              ('look', None), ('key', '<Return>')], context, windows=True)
-        self.assertEqual(root.seen[0][0], 'Neden kaydediyorsun?')
+        self.assertEqual(root.seen[0][0], 'Why are you saving this?')
         self.assertEqual(self.card(result)['meta']['url'], context['url'])
         self.assertNotIn('ek_urller', self.card(result)['meta'])
 
@@ -955,7 +955,7 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         page = 'https://www.instagram.com/reel/Abcd/'
         result, root, _ = self.popup(page, None, [('look', None), ('key', '<Return>')],
                                      {'url': page, 'url_alinti': page}, windows=True, fresh=True)
-        self.assertFalse(any('Alıntılanan gönderi' in text or 'Pano bağlantısı' in text for text in root.seen[0][1]))
+        self.assertFalse(any('Quoted post' in text or 'Clipboard link' in text for text in root.seen[0][1]))
         self.assertNotIn('ek_urller', self.card(result)['meta'])
 
     def test_link_and_window_picture_are_saved_together_only_after_alt_w(self):
@@ -965,13 +965,13 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
             script = [('look', None)] + ([('key', '<Alt-w>')] if enabled else []) + [('key', '<Return>')]
             result, root, _ = self.popup('', None, script, {'url': page}, windows=True, shot=shot)
             card = self.card(result)
-            self.assertTrue(any('Pencere görüntüsü' in text for text in root.seen[0][1]))
+            self.assertTrue(any('Window image' in text for text in root.seen[0][1]))
             self.assertEqual(card['meta']['url'], page)
             self.assertEqual(card['meta']['kaynak_turu'], 'makale')
             self.assertEqual(len(self.saved_files()), int(enabled))
             if enabled:
                 self.assertEqual(card['meta']['visibility'], 'private')
-                self.assertIn('## Dosyalar', card['body'])
+                self.assertIn('## Files', card['body'])
             self.assertFalse(Path(shot['folder']).exists())
 
     def test_many_sources_fit_a_small_monitor_and_keep_controls_visible(self):
@@ -987,7 +987,7 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
         self.assertGreater(rows.options['scrollregion'][3], rows.options['height'])
         self.assertEqual(rows.options['last_scroll'], (1, 'pages'))
         self.assertEqual(rows.options['last_position'], 0)
-        self.assertTrue(any('Kaydet' in text for text in root.seen[0][1]))
+        self.assertTrue(any('Save' in text for text in root.seen[0][1]))
         self.assertFalse((self.vault / INBOX).exists())
 
     def test_empty_windows_sources_keep_the_note_field_without_a_negative_viewport(self):
@@ -1006,7 +1006,7 @@ class PopupWiringTest(ScreenshotFiles, unittest.TestCase):
                                      windows=True, fresh=True)
         self.assertEqual(result['kaynak_turu'], 'dosya')
         self.assertEqual(len(self.saved_files()), 1)
-        self.assertTrue(any('Pano görüntüsü' in text for text in root.seen[0][1]))
+        self.assertTrue(any('Clipboard image' in text for text in root.seen[0][1]))
         # Next to a browser link the fresh picture is offered, not chosen.
         result, _, _ = self.popup('', self.bitmap, [('key', '<Return>')],
                                   {'url': 'https://example.com/page'}, windows=True, fresh=True)

@@ -253,7 +253,7 @@ class LayaCommandTest(JevToggleTestCase):
                 self.assertEqual(error['hint'], error['hint'].encode('ascii', 'replace').decode('ascii'))
                 self.assertFalse((self.state / 'jev.json').exists())
                 human = entry.human_result(error, 'jev')
-                self.assertTrue(human.startswith('Islem tamamlanamadi: laya_shadow_only\nLaya yalniz golge modda calisir'), human)
+                self.assertTrue(human.startswith('Operation failed: laya_shadow_only\nLaya runs in shadow mode only'), human)
         self.jev('shadow', '--provider', 'laya')
         before = (self.state / 'jev.json').read_bytes()
         result = self.cli('jev', 'on')
@@ -385,22 +385,22 @@ class StatusReportTest(JevToggleTestCase):
         rendered += [entry.human_result(edited, 'jev'), entry.human_result({'status': 'never_seen', 'jev': edited}, 'doctor')]
         for text in rendered:
             self.assertEqual(text, text.encode('ascii', 'replace').decode('ascii'))
-        self.assertIn('Jev: acik', rendered[0])
-        self.assertIn('otomatik baglam: acik', rendered[1])
-        self.assertIn('Jev: kapali', rendered[2])
-        self.assertIn('Jev: golge (yalniz)', rendered[3])
-        self.assertIn('Saglayici: laya (yerel, model multilingual)', rendered[3])
-        self.assertIn('Anahtar: gerekmez', rendered[3])
-        self.assertIn('Laya yalniz golge modda calisir', rendered[3])
-        self.assertIn('Laya sunucusuna ulasilamadi', rendered[3])
+        self.assertIn('Jev: on', rendered[0])
+        self.assertIn('automatic context: on', rendered[1])
+        self.assertIn('Jev: off', rendered[2])
+        self.assertIn('Jev: shadow (only)', rendered[3])
+        self.assertIn('Provider: laya (local, model multilingual)', rendered[3])
+        self.assertIn('Key: not needed', rendered[3])
+        self.assertIn('Laya runs in shadow mode only', rendered[3])
+        self.assertIn('Laya server unreachable', rendered[3])
         self.assertNotIn('TYPESAFE_API_KEY', rendered[3])
-        self.assertNotIn('jev.json acik mod istiyor', rendered[3])
-        self.assertIn('Jev: golge (yalniz), saglayici: laya', rendered[4])
-        # A hand-edited `on` is shown as shadow-only, with the reason, never as acik.
-        self.assertIn('Jev: golge (yalniz)', rendered[5])
-        self.assertIn('jev.json acik mod istiyor ama Laya yalniz golge modda calisir', rendered[5])
-        self.assertNotIn('Jev: acik', rendered[5])
-        self.assertIn('Jev: golge (yalniz), saglayici: laya', rendered[6])
+        self.assertNotIn('jev.json asks for on mode', rendered[3])
+        self.assertIn('Jev: shadow (only), provider: laya', rendered[4])
+        # A hand-edited `on` is shown as shadow-only, with the reason, never as on.
+        self.assertIn('Jev: shadow (only)', rendered[5])
+        self.assertIn('jev.json asks for on mode, but Laya runs in shadow mode only', rendered[5])
+        self.assertNotIn('Jev: on', rendered[5])
+        self.assertIn('Jev: shadow (only), provider: laya', rendered[6])
 
     def test_jev_status_and_doctor_report_context_mode_notice_when_not_turn(self):
         import beyin_v3_preferences as prefs

@@ -473,18 +473,18 @@ class WebAssetTest(unittest.TestCase):
     def test_csrf_value_is_escaped_into_the_page(self):
         self.assertIn('content="a&quot;b"', ui.index_page('a"b', False))
 
-    def test_turkish_interface_text(self):
+    def test_english_interface_text(self):
         page = ui.index_page('x', False)
-        for text in ('Görevler', 'Hafıza', 'Eşitle', 'Sunucuyu kapat', 'Başlık', 'Açıklama', 'Sıkıştır', 'Önizleme'):
+        for text in ('Tasks', 'Memory', 'Sync', 'Stop server', 'Title', 'Description', 'Compaction', 'Preview'):
             self.assertIn(text, page)
-        for text in ("'İptal'", "'Engellendi'", "'Bekliyor'", 'Görev oluşturuldu'):
+        for text in ("'Cancelled'", "'Blocked'", "'Waiting'", 'Task created'):
             self.assertIn(text, ui.APP_JS)
         self.assertNotRegex(page + ui.APP_JS, '[–—â]')
-        # Every status `beyin.py doctor` and `beyin.py sync` report has a Turkish label.
+        # Every status `beyin.py doctor` and `beyin.py sync` report has an English label.
         doctor = re.search(r'const DOKTOR = \{(.*?)\};', ui.APP_JS, re.S).group(1)
         self.assertEqual(sorted(re.findall(r'(\w+): \[', doctor)),
                          ['needs_attention', 'never_seen', 'observed_metadata', 'pending'])
-        self.assertIn("observed_metadata: ['Sağlıklı', 'iyi']", doctor)
+        self.assertIn("observed_metadata: ['Healthy', 'iyi']", doctor)
         sync = re.search(r'const ESITLEME = \{(.*?)\};', ui.APP_JS, re.S).group(1)
         self.assertEqual(sorted(re.findall(r'(\w+): ', sync)), ['conflict', 'degraded', 'succeeded'])
 
@@ -575,11 +575,11 @@ class WebLifecycleTest(unittest.TestCase):
             with self.subTest(newline=newline):
                 code, output = legacy('durum', newline=newline)
                 self.assertEqual((code, output.decode('cp1252')),
-                                 (0, 'Web görünümü çal??m?yor.' + (newline or os.linesep)))
+                                 (0, 'Web view is not running.' + (newline or os.linesep)))
         code, output = legacy('--help')
         self.assertEqual(code, 0)
-        self.assertIn('?ste?e ba?l? yerel web görünümü', output.decode('cp1252'))
-        # A Turkish error in JSON mode stays ASCII, so it decodes the same under any code page.
+        self.assertIn('Optional local web view (127.0.0.1 only)', output.decode('cp1252'))
+        # An error in JSON mode stays ASCII, so it decodes the same under any code page.
         with contextlib.closing(socket.socket()) as taken:
             taken.bind(('127.0.0.1', 0))
             taken.listen(1)
@@ -587,7 +587,7 @@ class WebLifecycleTest(unittest.TestCase):
             code, output = legacy('--json', 'ac', '--no-browser', '--port', str(port))
         self.assertEqual(code, 1)
         self.assertTrue(output.isascii())
-        self.assertEqual(json.loads(output), {'durum': 'hata', 'mesaj': f'Port kullanılamıyor: {port}'})
+        self.assertEqual(json.loads(output), {'durum': 'hata', 'mesaj': f'Port unavailable: {port}'})
         self.assertIsNone(web.read_running(self.state))
 
     def test_a_start_that_cannot_announce_itself_leaves_no_listener_or_record(self):
@@ -657,7 +657,7 @@ class WebInstalledEntryTest(unittest.TestCase):
                 done = subprocess.run(command + list(argv), cwd=vault, env=env, capture_output=True, timeout=60)
                 return done.returncode, done.stdout.decode('cp1252'), done.stderr.decode('cp1252', 'replace')
 
-            self.assertEqual(run('durum')[:2], (0, 'Web görünümü çal??m?yor.' + os.linesep))
+            self.assertEqual(run('durum')[:2], (0, 'Web view is not running.' + os.linesep))
             server = subprocess.Popen(command + ['ac', '--no-browser'], cwd=vault, env=env,
                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.addCleanup(lambda: server.poll() is None and server.kill())
@@ -669,7 +669,7 @@ class WebInstalledEntryTest(unittest.TestCase):
                 time.sleep(0.1)
             code, output, error = run('durum')
             self.assertEqual(code, 0, error)
-            self.assertTrue(output.startswith('Web görünümü çal???yor: http://127.0.0.1:'), output)
+            self.assertTrue(output.startswith('Web view is running: http://127.0.0.1:'), output)
             # Explicit JSON is the opt-in manual bootstrap. It must remain usable and one-use.
             code, manual, error = run('ac', '--no-browser', '--json')
             self.assertEqual(code, 0, error)
@@ -688,19 +688,19 @@ class WebInstalledEntryTest(unittest.TestCase):
             self.assertEqual(code, 0, error)
             self.assertIn('beyin.py web ac --no-browser --json', manual_help)
             self.assertNotIn('token=', manual_help)
-            self.assertEqual(run('durdur')[:2], (0, 'Web görünümü durduruldu.' + os.linesep))
+            self.assertEqual(run('durdur')[:2], (0, 'Web view stopped.' + os.linesep))
             output, error = server.communicate(timeout=30)
             self.assertEqual(server.returncode, 0, error.decode('cp1252', 'replace'))
             lines = output.decode('cp1252', 'replace').splitlines()
-            self.assertEqual(lines[0], 'Beyin web görünümü aç?ld? (yaln?z bu bilgisayar).')
+            self.assertEqual(lines[0], 'Beyin web view opened (this computer only).')
             # Line 1 should mention the URL but NOT the launch token (single-use, not shown in terminal)
             self.assertIn('http://127.0.0.1:', lines[1])
             self.assertNotIn('token=', lines[1])
-            self.assertNotIn('Taray?c?da aç?l?yor', lines[1])
+            self.assertNotIn('Opening in the browser', lines[1])
             self.assertIn('beyin.py web ac --no-browser --json', output.decode('cp1252', 'replace'))
-            self.assertEqual(lines[-1], 'Web görünümü kapand?.')
+            self.assertEqual(lines[-1], 'Web view closed.')
             self.assertIsNone(web.read_running(state))
-            # JSON stays ASCII under the legacy code page, Turkish messages included.
+            # JSON stays ASCII under the legacy code page.
             with contextlib.closing(socket.socket()) as taken:
                 taken.bind(('127.0.0.1', 0))
                 taken.listen(1)
@@ -708,7 +708,7 @@ class WebInstalledEntryTest(unittest.TestCase):
                 code, output, error = run('ac', '--no-browser', '--port', str(port), '--json')
             self.assertEqual(code, 1, error)
             self.assertTrue(output.isascii())
-            self.assertEqual(json.loads(output), {'durum': 'hata', 'mesaj': f'Port kullanılamıyor: {port}'})
+            self.assertEqual(json.loads(output), {'durum': 'hata', 'mesaj': f'Port unavailable: {port}'})
             self.assertIsNone(web.read_running(state))
 
     def test_release_package_carries_the_web_files_through_the_updater_allowlist(self):

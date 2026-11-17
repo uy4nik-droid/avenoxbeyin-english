@@ -116,7 +116,7 @@ class LearningCandidateLedgerTest(unittest.TestCase):
         res = hook.receipt_reminder(payload_stop, self.state, 'claude', 'Stop', vault=self.vault)
         self.assertIsNotNone(res)
         self.assertEqual(res.get('decision'), 'block')
-        self.assertIn("Öğrenilen: yok", res.get('reason', ''))
+        self.assertIn("Learned: none", res.get('reason', ''))
         # The command in the reminder runs on every platform and names this session, so a
         # harness without a session variable (Codex) stages into the right window.
         self.assertIn('python3 beyin.py learn --session ' + session_hash + ' --candidate', res['reason'])

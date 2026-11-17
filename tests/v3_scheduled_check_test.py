@@ -149,9 +149,9 @@ class CliTest(unittest.TestCase):
         self.assertEqual((result['status'], code), ('needs_attention', 4))
         entry = load('beyin_entry_under_test', ROOT / 'scripts/beyin_entry.py')
         text = entry.human_result(result, 'scheduled-check')
-        self.assertNotIn('tamamlanamadi', text)
+        self.assertNotIn('could not finish', text)
         self.assertIn('beyin.py doctor', text)
-        self.assertIn('tamamlanamadi', entry.human_result({'status': 'error', 'error': 'RuntimeError'}, 'scheduled-check'))
+        self.assertIn('could not finish', entry.human_result({'status': 'error', 'error': 'RuntimeError'}, 'scheduled-check'))
 
 
 class NotifyTest(unittest.TestCase):
@@ -185,16 +185,16 @@ class NotifyTest(unittest.TestCase):
         self.assertEqual(self.shown, [], 'a first healthy run stays quiet')
         record, code = self.step(TROUBLED)
         self.assertEqual((code, record['notification'], len(self.shown)), (4, 'shown', 1))
-        self.assertEqual(self.shown[0], 'Beyin: sync cakismasi (2), hook uyarisi (1), skill/talimat cakismasi (1)'
-                                        ' - ayrinti: beyin.py doctor')
+        self.assertEqual(self.shown[0], 'Beyin: sync conflict (2), hook warning (1), skill/instruction conflict (1)'
+                                        ' - details: beyin.py doctor')
         for _ in range(6):
             self.step(TROUBLED)
         self.assertEqual(len(self.shown), 1, 'the same problem is not repeated every night')
         self.step(TROUBLED)  # seven days after the first notification
         self.assertEqual(len(self.shown), 2)
-        self.assertTrue(self.shown[1].startswith('Beyin (hatirlatma): sync cakismasi (2)'))
+        self.assertTrue(self.shown[1].startswith('Beyin (reminder): sync conflict (2)'))
         self.step(HEALTHY)
-        self.assertEqual(self.shown[2], 'Beyin: sorunlar giderildi, kasa saglikli.')
+        self.assertEqual(self.shown[2], 'Beyin: issues resolved, vault is healthy.')
         self.step(HEALTHY)
         self.assertEqual(len(self.shown), 3)
         self.assertFalse(any(PRIVATE in text or '.md' in text for text in self.shown))
@@ -203,19 +203,19 @@ class NotifyTest(unittest.TestCase):
         (self.cli.parent / 'outputs.json').write_text(json.dumps(TROUBLED), encoding='utf-8')
         entry = load('beyin_entry_notice_probe', ROOT / 'scripts/beyin_entry.py')
         first, _ = scheduled.run(self.vault, self.state, self.cli, now=self.now)
-        self.assertIn('oturumunun acilisinda', entry.human_result(first, 'scheduled-check'))
+        self.assertIn('when the next agent session opens', entry.human_result(first, 'scheduled-check'))
         self.assertTrue(scheduled.session_notice(self.state))
         repeated, _ = scheduled.run(self.vault, self.state, self.cli, now=self.now)
         self.assertEqual(first['finished_at'], repeated['finished_at'])
         self.assertEqual(repeated['told_at'], repeated['finished_at'])
-        self.assertNotIn('oturumunun acilisinda', entry.human_result(repeated, 'scheduled-check'))
+        self.assertNotIn('when the next agent session opens', entry.human_result(repeated, 'scheduled-check'))
         self.assertFalse(repeated['session_notice_pending'])
 
     def test_without_notify_nothing_is_shown_but_the_session_line_is_left(self):
         record, code = self.step(TROUBLED, notify=False)
         self.assertEqual((code, self.shown, record['notify']), (4, [], False))
         self.assertNotIn('notification', record)
-        self.assertIn('kullaniciya soyle: Beyin: sync cakismasi (2)', scheduled.session_notice(self.state))
+        self.assertIn('tell the user: Beyin: sync conflict (2)', scheduled.session_notice(self.state))
 
     def test_a_failed_check_is_an_error_not_a_change(self):
         self.step(TROUBLED)
@@ -236,8 +236,8 @@ class NotifyTest(unittest.TestCase):
                 record, _ = self.step(TROUBLED)
                 self.assertEqual(record['notification'], answer)
                 line = scheduled.session_notice(self.state)
-                self.assertTrue(line.startswith('Zamanlanmis denetim dikkat gerektiren bir sonuc buldu; '
-                                                'kullaniciya soyle: Beyin: sync cakismasi (2)'), line)
+                self.assertTrue(line.startswith('The scheduled check found something that needs attention; '
+                                                'tell the user: Beyin: sync conflict (2)'), line)
                 self.assertTrue(line.endswith('\n') and line.count('\n') == 1)
                 self.assertEqual(scheduled.session_notice(self.state), '', 'said once')
 
@@ -248,14 +248,14 @@ class NotifyTest(unittest.TestCase):
             self.step(TROUBLED)
         self.assertEqual(scheduled.session_notice(self.state), '', 'the same problem is not said every night')
         self.step(TROUBLED)  # the weekly reminder
-        self.assertIn('Beyin (hatirlatma): sync cakismasi (2)', scheduled.session_notice(self.state))
+        self.assertIn('Beyin (reminder): sync conflict (2)', scheduled.session_notice(self.state))
         self.step(HEALTHY)
         self.step(TROUBLED)  # a new problem, unsaid by any session yet
         self.assertTrue((self.state / 'scheduled-notice.json').exists())
         self.step(HEALTHY)
         self.assertFalse((self.state / 'scheduled-notice.json').exists(), 'a recovery takes back an unsaid line')
         self.assertEqual(scheduled.session_notice(self.state), '')
-        self.assertEqual(self.shown[-1], 'Beyin: sorunlar giderildi, kasa saglikli.')
+        self.assertEqual(self.shown[-1], 'Beyin: issues resolved, vault is healthy.')
 
     def test_a_hand_written_line_is_not_passed_on(self):
         self.state.mkdir()
@@ -297,7 +297,7 @@ class IssuesTest(unittest.TestCase):
         self.assertEqual(scheduled.issues(HEALTHY['sync'], {'task_completion': {'strict_issue_count': 0},
                                                             'validity': {'ignored_rejection_count': 0}}), {})
         text = scheduled.message('needs_attention', scheduled.issues(HEALTHY['sync'], doctor))
-        self.assertEqual(text, 'Beyin: gorev kaydi sorunu (3), gecerlilik sorunu (2) - ayrinti: beyin.py doctor')
+        self.assertEqual(text, 'Beyin: task record issue (3), validity issue (2) - details: beyin.py doctor')
 
     def test_a_hook_error_file_counts_even_when_hook_paths_are_fine(self):
         doctor = {'hook_paths': {'status': 'ok'}, 'hook-error.json': {'at': 1.0, 'error': 'OSError'}}
@@ -309,7 +309,7 @@ class IssuesTest(unittest.TestCase):
         self.assertEqual(scheduled.issues(sync, {}), {'sync_degraded': 2})
         self.assertEqual(scheduled.issues({'status': 'degraded'}, {}), {'sync_degraded': 1})
         self.assertEqual(scheduled.message('needs_attention', {'sync_degraded': 2}),
-                         'Beyin: sync uyarisi (2) - ayrinti: beyin.py doctor')
+                         'Beyin: sync warning (2) - details: beyin.py doctor')
 
     def test_a_degraded_sync_alone_makes_a_run_need_attention(self):
         tmp = tempfile.TemporaryDirectory(prefix='v3-scheduled-issues-')
@@ -432,14 +432,14 @@ class InstalledTest(unittest.TestCase):
         (self.vault / 'b.md').write_text('---\n{"id": "dup"}\n---\nTwo.\n', encoding='utf-8')
         ran = self.scheduled_check()
         self.assertEqual(ran.returncode, 4, ran.stdout + ran.stderr)
-        self.assertIn('kontrol gerektiren bir sorun var', ran.stdout + ran.stderr)
-        self.assertIn('oturumunun acilisinda da tek satir', ran.stdout + ran.stderr)
-        self.assertNotIn('tamamlanamadi', ran.stdout + ran.stderr)
-        self.assertIn('kullaniciya soyle: Beyin: sync cakismasi (1)', self.session_start())
-        self.assertNotIn('Zamanlanmis denetim', self.session_start())
+        self.assertIn('there is a problem that needs attention', ran.stdout + ran.stderr)
+        self.assertIn('reported in one line when the next agent session opens', ran.stdout + ran.stderr)
+        self.assertNotIn('could not finish', ran.stdout + ran.stderr)
+        self.assertIn('tell the user: Beyin: sync conflict (1)', self.session_start())
+        self.assertNotIn('The scheduled check found', self.session_start())
         again = self.scheduled_check()
         self.assertEqual(again.returncode, 4)
-        self.assertNotIn('oturumunun acilisinda', again.stdout + again.stderr, 'an already said problem is not announced again')
+        self.assertNotIn('when the next agent session opens', again.stdout + again.stderr, 'an already said problem is not announced again')
 
     def test_update_and_rollback_leave_doctor_and_session_start_working(self):
         # Everything scheduled-check keeps is in the state folder: the vault preference schema an
@@ -461,7 +461,7 @@ class InstalledTest(unittest.TestCase):
                                 text=True, encoding='utf-8', env=self.env, cwd=self.vault, timeout=300)
         self.assertEqual(doctor.returncode, 0, doctor.stderr)
         self.assertEqual(json.loads(doctor.stdout)['scheduled_check']['status'], 'needs_attention')
-        self.assertIn('kullaniciya soyle: Beyin: sync cakismasi (1)', self.session_start())
+        self.assertIn('tell the user: Beyin: sync conflict (1)', self.session_start())
 
 
 if __name__ == '__main__':

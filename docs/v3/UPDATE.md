@@ -1,28 +1,28 @@
-# Kurulum, güncelleme ve geri alma
+# Installation, update and rollback
 
-Vault içindeki `beyin.py` tek giriş noktasıdır. Komutları vault klasöründe çalıştır. Aşağıdaki örneklerde macOS/Linux için `python3` kullanılır; Windows'ta bunun yerine `py -3` yazılır. Python 3.11+ gerekir.
+`beyin.py` inside the vault is the single entry point. Run the commands in the vault folder. The examples below use `python3` for macOS/Linux; on Windows, write `py -3` instead. Python 3.11+ is required.
 
-## Git kullanmadan ilk kurulum
+## First installation without Git
 
-[Son kararlı release sayfasından](https://github.com/avenoxai/avenoxbeyin/releases/latest) `beyin-v3-X.Y.Z.zip` paketini indirip aç (`X.Y.Z` sayfadaki sürüm numarasıdır). Paket ve minimum gereksinimler sürüm sayfasında belirtilir. GitHub'ın otomatik kaynak arşivi ile ürün paketi farklıdır.
+Download and unpack the `beyin-v3-X.Y.Z.zip` package from [the latest stable release page](https://github.com/uy4nik-droid/avenoxbeyin-english/releases/latest) (`X.Y.Z` is the version number on the page). The package and the minimum requirements are stated on the release page. GitHub's automatic source archive is different from the product package.
 
-Bir vault klasörü seç veya oluştur. Açılan paketin içinde:
+Pick or create a vault folder. Inside the unpacked package:
 
 ```sh
-python3 scripts/install_v3.py --vault "/tam/yol/Beynim"
+python3 scripts/install_v3.py --vault "/full/path/to/Beynim"
 ```
 
-Windows örneği:
+Windows example:
 
 ```powershell
-py -3 scripts/install_v3.py --vault "C:\Notlar\Beynim"
+py -3 scripts/install_v3.py --vault "C:\Notes\Beynim"
 ```
 
-Runtime varsayılan olarak işletim sisteminin yerel uygulama verisi alanına, vault dışında kurulur. İstersen kurulumda `--state "/ayri/yerel/dizin"` verebilirsin; yalnız bu uygulama için ayrılmış bir dizin seç. Kurulu giriş ve başlatıcılar bu seçimi hatırlar. Yeni hesap, Git, pip veya servis kurulmaz.
+By default the runtime is installed in the operating system's local application data area, outside the vault. If you like, you can pass `--state "/separate/local/directory"` at install time; pick a directory reserved only for this application. The installed entry point and launchers remember this choice. No new account, Git, pip or service is installed.
 
-İlk bağlantı için AI istemcisinde vault'u açıp yeni oturum başlat. Hook tanımları değiştiğinde istemcinin gerekli güven incelemesini tamamla; updater güven kaydı üretmez. `update` sonucu `trust_review_required: true` olduğunda `trust_review_files` hangi hook dosyalarının değiştiğini söyler; insan çıktısı yalnız o istemcilerin adımını gösterir (`.codex/hooks.json` → Codex `/hooks`, `.kiro/hooks/beyin-v3.json` → Kiro Agent Hooks paneli veya CLI `/hooks`, `.agents/hooks.json` → Antigravity klasör güveni, `.claude/settings.local.json` → Claude Code'da yeni oturum).
+For the first connection, open the vault in your AI client and start a new session. When hook definitions change, complete the client's required trust review; the updater does not create a trust record. When the `update` result has `trust_review_required: true`, `trust_review_files` says which hook files changed; the human output shows only those clients' steps (`.codex/hooks.json` → Codex `/hooks`, `.kiro/hooks/beyin-v3.json` → Kiro Agent Hooks panel or CLI `/hooks`, `.agents/hooks.json` → Antigravity folder trust, `.claude/settings.local.json` → a new session in Claude Code).
 
-## Kontrol ve güncelleme
+## Checking and updating
 
 ```sh
 python3 beyin.py doctor
@@ -30,294 +30,297 @@ python3 beyin.py update --check
 python3 beyin.py update
 ```
 
-`doctor` yerel kayıtları, bekleyen işleri ve sorunları gösterir. Bir metadata raporu gerçek istemci teslimi veya her notun doğru yorumlandığı kanıtı değildir.
+`doctor` shows local records, pending work and problems. A metadata report is not proof of real client delivery or that every note was interpreted correctly.
 
-`update --check` resmi stable release'i inceler ve paketi geçici alanda doğrular. Vault ve mevcut runtime dosyalarını değiştirmez. Paket verilmezse ağ erişimi gerekir. `update` aynı doğrulamadan sonra yeni sürümü uygular. Aynı sürüme ikinci güncelleme no-op'tur; sayısal sürüm sırası kullanılır. Eski bir paketi yükleyerek downgrade yapılmaz; geri dönüş için `rollback` kullanılır.
+`update --check` examines the official stable release and verifies the package in a temporary area. It does not change the vault or the existing runtime files. If no package is given, network access is required. `update` applies the new version after the same verification. A second update to the same version is a no-op; numeric version order is used. A downgrade is not done by loading an older package; `rollback` is used to go back.
 
-Varsayılan indirme kaynağı `avenoxai/avenoxbeyin` deposunun resmi GitHub stable release'idir. Preview, hareket eden geliştirme dalı veya üçüncü taraf paket kaynağı otomatik seçilmez. Stable release ya da beklenen ZIP yoksa bunu hata olarak bildirir; yayın varmış gibi sonuç vermez.
+The default download source is the official GitHub stable release of the `uy4nik-droid/avenoxbeyin-english` repository. A preview, a moving development branch or a third-party package source is not selected automatically. If there is no stable release or no expected ZIP, it reports this as an error; it does not return a result as if a release existed.
 
-Yerel, önceden indirilmiş ZIP ile ağ gerekmez:
+With a local, previously downloaded ZIP, no network is needed:
 
 ```sh
-python3 beyin.py update --check --package "/indirilen/beyin-v3-X.Y.Z.zip"
-python3 beyin.py update --package "/indirilen/beyin-v3-X.Y.Z.zip"
+python3 beyin.py update --check --package "/downloaded/beyin-v3-X.Y.Z.zip"
+python3 beyin.py update --package "/downloaded/beyin-v3-X.Y.Z.zip"
 ```
 
-Yerel paketi yalnız güvendiğin kaynaktan al: checksum bütünlüğü kontrol eder; bağımsız bir imza veya kaynak güveninin yerine geçmez.
+Take a local package only from a source you trust: the checksum verifies integrity; it is not a substitute for an independent signature or trust in the source.
 
-## Tıklanabilir başlatıcılar
+## Clickable launchers
 
-Kurucu vault'a yalnız ilgili platformun başlatıcısını koyar:
+The installer puts only the launcher for the relevant platform into the vault:
 
-| Platform | Başlatıcı |
+| Platform | Launcher |
 | --- | --- |
 | macOS | `Beyni Güncelle.command` |
 | Windows | `Beyni Guncelle.cmd` |
-| Linux | `Beyni Güncelle.desktop` ve `Beyni Güncelle.sh` |
+| Linux | `Beyni Güncelle.desktop` and `Beyni Güncelle.sh` |
 
-Hepsi kurulu `beyin.py update` komutunu çağırır, ayrı güncelleme mantığı içermez. İşletim sistemi dosyanın açılması/çalıştırılması için izin isteyebilir. Özel Python/runtime yolu kurulumda kaydedilir; Python'u sonradan taşıdıysan kurulumu yeniden değerlendirmek gerekir.
+All of them call the installed `beyin.py update` command and contain no separate update logic. The operating system may ask for permission to open/run the file. A custom Python/runtime path is recorded at install time; if you moved Python afterwards, the installation needs to be reassessed.
 
-## Kesinti veya sorun
+## Interruption or problem
 
 ```sh
 python3 beyin.py recover
 python3 beyin.py rollback
 ```
 
-`recover`, yarım kalan işlemin journal'ını okuyup planlanan işlemi tamamlar. Bir hata mesajı işlemin iptal edildiği anlamına gelmez; bazı sistem dosyaları yazılmış, başarılı sürüm damgası henüz yazılmamış olabilir.
+`recover` reads the journal of an interrupted operation and completes the planned operation. An error message does not mean the operation was cancelled; some system files may have been written and the successful version stamp may not have been written yet.
 
-`rollback`, son sistem işleminin yedeğini geri getirir. [Opsiyonel global köprüyü](GLOBAL-BRIDGE.md) kendin eklediysen, köprüyü içermeyen eski bir sürüme (V3.1.0 ve öncesi) `rollback` veya `uninstall` yapmadan önce global ayardaki köprü handler'larını kaldır; olmayan bir scripti global hook'ta bırakmak istemci hatası üretir. Antigravity köprüsünü eklediysen aynısı 3.9.0 ve öncesine dönerken geçerlidir: o sürümlerin köprüsü `--harness antigravity` tanımaz, önce `~/.gemini/config/hooks.json` içindeki `beyin-v3-bridge` anahtarını kaldır. [Pi](PI.md) kullandıysan Pi desteği içermeyen bir sürüme (3.12.0 ve öncesi) dönerken: `rollback` ve `uninstall` `.pi/extensions/beyin-v3.ts` dosyasını kaldırır, kişisel Pi ayarına veya `pi -e ... --beyin-project-root ...` takma adına eklediğin yolu önce kaldır, yoksa Pi `Unknown option: --beyin-project-root` hatasıyla açılmaz. `--harness pi` receipt'leri kaynakta `harness: manual` ve eski sürümlerin yok saydığı `client: pi` alanıyla yazılır; eski sürüm bunları manual receipt olarak okur ve `sync` sağlıklı kalır, yeniden güncelleme Pi atfını korur. Pi için ayrı bir hariç tutma adı yoktur; extension `adapters` grubuyla hariç tutulur, eski sürümler bu adı tanır. İlk V2 geçişinde önceki sürüm ve tanınan eski runner'lar da geri yüklenir. Temiz V3 kurulumunu geri almak `uninstalled` olarak raporlanır; olmayan bir eski sürüm uydurulmaz. Sonradan eklediğin kullanıcı notları silinmez. Bu komut bütün vault geçmişini geri alan bir işlem değildir.
+`rollback` restores the backup of the last system operation. If you added the [optional global bridge](GLOBAL-BRIDGE.md) yourself, before doing `rollback` or `uninstall` to an older version that does not contain the bridge (V3.1.0 and earlier), remove the bridge handlers from the global settings; leaving a nonexistent script in a global hook produces a client error. If you added the Antigravity bridge, the same applies when going back to 3.9.0 and earlier: the bridge of those versions does not recognize `--harness antigravity`, so first remove the `beyin-v3-bridge` key in `~/.gemini/config/hooks.json`. If you used [Pi](PI.md), when going back to a version without Pi support (3.12.0 and earlier): `rollback` and `uninstall` remove the `.pi/extensions/beyin-v3.ts` file; first remove the path you added to your personal Pi settings or to the `pi -e ... --beyin-project-root ...` alias, otherwise Pi will not start, failing with `Unknown option: --beyin-project-root`. `--harness pi` receipts are written in the source with `harness: manual` and a `client: pi` field that older versions ignore; an older version reads them as manual receipts and `sync` stays healthy, and updating again preserves the Pi attribution. There is no separate exclusion name for Pi; the extension is excluded with the `adapters` group, and older versions recognize this name. In the first V2 migration, the previous version and the recognized old runners are also restored. Rolling back a clean V3 installation is reported as `uninstalled`; a nonexistent older version is not invented. User notes you added later are not deleted. This command is not an operation that undoes the whole vault history.
 
-Yönetilen dosyada araya giren kullanıcı değişikliği varsa işlem bunu ezmek yerine conflict ile durur. Desteklenen JSON ayarlarında ilgisiz değişiklikler korunur; çakışan yönetilen bölüm için inceleme gerekir. Kilitli/aktif bir writer varsa tamamlanmasını bekleyip tekrar dene. Kaybolmuş bir işin kilit/sentinel dosyasını gelişigüzel silme.
+If there is a user change that came in between in a managed file, the operation stops with a conflict instead of overwriting it. In supported JSON settings, unrelated changes are preserved; a conflicting managed section needs review. If there is a locked/active writer, wait for it to finish and try again. Do not delete the lock/sentinel file of a lost operation haphazardly.
 
-Yalnız satır sonu farkı değişiklik sayılmaz: `core.autocrlf` ya da bir editör yönetilen dosyayı CRLF'e çevirmişse güncelleme, kaldırma ve rollback durmaz, dosya yeniden yazılırken stok LF biçimine döner. Conflict mesajı sebebi söyler: `content differs` gerçek bir düzenleme, `deleted` silinmiş dosya demektir.
+A line-ending difference alone does not count as a change: if `core.autocrlf` or an editor converted a managed file to CRLF, update, removal and rollback do not stop, and the file returns to the stock LF format when it is rewritten. The conflict message states the reason: `content differs` means a real edit, `deleted` means a deleted file.
 
-## Tam kaldırma: kalan bileşenleri kontrol et
+## Full removal: check the remaining components
 
-`python3 beyin.py rollback` ya da kurucunun `--uninstall` seçeneği vault içindeki
-yönetilen dosyaları geri alır. Bilerek **notları, receipt'leri ve vault dışındaki state
-klasörünü silmez**. Ek olarak açılmış isteğe bağlı bileşenleri şu sırayla kapat:
+`python3 beyin.py rollback` or the installer's `--uninstall` option reverts the managed files
+inside the vault. It deliberately **does not delete notes, receipts or the state folder
+outside the vault**. Turn off the optional components that were additionally enabled, in this order:
 
-1. Önce `python3 beyin.py doctor` veya `.beyin-runtime.json` üzerinden state
-   klasörünün tam yolunu kaydet; saklamak istediğin verileri yedekle. Vault kaldırılınca
-   bu CLI ve runtime dosyası artık bulunmayabilir.
-2. Her etkin global köprü için, vault içindeki güncel CLI ile örneğin
-   `python3 beyin.py bridge --harness codex --uninstall` çalıştır (etkin her harness adı
-   için tekrarla). Bu adımı vault adaptörünü kaldırmadan önce yap; global ayarda olmayan bir
-   vault betiği kalırsa istemci başlangıçta hata verebilir.
-3. Yakala kuruluysa `python3 beyin.py yakala kaldir` çalıştır. Bu; kısayol, başlangıç
-   entegrasyonu ve Yakala skill'ini kaldırır; kartlar, indirilen dosyalar ve tanı kayıtları
-   yerinde kalır.
-4. Sonra vault kurulumunu `python3 scripts/install_v3.py --vault "<vault>" --uninstall`
-   ile kaldır veya önceki sürüme dönüyorsan `python3 beyin.py rollback` çalıştır.
-5. En son, saklamak istemediğin makine-yerel indeks/geçmiş varsa önceden kaydettiğin
-   state yolunu ve yedeğini doğrula; state klasörünü **ayrı, açık bir karar** olarak
-   sil. Bu işlem geri alınamaz; varsayılan kaldırmanın parçası değildir.
+1. First, record the full path of the state folder via `python3 beyin.py doctor` or
+   `.beyin-runtime.json`; back up any data you want to keep. Once the vault is removed,
+   this CLI and the runtime file may no longer exist.
+2. For every active global bridge, run, for example,
+   `python3 beyin.py bridge --harness codex --uninstall` with the current CLI inside the vault
+   (repeat for every active harness name). Do this step before removing the vault adapter; if
+   a vault script that is not in the global settings remains, the client may give an error at startup.
+3. If Yakala is installed, run `python3 beyin.py yakala kaldir`. This removes the shortcut, the
+   startup integration and the Yakala skill; cards, downloaded files and diagnostic records
+   stay in place.
+4. Then remove the vault installation with `python3 scripts/install_v3.py --vault "<vault>" --uninstall`,
+   or, if you are going back to the previous version, run `python3 beyin.py rollback`.
+5. Last, if there is a machine-local index/history you do not want to keep, verify the state
+   path and the backup you recorded beforehand; delete the state folder as a **separate,
+   explicit decision**. This operation cannot be undone; it is not part of the default removal.
 
-Birden çok harness veya Yakala kurulumu varsa 2. ve 3. adımları her etkin bileşen için tekrarla.
-Köprü ya da Yakala hiç kurulmadıysa o adımı geç. Kaldırmadan önce `beyin.py doctor`, işlem
-sonrasında `git status --short` ile kalan dosyaları incele; kullanıcıya ait ayarları topluca silme.
+If there is more than one harness or Yakala installation, repeat steps 2 and 3 for each active component.
+If the bridge or Yakala was never installed, skip that step. Before removal, inspect with `beyin.py doctor`,
+and after the operation, inspect the remaining files with `git status --short`; do not delete the user's settings wholesale.
 
 
-## Bağlı ana sayfalardan eski sürüme dönüş
+## Going back to an older version from linked homepages
 
-Seçilmiş bilgileri kopyalayan `homepage-create` sayfaları kaynaklarının güncel izinlerine
-bağlıdır. Bu bağı bilmeyen eski bir okuyucu (3.12.0 dahil), `sync` sırasında kopyayı
-bağımsız not sayabilir. Bu nedenle `rollback`, hedef okuyucu güvenli ana sayfa geri
-dönüş sözleşmesini taşımıyorsa ve vault içinde bağlı sayfa işaretleri bulunuyorsa,
-**sistem dosyalarını değiştirmeden durur**. Yarım kalmış rollback'in yeniden denenmesi
-ve `recover` yolu da denetimi tekrar yapar.
+`homepage-create` pages that copy selected information depend on the current permissions of
+their sources. An older reader that does not know about this link (including 3.12.0) may
+count the copy as an independent note during `sync`. For this reason, if the target reader
+does not carry the safe homepage rollback contract and linked-page markers are found inside the vault,
+`rollback` **stops without changing the system files**. A retry of a half-finished rollback
+and the `recover` path also repeat the check.
 
-Mevcut sürümde kalın veya türetilmiş kopyaları bilinçli olarak vault dışına aldıktan
-sonra tekrar deneyin. Yalnız bağlama işaretlerini silmek yeterli değildir: kopyalanmış
-hassas değerler kalırsa eski okuyucu bunları sıradan not olarak okuyabilir. Komut
-kullanıcı notlarını silmez, gizlilik metadata'sını değiştirmez veya bağı kendiliğinden
-koparmaz. Okunamayan Markdown varsa güvenlik doğrulanamadığı için işlem durur.
-Bağlı kopyası olmayan vault'larda rollback normal çalışır. Bu koruma desteklenen
-`rollback`/`recover` akışı içindir; runtime dosyalarını elle eski sürümle değiştirmek
-veya eski bir kurucuyla yeniden kurmak güvenli geri dönüş sayılmaz.
+After deliberately moving the copied or derived copies out of the vault in the current version,
+try again. Deleting only the link markers is not enough: if copied sensitive values remain,
+an older reader may read them as ordinary notes. The command does not delete user notes, change
+privacy metadata or break the link on its own. If there is unreadable Markdown, the operation
+stops because safety cannot be verified. In vaults with no linked copies, rollback works
+normally. This protection is for the supported `rollback`/`recover` flow; replacing the runtime
+files by hand with an old version or reinstalling with an old installer is not considered a
+safe way back.
 
-## State dizinini taşımak
+## Moving the state directory
 
-State dizini vault'un dışında, yerel hesap altındadır ve varsayılan yeri işletim
-sisteminin uygulama verisi alanıdır (Windows'ta `%LOCALAPPDATA%`). Bazı durumlarda bu
-varsayılanı bırakıp state'i başka bir yere almak gerekir:
+The state directory is outside the vault, under the local account, and its default location is
+the operating system's application data area (`%LOCALAPPDATA%` on Windows). In some cases it
+is necessary to leave this default and put the state somewhere else:
 
-- İstemci **MSIX paketi** olarak kuruluysa Windows `%LOCALAPPDATA%` yolunu paketin
-  kapsayıcısına yönlendirir (`...\Packages\<paket-kimliği>\LocalCache\Local\...`).
-  Paket içinden ve paket dışından çalışan süreçler aynı dizeyi okuyup farklı dizine
-  gidebilir; o zaman hafızanın yarısı bir tarafta, yarısı diğerinde kalır.
-- Kapsayıcı yolu paket kimliğini içerir. Uygulama farklı bir kimlikle yeniden kurulursa
-  ya da kapsayıcı sıfırlanırsa sabitlenmiş yol geçersiz kalır.
-- `%LOCALAPPDATA%` bulut ile eşitlenen bir klasöre yönlendirilmişse state eşitlenmemelidir.
+- If the client is installed as an **MSIX package**, Windows redirects the `%LOCALAPPDATA%`
+  path to the package's container (`...\Packages\<package-identity>\LocalCache\Local\...`).
+  Processes running inside and outside the package can read the same string and go to
+  different directories; then half of the memory is left on one side and half on the other.
+- The container path contains the package identity. If the application is reinstalled with a
+  different identity or the container is reset, the pinned path becomes invalid.
+- If `%LOCALAPPDATA%` is redirected to a folder synced with the cloud, the state must not be synced.
 
-Taşıma desteklenen bir işlemdir: `install_v3.py --state` yeni yolu sabitler. Veritabanı
-**vault kök yoluna** bağlıdır, state yoluna değil; bu yüzden aynı vault için state'i taşımak
-veritabanını geçersizleştirmez. Vault'u taşımak ayrı bir konudur: kurucu eski state ve
-`--rebind-state` ile bağı yeni yola açıkça çeker (taşınan vault'ta `beyin.py update` bu adım
-yapılana kadar durur); ayrıntı için [MULTI-MACHINE](MULTI-MACHINE.md#vaultu-başka-klasöre-ya-da-hesaba-taşımak).
+Moving is a supported operation: `install_v3.py --state` pins the new path. The database is
+tied to the **vault root path**, not the state path; so moving the state for the same vault
+does not invalidate the database. Moving the vault is a separate matter: the installer
+explicitly pulls the binding to the new path with the old state and `--rebind-state` (in a
+moved vault, `beyin.py update` stops until this step is done); for details see [MULTI-MACHINE](MULTI-MACHINE.md#moving-the-vault-to-another-folder-or-account).
 
-### Adımlar
+### Steps
 
-1. **Ajan oturumlarını kapat.** Çalışan bir worker state'e yazıyor olabilir.
+1. **Close the agent sessions.** A running worker may be writing to the state.
 
-2. **Mevcut yolu oku.** Vault kökündeki `.beyin-runtime.json` dosyasındaki `state`
-   alanı sabitlenmiş yoldur. Bu dosyayı elle değiştirme; kurucu yazar.
+2. **Read the current path.** The `state` field in the `.beyin-runtime.json` file at the vault
+   root is the pinned path. Do not edit this file by hand; the installer writes it.
 
-3. **Hedefi seç.** Vault'un dışında, yalnız bu uygulamaya ayrılmış, yerel sabit bir
-   diskte ve bulut eşitlemesi olmayan bir dizin. Örnek: `F:\beyin-v3-state`.
+3. **Pick the target.** A directory outside the vault, reserved only for this application, on a
+   local fixed disk and without cloud syncing. Example: `F:\beyin-v3-state`.
 
-4. **Dizini kopyala.** Tüm içerik taşınır: `memory.sqlite3`, `v3-install.json`,
-   `hook-queue/`, `hook-done/`, `markdown-journal/`, tercih ve cache dosyaları.
-   Kopya sonrası dosya hash'lerini karşılaştır.
+4. **Copy the directory.** The whole content is moved: `memory.sqlite3`, `v3-install.json`,
+   `hook-queue/`, `hook-done/`, `markdown-journal/`, preference and cache files.
+   After copying, compare the file hashes.
 
-5. **`update-journal.json` dosyasını kopyalama.** Yarıda kalmış bir güncellemeden
-   kalan journal varsa yeni konuma taşınmamalıdır. `install_v3.py` hedef state'te
-   bekleyen bir journal görürse taze kurulum yapmaz; `recover` çağırıp **eski işlemi
-   sürdürür** ve eski sabitlemeyi hedefler. Sonuç `install_resumed: true` döner ve
-   `.beyin-runtime.json` yeni yolu göstermez. Eski dizinde journal varsa önce orada
-   `beyin.py recover` ile işlemi tamamla, sonra kopyala.
+5. **Do not copy the `update-journal.json` file.** If there is a journal left over from an
+   interrupted update, it must not be moved to the new location. If `install_v3.py` sees a
+   pending journal in the target state, it does not do a fresh installation; it calls `recover`
+   and **continues the old operation**, targeting the old pin. The result returns
+   `install_resumed: true` and `.beyin-runtime.json` does not point to the new path. If there
+   is a journal in the old directory, first complete the operation there with
+   `beyin.py recover`, then copy.
 
-6. **Kurucuyu yeni yolla çalıştır.** Önce planı incele:
+6. **Run the installer with the new path.** First inspect the plan:
 
    ```powershell
-   py -3 scripts/install_v3.py --vault "C:\Notlar\Beynim" --state "F:\beyin-v3-state" --plan
+   py -3 scripts/install_v3.py --vault "C:\Notes\Beynim" --state "F:\beyin-v3-state" --plan
    ```
 
-   Plan temizse aynı komutu `--plan` olmadan çalıştır. Kurucu dizini oluşturduktan
-   **sonra** yeniden çözümleyip kanonik yolu sabitler.
+   If the plan is clean, run the same command without `--plan`. After creating the directory,
+   the installer re-resolves it and pins the canonical path.
 
-7. **İki taraftan doğrula.** `py -3 beyin.py doctor --json` komutunu hem ajan kabuğundan
-   (paket içi) hem de normal bir PowerShell penceresinden (paket dışı) çalıştır; aynı
-   sonucu vermeli. `state_location` alanı `warnings` listesini boş, `sibling_state_roots`
-   listesini de tek girdili (ya da boş) göstermeli. `--json` olmadan çalışan insan okunur
-   çıktıda her uyarı `State konumu (bilgi):` ile başlayan bir satırdır; hiç olmamalı.
+7. **Verify from both sides.** Run `py -3 beyin.py doctor --json` both from the agent shell
+   (inside the package) and from a normal PowerShell window (outside the package); it should
+   give the same result. The `state_location` field should show the `warnings` list empty and
+   the `sibling_state_roots` list with a single entry (or empty). In the human-readable output
+   that runs without `--json`, each warning is a line starting with `State location (info):`;
+   there should be none.
 
-8. **Eski dizini ancak bundan sonra sil.** Doğrulama geçene kadar dur.
+8. **Delete the old directory only after this.** Wait until the verification passes.
 
 
-### Bölünmüş state'i tanımak
+### Recognizing a split state
 
-Bölünme kendini bozuk bir kurulum gibi göstermez: iki dizin de gerçekten vardır ve
-ikisinde de `v3-install.json` bulunur, çünkü biri paket içinden biri paket dışından
-kurulmuştur. Tek başına bakıldığında ikisi de sağlıklı görünür; fark, oturumun hangi
-yarıyı okuduğunun sürecin paket içinde olup olmamasına bağlı olmasıdır.
+A split does not present itself like a broken installation: both directories really exist
+and both have a `v3-install.json`, because one was installed from inside the package and one
+from outside. Looked at alone, both seem healthy; the difference is that which half a session
+reads depends on whether the process is inside the package.
 
-`doctor` bunu `state_location` altında raporlar:
+`doctor` reports this under `state_location`:
 
-- `sibling_state_roots`: aynı vault anahtarı için kurulu bulunan bütün state kökleri,
-  dizin kimliğine göre bir kez sayılır. Birden fazlaysa `state_split` uyarısı verilir.
-  Paket içinde düz yazım da kapsayıcıya yönlendirildiği için gerçek bir bölünme en
-  güvenilir biçimde **paket dışından** görünür.
-- `pinned_in_package_container`: sabitlenmiş yol `Packages\...\LocalCache` içinden geçiyor.
-- `pin_resolves_elsewhere`: bu süreç sabitlenmiş dizeyi başka bir dizine çözümlüyor. Alan
-  her platformda doldurulur, uyarı yalnız Windows'ta verilir; macOS ve Linux'ta bir
-  symlink her süreç için aynı yere gider, bölünme doğurmaz.
-- `pinned_state_empty`: sabitlenmiş kökte kurulum bulunamadı.
-- `effective_state_differs`: bu çalışma sabitlenmiş kök yerine başka bir state okuyor
-  (örneğin kaynak CLI farklı bir `--state` ile çağrıldı).
+- `sibling_state_roots`: all the state roots installed for the same vault key, counted once
+  by directory identity. If there is more than one, a `state_split` warning is given. Since
+  plain writes inside the package are also redirected to the container, a real split is most
+  reliably visible from **outside the package**.
+- `pinned_in_package_container`: the pinned path passes through `Packages\...\LocalCache`.
+- `pin_resolves_elsewhere`: this process resolves the pinned string to a different directory.
+  The field is filled on every platform, and the warning is given only on Windows; on macOS
+  and Linux a symlink goes to the same place for every process and causes no split.
+- `pinned_state_empty`: no installation was found at the pinned root.
+- `effective_state_differs`: this run reads a different state instead of the pinned root
+  (for example, the source CLI was called with a different `--state`).
 
-Bunlar bilgi amaçlıdır; `doctor` durumunu yükseltmezler. Bölünme görürsen hangi yarının
-güncel olduğuna karar ver (`memory.sqlite3` tarihleri ve makbuz sayısı yardımcı olur),
-onu yukarıdaki adımlarla taşı; diğerini ancak adım 7 doğrulaması geçtikten sonra sil.
+These are informational; they do not raise the `doctor` status. If you see a split, decide
+which half is current (the `memory.sqlite3` dates and the receipt count help), move it with the
+steps above; delete the other only after the step 7 verification has passed.
 
-### Yönlendirme öncesi yolla sabitlenmiş eski kurulumlar
+### Old installations pinned with a pre-redirection path
 
-3.4.0 ve öncesiyle (#114 düzeltmesinden önce) yapılmış bir MSIX kurulumunda sabitlenmiş
-yol yönlendirme uygulanmadan yazılmış olabilir. Bu kendiliğinden düzelmez. Düzeltmek için
-#114'ü içeren kurucuyu **paket içinden** (ajan kabuğundan) mevcut `--state` değeriyle
-yeniden çalıştır; sabitleme yönlendirilmiş kanonik yola döner. Bu durumda kopyalama
-gerekmez, ama adım 5'teki kural geçerlidir: bekleyen bir `update-journal.json` varsa önce
-`beyin.py recover` çalıştır, sonra adım 6'daki gibi önce `--plan` ile incele.
+In an MSIX installation made with 3.4.0 and earlier (before the #114 fix), the pinned path may
+have been written without the redirection being applied. This does not fix itself. To fix it,
+run the installer containing #114 **from inside the package** (from the agent shell) again with
+the current `--state` value; the pin returns to the redirected canonical path. In this case no
+copying is needed, but the rule in step 5 applies: if there is a pending `update-journal.json`,
+first run `beyin.py recover`, then inspect first with `--plan` as in step 6.
 
-#### `update` ve `recover` ikisi de `transaction target escapes root` veriyorsa (#139)
+#### If `update` and `recover` both give `transaction target escapes root` (#139)
 
-Paket içinden bakıldığında state kökü eski yazımında kalıp içindeki dosyalar
-`Packages\<paket>\LocalCache\...` altına çözümlenebilir. Bu, kökün kendisi paket dışında da
-var olduğunda olur. Bu sürümden önceki güncelleyici iki yazımı farklı dizin sayıp işlemi
-durduruyordu; `recover` ve bekleyen journal'ı `recover`'a devreden kurucu da aynı kontrolden
-geçtiği için üçü de takılı kalıyordu. Artık hedef kökün altında adıyla duruyor ve arada kök
-dışına götüren bir link (symlink, junction) yoksa yazılıyor; kök dışına çıkan link hala
-reddedilir.
+Viewed from inside the package, the state root may stay in its old spelling while the files
+inside it can resolve under `Packages\<package>\LocalCache\...`. This happens when the root
+itself also exists outside the package. The updater before this version counted the two
+spellings as different directories and stopped the operation; `recover` and the installer that
+delegates a pending journal to `recover` went through the same check, so all three were stuck.
+Now, if it sits under the target root by name and there is no link (symlink, junction) in
+between that leads outside the root, it is written; a link that goes outside the root is still
+rejected.
 
-Takılı bir vault kendi kurulu `recover`'ıyla bu duvarı aşamaz, çünkü kurulu güncelleyici
-eski kontrolü taşır. Düzeltmeyi içeren sürümün paketini indirip aç, sonra **paket içinden**
-(ajan kabuğundan) `.beyin-runtime.json`'daki `state` değeriyle kurucuyu çalıştır:
+A stuck vault cannot get past this wall with its own installed `recover`, because the
+installed updater carries the old check. Download and unpack the package of the version that
+contains the fix, then run the installer **from inside the package** (from the agent shell)
+with the `state` value in `.beyin-runtime.json`:
 
 ```powershell
-py -3 scripts/install_v3.py --vault "C:\Notlar\Beynim" --state "<.beyin-runtime.json'daki state>"
+py -3 scripts/install_v3.py --vault "C:\Notes\Beynim" --state "<state in .beyin-runtime.json>"
 ```
 
-İlk çalıştırma bekleyen işlemi tamamlar (`install_resumed: true`). Aynı komutu bir kez daha
-çalıştır; bu sefer yeni sürüm kurulur ve vault düzeltilmiş güncelleyiciyi alır. Sonra
-`beyin.py doctor` ile doğrula. Sabitleme dosyasını elle değiştirme.
+The first run completes the pending operation (`install_resumed: true`). Run the same command
+once more; this time the new version is installed and the vault gets the fixed updater. Then
+verify with `beyin.py doctor`. Do not edit the pin file by hand.
 
 ## `invalid legacy skill hashes` (#73)
 
-17–19 Eylül 2026 arasında `cad7953` (#35) sonrası `main` üzerinden kurulan
-bazı vault'lar `3.0.2` damgası taşısa da resmi V3.0.2 etiketinden farklı bir
-paket doğrulayıcı kullanır. Bu doğrulayıcı V3.1.0/V3.2.0 manifestindeki yeni
-skill yollarını reddeder; `update --check` de aynı hatayı verir. Resmi V3.0.2
-paketinden yapılan geçiş bu özel durumu temsil etmez.
+Some vaults installed from `main` after `cad7953` (#35), between 17 and 19 September 2026,
+carry the `3.0.2` stamp but use a package verifier different from the official V3.0.2 tag.
+This verifier rejects the new skill paths in the V3.1.0/V3.2.0 manifest; `update --check`
+gives the same error. A migration done from the official V3.0.2 package does not represent
+this special case.
 
-V3.2.1 için hazırlanan paket biçimi bu eski doğrulayıcıyla uyumludur; stable
-olarak yayımlandıktan sonra normal `update` yeterlidir. Henüz yayımlanmamış
-bir düzeltmenin kurulu olduğunu varsayma. Mevcut V3.2.0'a hemen geçmek için:
+The package format prepared for V3.2.1 is compatible with this old verifier; once it is
+published as stable, a normal `update` is enough. Do not assume a fix that has not yet been
+published is installed. To move to the current V3.2.0 right away:
 
-1. [Resmi V3.2.0 sayfasından](https://github.com/avenoxai/avenoxbeyin/releases/tag/v3.2.0)
-   `beyin-v3-3.2.0.zip` ve yanındaki `.sha256` dosyasını indir. ZIP'i açmadan
-   ve içindeki kodu çalıştırmadan önce SHA-256 değerini karşılaştır. macOS/Linux
-   için `shasum -a 256 beyin-v3-3.2.0.zip`, Windows için
-   `Get-FileHash beyin-v3-3.2.0.zip -Algorithm SHA256` kullan; sonuç resmi
-   `.sha256` dosyasının ilk alanıyla aynı olmalı.
-2. Ajan oturumlarını kapat. ZIP'i vault dışında ayrı bir klasöre aç. Mevcut
-   vault'un `.beyin-runtime.json` dosyasındaki `state` yolunu oku; özel state
-   kullandıysan varsayılan yeni bir state yaratma. Bu dosyayı değiştirme.
-3. Açılan paket klasöründe, gerçek vault ve mevcut state yollarıyla planı incele:
+1. From [the official V3.2.0 page](https://github.com/uy4nik-droid/avenoxbeyin-english/releases/tag/v3.2.0)
+   download `beyin-v3-3.2.0.zip` and the `.sha256` file next to it. Before unpacking the ZIP
+   and running the code inside it, compare the SHA-256 value. Use
+   `shasum -a 256 beyin-v3-3.2.0.zip` for macOS/Linux and
+   `Get-FileHash beyin-v3-3.2.0.zip -Algorithm SHA256` for Windows; the result must equal the
+   first field of the official `.sha256` file.
+2. Close the agent sessions. Unpack the ZIP into a separate folder outside the vault. Read the
+   `state` path in the existing vault's `.beyin-runtime.json` file; if you used a custom state,
+   do not create a new default state. Do not modify this file.
+3. In the unpacked package folder, inspect the plan with the real vault and existing state paths:
 
    ```sh
-   python3 scripts/install_v3.py --vault "/tam/yol/Beynim" --state "/mevcut/state" --plan
+   python3 scripts/install_v3.py --vault "/full/path/to/Beynim" --state "/existing/state" --plan
    ```
 
-4. Plan başarılıysa aynı komutu `--plan` olmadan çalıştır. Installer paket
-   hashlerini doğrular, mevcut kullanıcı düzenlemelerinde conflict ile durur
-   ve güncelleme journal'ı/yedeği oluşturur. Conflict varsa dosyaları ezme,
-   önce değişikliği incele. `.beyin-version` veya kurulu Python dosyalarını
-   elle değiştirme.
-5. Vault içinde `python3 beyin.py doctor` ile sonucu kontrol et. Hook
-   tanımları değiştiyse Codex `/hooks`, Kiro Agent Hooks paneli veya CLI `/hooks`
-   incelemesini tamamla ve yeni oturum aç.
-   Sonraki güncellemeler yine normal `update` komutunu kullanır; gerekirse
-   `rollback` önceki kurulumu geri getirir.
+4. If the plan succeeds, run the same command without `--plan`. The installer verifies the
+   package hashes, stops with a conflict on existing user edits, and creates the update
+   journal/backup. If there is a conflict, do not overwrite the files; first inspect the
+   change. Do not edit `.beyin-version` or the installed Python files by hand.
+5. Check the result inside the vault with `python3 beyin.py doctor`. If the hook definitions
+   changed, complete the Codex `/hooks`, Kiro Agent Hooks panel or CLI `/hooks` review and
+   open a new session.
+   Later updates again use the normal `update` command; if needed, `rollback` brings back the
+   previous installation.
 
-Windows'ta Python komutları için `py -3` kullan. Bu yol kurulu eski
-paket doğrulayıcısını çağırmak yerine doğrulanmış resmi paketin installer'ını
-kullanır; kullanıcı notları ve mevcut state dizini korunur.
+On Windows, use `py -3` for the Python commands. This path uses the installer of the verified
+official package instead of calling the installed old package verifier; user notes and the
+existing state directory are preserved.
 
-## Neler değişir?
+## What changes?
 
-Paket yalnız yönetilen motor dosyaları, kurulu giriş/başlatıcılar, üç çekirdek skill ve istemci bağlantılarını günceller. Aynı adlı özel skill veya değiştirilmiş yönetilen script sessizce ezilmez. İlgisiz kullanıcı ayarları desteklenen birleştirme kurallarıyla korunur. Markdown notlar, Companion metinleri ve eski günlük/bilgi kaynakları paket içeriğiyle değiştirilmez.
+The package updates only the managed engine files, the installed entry point/launchers, the three core skills and the client connections. A custom skill with the same name or a modified managed script is not silently overwritten. Unrelated user settings are preserved with the supported merge rules. Markdown notes, Companion texts and old daily/knowledge sources are not replaced by the package contents.
 
-V2 geçişinde hash ile tanınan stok writer'lar geri alınabilir, etkisiz girişlerle değiştirilir. Böylece önceden açılmış istemcide kalan eski komut da model derleyicisini yeniden başlatmaz. Özelleştirilmiş runner'lar ve proje dışındaki zamanlayıcılar ayrıca değerlendirilir. [Geçiş rehberi](MIGRATION.md).
+In the V2 migration, stock writers recognized by hash are replaced with reversible, inert entries. This way, an old command remaining in an already-open client does not restart the model compiler either. Customized runners and schedulers outside the project are assessed separately. [Migration guide](MIGRATION.md).
 
-## Uygulanan kontroller
+## Checks applied
 
-Arşiv izin listesi, dosya SHA256, sürüm ve runtime şeması doğrulanır. Paket Python dosyaları derlenir; yeni kod ayrı sentetik vault'ta init, sync, kaynak arama ve receipt testinden geçer. Gerçek vault notları bu test için kullanılmaz. Uygulamada yerel kilit, önceki/yeni dosya içerikleri ve modlarıyla kalıcı journal, yönetilen dosya hash kontrolleri ve sürümden önce runtime veritabanı kontrolü vardır. Sürüm damgası en son yazılır.
+The archive allow list, file SHA256, version and runtime schema are verified. The package Python files are compiled; the new code passes an init, sync, source search and receipt test in a separate synthetic vault. Real vault notes are not used for this test. The implementation has a local lock, a persistent journal with the previous/new file contents and modes, managed-file hash checks and a runtime database check before the version. The version stamp is written last.
 
-Bu kontroller dağıtık cloud kilidi veya bütün harici uygulamalar için atomik transaction değildir. Başka bir editörün görülen değişiklikleri korunur; gerçek istemci davranışı ayrı doğrulanır. [Platform raporu](PLATFORM-TESTS.md).
+These checks are not a distributed cloud lock or an atomic transaction for all external applications. Changes seen from another editor are preserved; real client behavior is verified separately. [Platform report](PLATFORM-TESTS.md).
 
-## Bileşen hariç tutma ve güncellemeler
+## Component exclusion and updates
 
-Kullanıcı gereksinim duymadığı bileşenleri (`skills/<ad>`, `adapters/<ad>`, `launchers`, `agents_block`, `harnesses/antigravity`) kurulumda `--exclude-component` ile veya çalışma zamanında `beyin.py preferences --exclude-component <ad>` ile hariç tutabilir (`--include-component` ile geri açabilir).
+A user can exclude components they do not need (`skills/<name>`, `adapters/<name>`, `launchers`, `agents_block`, `harnesses/antigravity`) with `--exclude-component` at install time or with `beyin.py preferences --exclude-component <name>` at runtime (and turn them back on with `--include-component`).
 
-- `update` ve `install` sırasında hariç tutulan bileşenlere ait yönetilen ve değiştirilmemiş dosyalar diskten temizlenir ve manifestten düşürülür.
-- Kullanıcı tarafından değiştirilmiş dosyalar asla silinmez, üzerine yazılmaz; korunur ve işlem özetinde bildirilir.
-- Kullanıcı ortak dosyalardaki (`AGENTS.md` veya `.agents/hooks.json`) V3 bölgelerini elle kaldırmışsa çakışma üretilmez.
-- Rollback yapıldığında önceki durum geri yüklenir; `.beyin-exclusions.json` dosyasındaki hariç tutma tercihleri korunur.
-- Hariç tutma dosyası okunamıyorsa işletim sistemi hatası korunur; geçersiz JSON veya UTF-8 hatası dosya adını belirtir. Okuma hataları dosyayı değiştirmez.
+- During `update` and `install`, managed and unmodified files belonging to excluded components are cleaned from disk and dropped from the manifest.
+- Files modified by the user are never deleted or overwritten; they are preserved and reported in the operation summary.
+- If the user removed the V3 regions in shared files (`AGENTS.md` or `.agents/hooks.json`) by hand, no conflict is produced.
+- On rollback, the previous state is restored; the exclusion preferences in the `.beyin-exclusions.json` file are preserved.
+- If the exclusion file cannot be read, the operating system error is preserved; an invalid JSON or UTF-8 error names the file. Read errors do not change the file.
 
-## Geliştiriciler için paket üretimi
+## Package building for developers
 
-Repo kökünde:
+At the repo root:
 
 ```sh
 python3 scripts/build_v3_release.py --output "/tmp/beyin-v3-3.13.0.zip" --version 3.13.0
 ```
 
-Bu komut yalnız yerel ZIP oluşturur, GitHub'a yayınlamaz. Paket `manifest.json`, izin verilen installer/giriş dosyaları, runtime modülleri ve üç skill'i içerir. Manifest sürüm, schema/runtime schema, minimum Python, dosya hashleri ve tanınan legacy hashlerini taşır. Release yayınlama ve final platform CI ayrı işlemlerdir.
+This command only builds a local ZIP; it does not publish to GitHub. The package contains `manifest.json`, the allowed installer/entry files, the runtime modules and the three skills. The manifest carries the version, schema/runtime schema, minimum Python, file hashes and recognized legacy hashes. Publishing the release and the final platform CI are separate operations.
 
-## V3.1 sürüm bildirimleri
+## V3.1 version notifications
 
-V3.0.2 kurulumunu bir kere `python3 beyin.py update` ile güncelle. Yeni bildirim kodu bu ilk geçişten sonra çalışır. Windows'ta `py -3` kullan. Oturum açılışı ağ beklemez; kısa ömürlü worker yalnız resmi GitHub metadata'sını günde en fazla bir kez kontrol eder. İlk kontrolün sonucu sonraki oturum veya `doctor` çağrısında görünür. Aynı sürüm her prompt'ta tekrar gösterilmez. Notlar ve prompt'lar bu kontrol için gönderilmez, model çağrısı veya otomatik kurulum yapılmaz.
+Update a V3.0.2 installation once with `python3 beyin.py update`. The new notification code runs after this first migration. On Windows, use `py -3`. Session opening does not wait for the network; the short-lived worker checks only the official GitHub metadata at most once a day. The result of the first check becomes visible in the next session or `doctor` call. The same version is not shown again at every prompt. Notes and prompts are not sent for this check, and no model call or automatic installation is made.
 
-`update --check --metadata-only` yalnız sürüm bilgisini okur: ZIP indirmez, paket kodu çalıştırmaz ve vault/runtime/cache yazmaz. Tam `update --check` mevcut paket doğrulamasını ve geçici sentetik kurulumu çalıştırmaya devam eder. Metadata sonucu paketin kurulabilirlik kanıtı değildir. Ağ hatası “güncelsin” anlamına gelmez; doctor son başarılı kontrol tarihini ve durumu gösterir.
+`update --check --metadata-only` reads only the version information: it does not download the ZIP, does not run package code and does not write the vault/runtime/cache. The full `update --check` continues to run the existing package verification and the temporary synthetic installation. A metadata result is not proof that the package can be installed. A network error does not mean "you are up to date"; doctor shows the last successful check date and the status.
 
-`preferences --update-notifications off/on` bildirimleri ve otomatik sürüm ağı erişimini yönetir; hafıza senkronizasyon tercihini değiştirmez. `BEYIN_UPDATES_OFF=1` bu tercihten önce gelir. `update --dismiss X.Y.Z` yalnız o sürümün oturum bildirimini susturur; doctor sürümü göstermeye devam eder. Tercih ve cache vault dışında state dizinindedir; eski preference şemasına alan eklenmediğinden eski sürüme rollback güvenlidir. İnternet erişimi kapalıyken `update --package /yol/paket.zip` kullanılabilir.
+`preferences --update-notifications off/on` manages the notifications and the automatic version network access; it does not change the memory synchronization preference. `BEYIN_UPDATES_OFF=1` takes precedence over this preference. `update --dismiss X.Y.Z` silences only that version's session notification; doctor continues to show the version. The preference and cache are in the state directory outside the vault; since no field was added to the old preference schema, rollback to an older version is safe. When internet access is off, `update --package /path/package.zip` can be used.
 
-Online ZIP indirmesinde GitHub asset SHA-256 ve varsa resmi checksum dosyası, herhangi bir paket kodu çalıştırılmadan önce doğrulanır. Cache kurulacak paketin kaynağı değildir; kurulum yeniden resmi metadata okur. Checksum bağımsız yayımlayıcı imzası değildir. `context --no-sync` sürüm kontrolü, worker veya bildirim kaydı oluşturmaz.
+In an online ZIP download, the GitHub asset SHA-256 and, if present, the official checksum file are verified before any package code is run. The cache is not the source of the package to be installed; the installation reads the official metadata again. A checksum is not an independent publisher signature. `context --no-sync` creates no version check, worker or notification record.
 
-## Bakımcı için yayın
+## Release for the maintainer
 
-`VERSION` ve `docs/v3/releases/X.Y.Z.md` aynı sürümü tanımlar. `Verified V3 release package` workflow'u ZIP'i bir kez build eder; altı OS/Python kombinasyonu bu aynı ZIP'i temiz kurulum, yayınlanmış gerçek V3.0.2 ve V3.1.0 paketlerinden ve `cad7953` ara kurulumundan geçiş, no-op, rollback ve kesinti/recover ile doğrular. PR çalışmaları yayın yapmaz.
+`VERSION` and `docs/v3/releases/X.Y.Z.md` define the same version. The `Verified V3 release package` workflow builds the ZIP once; six OS/Python combinations verify this same ZIP with a clean installation, migration from the published real V3.0.2 and V3.1.0 packages and the `cad7953` intermediate installation, no-op, rollback and interruption/recover. PR runs do not publish.
 
-Main üzerinde manuel `workflow_dispatch` ve `publish=true`, testler yeşilse aynı bytes'ı önce draft olarak yükler, sonra stable/latest yayınlar ve yayınlanmış asset'i tekrar indirip doğrular. Var olan release'in üzerine yazılmaz; yeni sürüm numarası gerekir. Opsiyonel global köprü (#41) V3.2.0 ile pakete girdi; kurulum ve güncelleme global ayarları değiştirmez ([GLOBAL-BRIDGE.md](GLOBAL-BRIDGE.md)).
+A manual `workflow_dispatch` with `publish=true` on main, if the tests are green, first uploads the same bytes as a draft, then publishes it as stable/latest and downloads the published asset again to verify it. An existing release is not overwritten; a new version number is needed. The optional global bridge (#41) entered the package with V3.2.0; installation and update do not change the global settings ([GLOBAL-BRIDGE.md](GLOBAL-BRIDGE.md)).

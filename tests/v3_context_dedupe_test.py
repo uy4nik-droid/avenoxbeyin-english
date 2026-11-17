@@ -188,9 +188,9 @@ class ContextDedupeHookTest(unittest.TestCase):
         sys.path.insert(0, str(ROOT / 'scripts'))
         import beyin_entry
         human_prefs = beyin_entry.human_result(saved, 'preferences')
-        self.assertIn('Oturum ici tekrar onleme: acik', human_prefs)
+        self.assertIn('In-session repeat prevention: on', human_prefs)
         human_doc = beyin_entry.human_result(doc, 'doctor')
-        self.assertIn('Oturum ici tekrar onleme: acik', human_doc)
+        self.assertIn('In-session repeat prevention: on', human_doc)
 
         # 5. Disable context_dedupe
         disabled = self.cli('preferences', '--context-dedupe', 'off')
